@@ -1,0 +1,74 @@
+.lobby {
+    text-align: center;
+    max-width: 34rem;
+    padding: 2.5rem 2rem;
+    border: 1px solid rgba(198, 161, 91, 0.35);
+    border-radius: 14px;
+    background: rgba(20, 24, 33, 0.55);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.crest {
+    font-size: 3.25rem;
+    line-height: 1;
+    margin-bottom: 0.75rem;
+}
+
+.lobby h1 {
+    margin: 0;
+    font-size: 2.2rem;
+    letter-spacing: 0.04em;
+    color: #e9d9a8;
+    font-weight: 700;
+}
+
+.status {
+    margin: 1.6rem 0 0;
+    color: #c9ccd3;
+    font-size: 1.05rem;
+    font-style: italic;
+}
+
+.label {
+    margin: 1.8rem 0 0.3rem;
+    color: #c9ccd3;
+    font-size: 1.05rem;
+}
+
+.code {
+    margin: 0;
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: 0.35em;
+    color: #e9d9a8;
+    /* letter-spacing pushes text right; nudge it back to stay centered */
+    text-indent: 0.35em;
+}
+
+.hint {
+    margin: 1.2rem 0 0;
+    color: #8b909b;
+    font-size: 0.9rem;
+}
+
+.error {
+    margin: 1.6rem 0 0;
+    color: #e39b9b;
+    font-size: 1rem;
+}
+
+.btn-retry {
+    margin: 1rem auto 0;
+    padding: 0.6rem 1.4rem;
+    border: 1px solid rgba(198, 161, 91, 0.65);
+    border-radius: 10px;
+    background: rgba(198, 161, 91, 0.12);
+    color: #e9d9a8;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.btn-retry:hover {
+    background: rgba(198, 161, 91, 0.25);
+}

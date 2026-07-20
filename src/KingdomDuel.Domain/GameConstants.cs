@@ -1,10 +1,5 @@
 ﻿namespace KingdomDuel.Domain;
 
-/// <summary>
-/// Every numeric rule of the game lives here, nowhere else. If you need to
-/// balance the game, this is the only file you should have to touch.
-/// Mirrors RULES.md exactly - keep both in sync.
-/// </summary>
 public static class GameConstants
 {
     public const int StartingResource = 50;

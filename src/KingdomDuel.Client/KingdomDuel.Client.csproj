@@ -10,13 +10,11 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.5" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.5" PrivateAssets="all" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-  <!-- Generated API client. Excluded from build until the client-wiring phase
-       (needs a ProjectReference to KingdomDuel.Shared + Newtonsoft.Json). -->
   <ItemGroup>
-    <Compile Remove="ApiClients\**\*.cs" />
-    <None Include="ApiClients\**\*.cs" />
+    <ProjectReference Include="..\KingdomDuel.Shared\KingdomDuel.Shared.csproj" />
   </ItemGroup>
 
 </Project>
