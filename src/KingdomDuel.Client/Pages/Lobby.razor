@@ -1,0 +1,59 @@
+@page "/lobby"
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Shared.Requests.Matches
+@inject MatchesApiClient Api
+
+<PageTitle>Lobby — Kingdom Duel</PageTitle>
+
+<section class="lobby">
+    <div class="crest">🏰</div>
+    <h1>Lobby meci</h1>
+
+    @if (isCreating)
+    {
+        <p class="status">Se creează meciul…</p>
+    }
+    else if (error is not null)
+    {
+        <p class="error">@error</p>
+        <button type="button" class="btn-retry" @onclick="CreateSessionAsync">Încearcă din nou</button>
+    }
+    else
+    {
+        <p class="label">Codul meciului:</p>
+        <p class="code">@matchCode</p>
+        <p class="hint">Trimite acest cod adversarului ca să se alăture.</p>
+    }
+</section>
+
+@code {
+    private bool isCreating = true;
+    private string? matchCode;
+    private string? error;
+
+    protected override async Task OnInitializedAsync() => await CreateSessionAsync();
+
+    private async Task CreateSessionAsync()
+    {
+        isCreating = true;
+        error = null;
+
+        try
+        {
+            var response = await Api.CreateMatchAsync(new CreateMatchRequest { DisplayName = "Gazdă" });
+            matchCode = response.MatchCode;
+        }
+        catch (ApiException ex)
+        {
+            error = $"Nu am putut crea meciul (cod {ex.StatusCode}). Verifică dacă API-ul rulează.";
+        }
+        catch (Exception)
+        {
+            error = "Nu am putut contacta serverul. Verifică dacă API-ul rulează.";
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+}
