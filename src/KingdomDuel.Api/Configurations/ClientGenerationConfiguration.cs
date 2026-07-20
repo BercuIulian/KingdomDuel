@@ -46,7 +46,7 @@ internal static class ClientGenerationConfiguration
             destinationPath: outputDir,
             csSettings: settings =>
             {
-                settings.ClassName = "MatchesApiClient";
+                settings.ClassName = "ApiClient";
                 settings.GenerateDtoTypes = false;
                 settings.UseBaseUrl = false;
                 settings.OperationNameGenerator = new SingleClientFromOperationIdOperationNameGenerator();
