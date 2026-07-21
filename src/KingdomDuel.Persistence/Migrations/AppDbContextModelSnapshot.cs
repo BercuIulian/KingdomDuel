@@ -90,10 +90,22 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<int>("Round")
                         .HasColumnType("integer");
 
+                    b.Property<int>("StartingGold")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StartingMorale")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("StartingTroops")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<int>("TotalRounds")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
@@ -121,6 +133,9 @@ namespace KingdomDuel.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)");
+
+                    b.Property<bool>("IsReady")
+                        .HasColumnType("boolean");
 
                     b.Property<string>("PlayerId")
                         .IsRequired()

@@ -1,6 +1,4 @@
-using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
-using KingdomDuel.Domain.Enums;
 using KingdomDuel.Shared.Requests.Matches;
 using KingdomDuel.Shared.Responses.Matches;
 using KingdomDuel.Shared.Validators.Matches;
@@ -51,8 +49,6 @@ internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
 
         var playerId = Guid.NewGuid().ToString("N");
         match.Player2 = new PlayerSlot { PlayerId = playerId, DisplayName = req.DisplayName };
-        match.Status = MatchStatus.InProgress;
-        match.CurrentEvent = new GameEngine().PickRandomEvent();
         await dbContext.SaveChangesAsync(ct);
 
         await Send.OkAsync(new JoinMatchResponse { PlayerId = playerId, State = match.ToStateDto() }, ct);
