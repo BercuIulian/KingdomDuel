@@ -1,0 +1,18 @@
+@page "/game"
+
+<PageTitle>Meci — Kingdom Duel</PageTitle>
+
+<section class="game">
+    <div class="crest">⚔️</div>
+    <h1>Meciul a început!</h1>
+    @if (!string.IsNullOrWhiteSpace(Code))
+    {
+        <p class="game-code">Cod meci: <strong>@Code</strong></p>
+    }
+    <p class="tagline">Câmpul de luptă se pregătește… (funcționalitatea urmează)</p>
+</section>
+
+@code {
+    [SupplyParameterFromQuery]
+    public string? Code { get; set; }
+}

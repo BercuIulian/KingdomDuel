@@ -1,4 +1,7 @@
 @page "/"
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Shared.Requests.Matches
+@inject ApiClient Api
 @inject NavigationManager Navigation
 
 <PageTitle>Kingdom Duel</PageTitle>
@@ -9,18 +12,73 @@
     <p class="tagline">Două regate. Opt runde. Un singur învingător.</p>
 
     <div class="join-row">
-        <button type="button" class="btn-check" title="Alătură-te meciului">✓</button>
+        <button type="button" class="btn-check" title="Alătură-te meciului"
+                disabled="@isJoining" @onclick="JoinMatch">
+            @(isJoining ? "…" : "✓")
+        </button>
         <input type="text"
                class="code-input"
                placeholder="Codul meciului"
-               @bind="matchCode" />
+               maxlength="12"
+               disabled="@isJoining"
+               @bind="matchCode"
+               @bind:event="oninput"
+               @onkeydown="OnCodeKeyDown" />
     </div>
+
+    @if (joinError is not null)
+    {
+        <p class="join-error">@joinError</p>
+    }
 
     <button type="button" class="btn-create" @onclick="CreateMatch">Crează meci</button>
 </section>
 
 @code {
     private string matchCode = string.Empty;
+    private bool isJoining;
+    private string? joinError;
 
     private void CreateMatch() => Navigation.NavigateTo("/lobby");
+
+    private async Task OnCodeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await JoinMatch();
+        }
+    }
+
+    private async Task JoinMatch()
+    {
+        var code = matchCode.Trim();
+        if (code.Length == 0 || isJoining)
+        {
+            return;
+        }
+
+        isJoining = true;
+        joinError = null;
+
+        try
+        {
+            var response = await Api.JoinMatchAsync(new JoinMatchRequest { DisplayName = "Player 2" }, code);
+            Navigation.NavigateTo(
+                $"/lobby?code={Uri.EscapeDataString(code)}&pid={Uri.EscapeDataString(response.PlayerId)}");
+        }
+        catch (ApiException ex)
+        {
+            joinError = ex.StatusCode is 400 or 404
+                ? "Cod invalid sau meciul nu există."
+                : $"Nu ne-am putut alătura meciului (cod {ex.StatusCode}).";
+        }
+        catch (Exception)
+        {
+            joinError = "Nu am putut contacta serverul.";
+        }
+        finally
+        {
+            isJoining = false;
+        }
+    }
 }

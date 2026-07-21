@@ -1,37 +1,264 @@
 @page "/lobby"
 @using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Shared.Dtos.Matches
 @using KingdomDuel.Shared.Requests.Matches
+@implements IAsyncDisposable
 @inject ApiClient Api
+@inject NavigationManager Navigation
 
 <PageTitle>Lobby — Kingdom Duel</PageTitle>
 
 <section class="lobby">
-    <div class="crest">🏰</div>
-    <h1>Lobby meci</h1>
 
-    @if (isCreating)
-    {
-        <p class="status">Se creează meciul…</p>
-    }
-    else if (error is not null)
-    {
-        <p class="error">@error</p>
-        <button type="button" class="btn-retry" @onclick="CreateSessionAsync">Încearcă din nou</button>
-    }
-    else
-    {
-        <p class="label">Codul meciului:</p>
-        <p class="code">@matchCode</p>
-        <p class="hint">Trimite acest cod adversarului ca să se alăture.</p>
-    }
+@if (closedMessage is not null)
+{
+    <div class="lobby-closed">
+        <span class="closed-icon">🚪</span>
+        <h1>Lobby închis</h1>
+        <p>@closedMessage</p>
+        <button type="button" class="btn-primary" @onclick="GoHome">Înapoi la meniu</button>
+    </div>
+}
+else
+{
+    <header class="lobby-header">
+        <div class="title-block">
+            <span class="crest">🏰</span>
+            <div>
+                <h1>Lobby meci</h1>
+                <p class="subtitle">Pregătește duelul înainte de start</p>
+            </div>
+        </div>
+
+        <div class="code-badge">
+            <span class="code-label">Codul meciului</span>
+            @if (isCreating)
+            {
+                <span class="code-value muted">••••••</span>
+            }
+            else if (error is not null)
+            {
+                <button type="button" class="code-retry" @onclick="CreateSessionAsync" title="@error">reîncearcă</button>
+            }
+            else
+            {
+                <span class="code-value">@matchCode</span>
+            }
+        </div>
+    </header>
+
+    <div class="lobby-body">
+
+        <!-- Setări generale ale meciului -->
+        <div class="panel settings-panel">
+            <h2><span class="panel-icon">⚙️</span> Setări meci</h2>
+
+            <div class="field">
+                <label for="playerName">Numele tău</label>
+                <input id="playerName" type="text" maxlength="24" placeholder="@(isHost ? "Player 1" : "Player 2")"
+                       @bind="playerName" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            <div class="field">
+                <label for="rounds">Număr de runde</label>
+                <input id="rounds" type="number" min="1" max="20"
+                       disabled="@(!isHost)" @bind="rounds" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            <div class="field">
+                <label for="gold">Aur de start</label>
+                <input id="gold" type="number" min="0" max="500" step="10"
+                       disabled="@(!isHost)" @bind="startingGold" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            <div class="field">
+                <label for="troops">Trupe de start</label>
+                <input id="troops" type="number" min="0" max="500" step="10"
+                       disabled="@(!isHost)" @bind="startingTroops" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            <div class="field">
+                <label for="morale">Moral de start</label>
+                <input id="morale" type="number" min="0" max="100" step="5"
+                       disabled="@(!isHost)" @bind="startingMorale" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            @if (!isHost)
+            {
+                <p class="settings-hint">🔒 Doar gazda poate schimba setările meciului.</p>
+            }
+        </div>
+
+        <!-- Jucătorii aflați în lobby -->
+        <div class="panel players-panel">
+            <h2><span class="panel-icon">🛡️</span> Jucători în lobby <span class="count">@players.Count(p => p.Present)/@players.Count</span></h2>
+
+            <ul class="player-list">
+                @foreach (var slot in players)
+                {
+                    var isYou = slot.IsHost == isHost;
+                    <li class="player @(slot.Present ? "present" : "empty") @(isYou ? "you" : "")">
+                        <span class="avatar">@(slot.Present ? slot.Emoji : "＋")</span>
+                        <div class="player-info">
+                            <span class="player-name">@(slot.Present ? DisplayName(slot) : "Se așteaptă un jucător…")</span>
+                            @if (slot.Present && slot.IsHost)
+                            {
+                                <span class="tag-host">Gazdă</span>
+                            }
+                        </div>
+                        <span class="status-dot @DotClass(slot, isYou)"></span>
+                    </li>
+                }
+            </ul>
+        </div>
+
+    </div>
+
+    <footer class="lobby-footer">
+        <button type="button" class="btn-secondary" @onclick="GoBack">← Înapoi</button>
+        @if (isHost)
+        {
+            <div class="start-group">
+                @if (!OpponentReady)
+                {
+                    <span class="start-hint">
+                        <span class="start-hint-icon">⚠️</span>
+                        @StartHint
+                    </span>
+                }
+                <button type="button" class="btn-primary" disabled="@(!OpponentReady)" @onclick="StartMatchAsync">Start</button>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="btn-primary @(isReady ? "unready" : "")" @onclick="ToggleReadyAsync">
+                @(isReady ? "Not ready" : "Ready")
+            </button>
+        }
+    </footer>
+}
+
 </section>
 
 @code {
+    [SupplyParameterFromQuery]
+    public string? Code { get; set; }
+
+    [SupplyParameterFromQuery(Name = "pid")]
+    public string? Pid { get; set; }
+
+    // --- Setări meci ---
+    private string playerName = "Player 1";
+    private int rounds = 8;
+    private int startingGold = 50;
+    private int startingTroops = 50;
+    private int startingMorale = 50;
+
+    private bool isHost = true;
+
+    private bool isReady;
+
+    // --- Jucători în lobby ---
+    private sealed record PlayerSlot(bool Present, string Name, string Emoji, bool IsHost, bool Ready);
+
+    private readonly List<PlayerSlot> players =
+    [
+        new(Present: true, Name: "Player 1", Emoji: "👑", IsHost: true, Ready: false),
+        new(Present: false, Name: "Player 2", Emoji: "🛡️", IsHost: false, Ready: false),
+    ];
+
+    private string DisplayName(PlayerSlot slot) =>
+        slot.IsHost == isHost && !string.IsNullOrWhiteSpace(playerName) ? playerName : slot.Name;
+
+    private string DotClass(PlayerSlot slot, bool isYou)
+    {
+        if (!slot.Present) return "off";
+        if (slot.IsHost) return "on";
+        return (isYou ? isReady : slot.Ready) ? "on" : "notready";
+    }
+
+    private bool OpponentReady => players[1].Present && players[1].Ready;
+
+    private string StartHint => players[1].Present
+        ? "Jucătorul 2 nu este încă pregătit."
+        : "Așteaptă un al doilea jucător.";
+
     private bool isCreating = true;
     private string? matchCode;
+    private string? playerId;
     private string? error;
 
-    protected override async Task OnInitializedAsync() => await CreateSessionAsync();
+    private string? closedMessage;
+
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+    private readonly CancellationTokenSource pollCts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Code))
+        {
+            await CreateSessionAsync();
+        }
+        else
+        {
+            await LoadJoinedSessionAsync(Code);
+        }
+
+        if (error is null && !string.IsNullOrWhiteSpace(matchCode))
+        {
+            _ = PollLoopAsync(pollCts.Token);
+        }
+    }
+
+    private async Task GoBack()
+    {
+        pollCts.Cancel();
+        await LeaveAsync();
+        Navigation.NavigateTo("/");
+    }
+
+    private void GoHome() => Navigation.NavigateTo("/");
+
+    private async Task LeaveAsync()
+    {
+        if (string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        {
+            return;
+        }
+
+        try
+        {
+            await Api.LeaveMatchAsync(new LeaveMatchRequest { PlayerId = playerId }, matchCode);
+        }
+        catch
+        {
+        }
+    }
+
+    private void GoToGame() =>
+        Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(matchCode!)}");
+
+    private async Task StartMatchAsync()
+    {
+        if (!isHost || !OpponentReady || string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        {
+            return;
+        }
+
+        try
+        {
+            var state = await Api.StartMatchAsync(new StartMatchRequest { PlayerId = playerId }, matchCode);
+            if (state.Status == MatchStatus.InProgress)
+            {
+                pollCts.Cancel();
+                GoToGame();
+            }
+        }
+        catch
+        {
+        }
+    }
 
     private async Task CreateSessionAsync()
     {
@@ -40,20 +267,169 @@
 
         try
         {
-            var response = await Api.CreateMatchAsync(new CreateMatchRequest { DisplayName = "Gazdă" });
+            var displayName = string.IsNullOrWhiteSpace(playerName) ? "Player 1" : playerName;
+            var response = await Api.CreateMatchAsync(new CreateMatchRequest { DisplayName = displayName });
             matchCode = response.MatchCode;
+            playerId = response.PlayerId;
         }
         catch (ApiException ex)
         {
-            error = $"Nu am putut crea meciul (cod {ex.StatusCode}). Verifică dacă API-ul rulează.";
+            error = $"Nu am putut crea meciul (cod {ex.StatusCode}).";
         }
         catch (Exception)
         {
-            error = "Nu am putut contacta serverul. Verifică dacă API-ul rulează.";
+            error = "Nu am putut contacta serverul.";
         }
         finally
         {
             isCreating = false;
         }
+    }
+
+    private async Task LoadJoinedSessionAsync(string code)
+    {
+        isCreating = true;
+        isHost = false;
+        playerId = Pid;
+        error = null;
+
+        try
+        {
+            var state = await Api.GetMatchAsync(code);
+            matchCode = state.Code;
+            playerName = string.IsNullOrWhiteSpace(state.Player2Name) ? "Player 2" : state.Player2Name!;
+            isReady = state.Player2Ready;
+            ApplyState(state);
+        }
+        catch (ApiException ex)
+        {
+            error = $"Nu am putut încărca meciul (cod {ex.StatusCode}).";
+        }
+        catch (Exception)
+        {
+            error = "Nu am putut contacta serverul.";
+        }
+        finally
+        {
+            isCreating = false;
+        }
+    }
+
+    private void ApplyState(MatchStateDto state)
+    {
+        players[0] = players[0] with
+        {
+            Present = state.Player1Name is not null,
+            Name = string.IsNullOrWhiteSpace(state.Player1Name) ? "Player 1" : state.Player1Name!,
+            Ready = state.Player1Ready,
+        };
+        players[1] = players[1] with
+        {
+            Present = state.Player2Name is not null,
+            Name = string.IsNullOrWhiteSpace(state.Player2Name) ? "Player 2" : state.Player2Name!,
+            Ready = state.Player2Ready,
+        };
+
+        if (!isHost)
+        {
+            rounds = state.TotalRounds;
+            startingGold = state.StartingGold;
+            startingTroops = state.StartingTroops;
+            startingMorale = state.StartingMorale;
+        }
+    }
+
+    private async Task PollLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (string.IsNullOrWhiteSpace(matchCode))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var state = await Api.GetMatchAsync(matchCode, ct);
+
+                    if (state.Status == MatchStatus.InProgress)
+                    {
+                        GoToGame();
+                        return;
+                    }
+
+                    ApplyState(state);
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (ApiException ex) when (ex.StatusCode == 404)
+                {
+                    closedMessage = "Gazda a părăsit lobby-ul. Meciul a fost închis.";
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+                catch
+                {
+                    // Ignorăm erorile tranzitorii de rețea; următorul tick reîncearcă.
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Componenta a fost distrusă; oprim polling-ul în liniște.
+        }
+    }
+
+    private async Task PersistLobbyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(playerName))
+        {
+            playerName = isHost ? "Player 1" : "Player 2";
+        }
+
+        try
+        {
+            var state = await Api.UpdateLobbyAsync(
+                new UpdateLobbyRequest
+                {
+                    PlayerId = playerId,
+                    DisplayName = playerName.Trim(),
+                    IsReady = isReady,
+                    TotalRounds = rounds,
+                    StartingGold = startingGold,
+                    StartingTroops = startingTroops,
+                    StartingMorale = startingMorale,
+                },
+                matchCode);
+            ApplyState(state);
+        }
+        catch
+        {
+            // Dacă eșuează, următorul tick de polling va reconcilia starea.
+        }
+    }
+
+    private async Task ToggleReadyAsync()
+    {
+        isReady = !isReady;
+        players[1] = players[1] with { Ready = isReady };
+        await PersistLobbyAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await pollCts.CancelAsync();
+        pollCts.Dispose();
     }
 }
