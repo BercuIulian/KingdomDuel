@@ -66,6 +66,7 @@ internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
 
             var result = engine.ResolveRound(
                 match.Round,
+                match.TotalRounds,
                 match.CurrentEvent,
                 match.Player1.Kingdom,
                 match.Player2.Kingdom,

@@ -53,8 +53,17 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
+        var engine = new GameEngine();
+        engine.InitializeKingdoms(
+            match.Player1.Kingdom,
+            match.Player2.Kingdom,
+            match.StartingGold,
+            match.StartingTroops,
+            match.StartingMorale);
+
+        match.Round = 1;
         match.Status = MatchStatus.InProgress;
-        match.CurrentEvent = new GameEngine().PickRandomEvent();
+        match.CurrentEvent = engine.PickRandomEvent();
         await dbContext.SaveChangesAsync(ct);
 
         await Send.OkAsync(match.ToStateDto(), ct);

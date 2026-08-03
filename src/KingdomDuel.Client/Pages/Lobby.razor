@@ -74,13 +74,13 @@ else
 
             <div class="field">
                 <label for="troops">Trupe de start</label>
-                <input id="troops" type="number" min="0" max="500" step="10"
+                <input id="troops" type="number" min="1" max="500" step="10"
                        disabled="@(!isHost)" @bind="startingTroops" @bind:after="PersistLobbyAsync" />
             </div>
 
             <div class="field">
                 <label for="morale">Moral de start</label>
-                <input id="morale" type="number" min="0" max="100" step="5"
+                <input id="morale" type="number" min="1" max="100" step="5"
                        disabled="@(!isHost)" @bind="startingMorale" @bind:after="PersistLobbyAsync" />
             </div>
 

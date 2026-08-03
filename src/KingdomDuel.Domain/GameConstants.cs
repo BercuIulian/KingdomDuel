@@ -3,7 +3,8 @@
 public static class GameConstants
 {
     public const int StartingResource = 50;
-    public const int MaxRounds = 8;
+
+    public const int DefaultTotalRounds = 8;
 
     public const int GoldPerEquipmentLevel = 20;
     public const int MaxEquipmentLevel = 5;
