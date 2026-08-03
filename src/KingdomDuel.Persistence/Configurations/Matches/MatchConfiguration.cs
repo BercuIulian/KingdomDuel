@@ -29,8 +29,6 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.Property(m => m.GameOverReason).HasConversion<string>().HasMaxLength(32);
         builder.HasIndex(m => m.Status);
 
-        // The two seats are separate rows in "player_slots". The FK lives on matches
-        // (Player1Id/Player2Id) - a match points at its two players.
         builder.HasOne(m => m.Player1)
             .WithOne()
             .HasForeignKey<Match>("Player1Id")
@@ -42,15 +40,11 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.Navigation(m => m.Player1).IsRequired(false);
         builder.Navigation(m => m.Player2).IsRequired(false);
 
-        // History is a one-to-many of resolved rounds in "round_results" (FK MatchId there).
         builder.HasMany(m => m.History)
             .WithOne()
             .HasForeignKey("MatchId")
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Round-in-progress actions are a transient map of primitives, not an entity - kept as
-        // jsonb. A serialize-based ValueComparer gives EF a real snapshot so in-place mutations
-        // (dict indexer, Clear) are detected.
         builder.Property(m => m.PendingActions)
             .HasColumnName("PendingActions")
             .HasColumnType("jsonb")

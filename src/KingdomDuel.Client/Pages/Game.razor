@@ -1,18 +1,189 @@
 @page "/game"
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Shared.Dtos.Matches
+@implements IAsyncDisposable
+@inject ApiClient Api
+@inject NavigationManager Navigation
 
 <PageTitle>Meci — Kingdom Duel</PageTitle>
 
 <section class="game">
-    <div class="crest">⚔️</div>
-    <h1>Meciul a început!</h1>
-    @if (!string.IsNullOrWhiteSpace(Code))
+
+    <header class="game-header">
+        <div class="title-block">
+            <span class="crest">⚔️</span>
+            <div>
+                <h1>Meci în desfășurare</h1>
+                <p class="subtitle">@Subtitle</p>
+            </div>
+        </div>
+
+        <div class="code-badge">
+            <span class="code-label">Codul meciului</span>
+            <span class="code-value">@(string.IsNullOrWhiteSpace(Code) ? "••••••" : Code)</span>
+        </div>
+    </header>
+
+    @if (error is not null)
     {
-        <p class="game-code">Cod meci: <strong>@Code</strong></p>
+        <div class="game-error">
+            <p>@error</p>
+            <button type="button" class="btn-primary" @onclick="GoHome">Înapoi la meniu</button>
+        </div>
     }
-    <p class="tagline">Câmpul de luptă se pregătește… (funcționalitatea urmează)</p>
+    else if (state is null)
+    {
+        <p class="tagline">Se încarcă starea meciului…</p>
+    }
+    else
+    {
+        <div class="sides">
+            @foreach (var side in Sides)
+            {
+                <div class="panel side-panel">
+                    <h2><span class="panel-icon">@side.Emoji</span> @side.Name</h2>
+
+                    @if (side.Kingdom is null)
+                    {
+                        <p class="tagline">Fără jucător.</p>
+                    }
+                    else
+                    {
+                        <ul class="resources">
+                            <li>
+                                <span class="res-icon">🪙</span>
+                                <span class="res-label">Aur</span>
+                                <span class="res-value">@side.Kingdom.Gold</span>
+                            </li>
+                            <li>
+                                <span class="res-icon">🗡️</span>
+                                <span class="res-label">Trupe</span>
+                                <span class="res-value">@side.Kingdom.Troops</span>
+                            </li>
+                            <li>
+                                <span class="res-icon">🔥</span>
+                                <span class="res-label">Moral</span>
+                                <span class="res-value">@side.Kingdom.Morale</span>
+                            </li>
+                        </ul>
+                    }
+                </div>
+            }
+        </div>
+
+        <p class="tagline">Alegerea acțiunilor urmează.</p>
+    }
+
 </section>
 
 @code {
     [SupplyParameterFromQuery]
     public string? Code { get; set; }
+
+    private MatchStateDto? state;
+    private string? error;
+
+    private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+    private readonly CancellationTokenSource pollCts = new();
+
+    private sealed record Side(string Name, string Emoji, KingdomDto? Kingdom);
+
+    private IEnumerable<Side> Sides =>
+    [
+        new(string.IsNullOrWhiteSpace(state!.Player1Name) ? "Player 1" : state.Player1Name!, "👑", state.Player1Kingdom),
+        new(string.IsNullOrWhiteSpace(state.Player2Name) ? "Player 2" : state.Player2Name!, "🛡️", state.Player2Kingdom),
+    ];
+
+    private string Subtitle => state is null
+        ? "Se pregătește câmpul de luptă…"
+        : $"Runda {state.Round} din {state.TotalRounds} · {EventLabel(state.CurrentEvent)}";
+
+    private static string EventLabel(GameEventType gameEvent) => gameEvent switch
+    {
+        GameEventType.Drought => "Secetă",
+        GameEventType.Harvest => "Recoltă bogată",
+        GameEventType.Rebellion => "Rebeliune",
+        GameEventType.PeaceRumors => "Zvonuri de pace",
+        GameEventType.DiplomaticFair => "Târg diplomatic",
+        _ => "Fără eveniment"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Code))
+        {
+            error = "Lipsește codul meciului.";
+            return;
+        }
+
+        await LoadStateAsync();
+
+        if (error is null)
+        {
+            _ = PollLoopAsync(pollCts.Token);
+        }
+    }
+
+    private void GoHome() => Navigation.NavigateTo("/");
+
+    private async Task LoadStateAsync()
+    {
+        try
+        {
+            state = await Api.GetMatchAsync(Code!);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 404)
+        {
+            error = "Meciul nu a fost găsit.";
+        }
+        catch (ApiException ex)
+        {
+            error = $"Nu am putut încărca meciul (cod {ex.StatusCode}).";
+        }
+        catch (Exception)
+        {
+            error = "Nu am putut contacta serverul.";
+        }
+    }
+
+    private async Task PollLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(PollInterval);
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                try
+                {
+                    state = await Api.GetMatchAsync(Code!, ct);
+                    await InvokeAsync(StateHasChanged);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (ApiException ex) when (ex.StatusCode == 404)
+                {
+                    error = "Meciul a fost închis.";
+                    await InvokeAsync(StateHasChanged);
+                    return;
+                }
+                catch
+                {
+                    // Ignorăm erorile tranzitorii de rețea; următorul tick reîncearcă.
+                }
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Componenta a fost distrusă; oprim polling-ul în liniște.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await pollCts.CancelAsync();
+        pollCts.Dispose();
+    }
 }

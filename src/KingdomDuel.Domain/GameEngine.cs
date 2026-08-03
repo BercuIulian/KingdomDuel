@@ -24,8 +24,25 @@ public class GameEngine
         return values[_random.Next(values.Length)];
     }
 
+    public void InitializeKingdoms(
+        Kingdom player1,
+        Kingdom player2,
+        int startingGold,
+        int startingTroops,
+        int startingMorale)
+    {
+        foreach (var side in new[] { player1, player2 })
+        {
+            side.Gold = startingGold;
+            side.Troops = startingTroops;
+            side.Morale = startingMorale;
+            side.DefenseStreak = 0;
+        }
+    }
+
     public RoundResult ResolveRound(
         int roundNumber,
+        int totalRounds,
         GameEventType currentEvent,
         Kingdom player1,
         Kingdom player2,
@@ -42,7 +59,7 @@ public class GameEngine
 
         ResolveInteraction(player1, player2, player1Action, player2Action, log);
 
-        var gameOverReason = EvaluateGameOver(player1, player2, roundNumber);
+        var gameOverReason = EvaluateGameOver(player1, player2, roundNumber, totalRounds);
 
         return new RoundResult
         {
@@ -55,7 +72,7 @@ public class GameEngine
         };
     }
 
-    public GameOverReason EvaluateGameOver(Kingdom player1, Kingdom player2, int roundNumber)
+    public GameOverReason EvaluateGameOver(Kingdom player1, Kingdom player2, int roundNumber, int totalRounds)
     {
         var player1Down = player1.Troops <= 0 || player1.Morale <= 0;
         var player2Down = player2.Troops <= 0 || player2.Morale <= 0;
@@ -64,7 +81,7 @@ public class GameEngine
         if (player1Down) return GameOverReason.Player1Collapsed;
         if (player2Down) return GameOverReason.Player2Collapsed;
 
-        if (roundNumber >= GameConstants.MaxRounds)
+        if (roundNumber >= totalRounds)
         {
             if (player1.TotalPower > player2.TotalPower) return GameOverReason.RoundsExhaustedPlayer1Wins;
             if (player2.TotalPower > player1.TotalPower) return GameOverReason.RoundsExhaustedPlayer2Wins;
