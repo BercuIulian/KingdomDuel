@@ -36,7 +36,22 @@
     </svg>
 
     <div>
-        <h2 class="name">@Name</h2>
+        <div class="name-row">
+            <div class="who">
+                <h2 class="name">@Name</h2>
+                @if (IsYou)
+                {
+                    <span class="tag-you">casa ta</span>
+                }
+            </div>
+
+            @if (OrderPending is not null)
+            {
+                <span class="order-state @(OrderPending.Value ? "waiting" : "sent")">
+                    @(OrderPending.Value ? "alege" : "ordin trimis")
+                </span>
+            }
+        </div>
 
         <dl class="stats">
             <div class="stat">
@@ -68,6 +83,12 @@
 
     [Parameter]
     public bool Mirrored { get; set; }
+
+    [Parameter]
+    public bool IsYou { get; set; }
+
+    [Parameter]
+    public bool? OrderPending { get; set; }
 
     private static string Value(int? amount) => amount?.ToString() ?? "—";
 }

@@ -1,8 +1,10 @@
 @page "/game"
+@using System.Text.Json
 @using KingdomDuel.Client.ApiClients
 @using KingdomDuel.Domain
 @using KingdomDuel.Domain.Enums
 @using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Shared.Requests.Matches
 @implements IAsyncDisposable
 @inject ApiClient Api
 @inject NavigationManager Navigation
@@ -52,7 +54,9 @@ else
         <section class="arena">
             <CastleView House="amber"
                         Name="@Player1Name"
-                        Kingdom="state.Player1Kingdom" />
+                        Kingdom="state.Player1Kingdom"
+                        IsYou="Side == 1"
+                        OrderPending="OrderPendingFor(1)" />
 
             <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
                         Power2="state.Player2Kingdom?.TotalPower ?? 0"
@@ -62,7 +66,9 @@ else
             <CastleView House="steel"
                         Name="@Player2Name"
                         Kingdom="state.Player2Kingdom"
-                        Mirrored="true" />
+                        Mirrored="true"
+                        IsYou="Side == 2"
+                        OrderPending="OrderPendingFor(2)" />
         </section>
 
         <section class="event">
@@ -88,7 +94,7 @@ else
                     <button type="button"
                             class="order"
                             aria-pressed="@(chosen == order.Action ? "true" : "false")"
-                            disabled="@orderSent"
+                            disabled="@(OrderSent || sending || !CanPlay)"
                             @onclick="() => ChooseOrder(order.Action)">
                         <span class="order-ico"><Glyph Name="@order.Glyph" /></span>
                         <b>@order.Name</b>
@@ -100,19 +106,30 @@ else
                     </button>
                 }
 
-                @if (orderSent)
-                {
-                    <p class="order-sent">
-                        <Glyph Name="seal" />
-                        <span>Așteptăm adversarul</span>
-                    </p>
-                }
-                else
-                {
-                    <button type="button" class="send" disabled="@(chosen is null)" @onclick="SendOrder">
-                        Trimite ordinul
-                    </button>
-                }
+                <div class="order-action">
+                    @if (sendError is not null)
+                    {
+                        <p class="send-error">@sendError</p>
+                    }
+
+                    @if (!CanPlay)
+                    {
+                        <p class="order-note">Urmărești meciul. Ca să dai ordine, intră din lobby.</p>
+                    }
+                    else if (OrderSent)
+                    {
+                        <p class="order-sent">
+                            <Glyph Name="seal" />
+                            <span>Așteptăm adversarul</span>
+                        </p>
+                    }
+                    else
+                    {
+                        <button type="button" class="send" disabled="@(chosen is null || sending)" @onclick="SendOrder">
+                            @(sending ? "Se trimite…" : "Trimite ordinul")
+                        </button>
+                    }
+                </div>
             </section>
         }
 
@@ -183,16 +200,60 @@ else
     [SupplyParameterFromQuery]
     public string? Code { get; set; }
 
+    [SupplyParameterFromQuery(Name = "pid")]
+    public string? PlayerId { get; set; }
+
+    [SupplyParameterFromQuery(Name = "side")]
+    public int? Side { get; set; }
+
     private MatchStateDto? state;
     private string? error;
 
     private ActionType? chosen;
-    private bool orderSent;
+    private bool sending;
+    private string? sendError;
+
+    private int? submittedRound;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
     private readonly CancellationTokenSource pollCts = new();
 
     private string? DisplayCode => state?.Code ?? Code;
+
+    private bool CanPlay => !string.IsNullOrWhiteSpace(PlayerId) && Side is 1 or 2;
+
+    private bool OrderSent
+    {
+        get
+        {
+            if (state is null)
+            {
+                return false;
+            }
+
+            if (submittedRound == state.Round)
+            {
+                return true;
+            }
+
+            return Side switch
+            {
+                1 => !state.WaitingOnPlayer1Action,
+                2 => !state.WaitingOnPlayer2Action,
+                _ => false,
+            };
+        }
+    }
+
+    private bool? OrderPendingFor(int side)
+    {
+        if (state is null || state.Status != MatchStatus.InProgress)
+        {
+            return null;
+        }
+
+        return side == 1 ? state.WaitingOnPlayer1Action : state.WaitingOnPlayer2Action;
+    }
 
     private string Player1Name =>
         string.IsNullOrWhiteSpace(state?.Player1Name) ? "Jucătorul 1" : state!.Player1Name!;
@@ -300,16 +361,75 @@ else
 
     private void ChooseOrder(ActionType action) => chosen = action;
 
-    private void SendOrder()
+    private async Task SendOrder()
     {
-        if (chosen is null)
+        if (chosen is null || sending || !CanPlay)
         {
             return;
         }
 
-        // TODO(conectare): aici intră Api.SubmitActionAsync(...). Serverul are
-        // deja tot ce trebuie — lipsește doar playerId-ul, purtat din lobby.
-        orderSent = true;
+        sending = true;
+        sendError = null;
+
+        var roundAtSubmit = state!.Round;
+
+        try
+        {
+            var fresh = await Api.SubmitActionAsync(
+                new SubmitActionRequest { PlayerId = PlayerId!, Action = chosen.Value },
+                Code!);
+
+            submittedRound = roundAtSubmit;
+            ApplyState(fresh);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 404)
+        {
+            sendError = "Meciul nu mai există.";
+        }
+        catch (ApiException ex)
+        {
+            sendError = ServerMessage(ex) ?? $"Ordinul n-a fost primit (cod {ex.StatusCode}).";
+        }
+        catch (Exception)
+        {
+            sendError = "Nu am putut contacta serverul. Încearcă din nou.";
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    private static string? ServerMessage(ApiException ex)
+    {
+        if (string.IsNullOrWhiteSpace(ex.Response))
+        {
+            return null;
+        }
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<ErrorResponse>(
+                ex.Response,
+                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return parsed?.Errors.Values.SelectMany(messages => messages).FirstOrDefault();
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+    }
+
+    private void ApplyState(MatchStateDto fresh)
+    {
+        if (state is not null && (fresh.Round != state.Round || fresh.Status != state.Status))
+        {
+            chosen = null;
+            sendError = null;
+        }
+
+        state = fresh;
     }
 
     // ---------- Cronică ----------
@@ -358,7 +478,7 @@ else
     {
         try
         {
-            state = await Api.GetMatchAsync(Code!);
+            ApplyState(await Api.GetMatchAsync(Code!));
         }
         catch (ApiException ex) when (ex.StatusCode == 404)
         {
@@ -385,14 +505,18 @@ else
                 {
                     var fresh = await Api.GetMatchAsync(Code!, ct);
 
-                    if (state is not null && fresh.Round != state.Round)
+                    if (state is not null && fresh.Round < state.Round)
                     {
-                        chosen = null;
-                        orderSent = false;
+                        continue;
                     }
 
-                    state = fresh;
+                    ApplyState(fresh);
                     await InvokeAsync(StateHasChanged);
+
+                    if (fresh.Status == MatchStatus.Completed)
+                    {
+                        return;
+                    }
                 }
                 catch (OperationCanceledException)
                 {
