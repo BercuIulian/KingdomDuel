@@ -1,0 +1,73 @@
+@using KingdomDuel.Shared.Dtos.Matches
+
+<article class="house house-@House @(Mirrored ? "mirrored" : "")">
+
+    <svg class="art" viewBox="0 0 240 170" role="img" aria-label="Cetatea @Name">
+        <path class="ground" d="M8 152 H232" />
+
+        <rect class="stone tower" x="44" y="76" width="44" height="76" />
+        <rect class="stone" x="48" y="66" width="8" height="10" />
+        <rect class="stone" x="62" y="66" width="8" height="10" />
+        <rect class="stone" x="76" y="66" width="8" height="10" />
+
+        <rect class="stone keep" x="88" y="56" width="64" height="96" />
+        <rect class="stone" x="88" y="46" width="8" height="10" />
+        <rect class="stone" x="102" y="46" width="8" height="10" />
+        <rect class="stone" x="116" y="46" width="8" height="10" />
+        <rect class="stone" x="130" y="46" width="8" height="10" />
+        <rect class="stone" x="144" y="46" width="8" height="10" />
+
+        <rect class="stone tower" x="152" y="76" width="44" height="76" />
+        <rect class="stone" x="156" y="66" width="8" height="10" />
+        <rect class="stone" x="170" y="66" width="8" height="10" />
+        <rect class="stone" x="184" y="66" width="8" height="10" />
+
+        <path class="win w1" d="M96 92 V83 A5 5 0 0 1 106 83 V92 Z" />
+        <path class="win w2" d="M116 92 V83 A5 5 0 0 1 126 83 V92 Z" />
+        <path class="win w3" d="M136 92 V83 A5 5 0 0 1 146 83 V92 Z" />
+        <path class="win w4" d="M61 110 V101 A5 5 0 0 1 71 101 V110 Z" />
+        <path class="win w5" d="M169 110 V101 A5 5 0 0 1 179 101 V110 Z" />
+
+        <path class="gate" d="M108 152 V128 A12 12 0 0 1 132 128 V152 Z" />
+        <path class="bars" d="M114 130 V152 M120 127 V152 M126 130 V152 M110 137 H130 M109 144 H131" />
+
+        <path class="pole" d="M174 66 V14" />
+        <path class="banner" d="M174 18 C186 13 196 24 208 19 L208 39 C196 44 186 33 174 38 Z" />
+    </svg>
+
+    <div>
+        <h2 class="name">@Name</h2>
+
+        <dl class="stats">
+            <div class="stat">
+                <dt><Glyph Name="coin" /> Aur</dt>
+                <dd>@Value(Kingdom?.Gold)</dd>
+            </div>
+            <div class="stat">
+                <dt><Glyph Name="helm" /> Trupe</dt>
+                <dd>@Value(Kingdom?.Troops)</dd>
+            </div>
+            <div class="stat">
+                <dt><Glyph Name="flame" /> Moral</dt>
+                <dd>@Value(Kingdom?.Morale)</dd>
+            </div>
+        </dl>
+    </div>
+
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = string.Empty;
+
+    [Parameter]
+    public string House { get; set; } = "amber";
+
+    [Parameter]
+    public KingdomDto? Kingdom { get; set; }
+
+    [Parameter]
+    public bool Mirrored { get; set; }
+
+    private static string Value(int? amount) => amount?.ToString() ?? "—";
+}

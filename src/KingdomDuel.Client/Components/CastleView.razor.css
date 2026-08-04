@@ -1,0 +1,154 @@
+.house {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--hairline);
+    border-radius: 12px;
+    background: var(--panel);
+}
+
+.house-amber { --house: var(--amber, #d9a55f); }
+.house-steel { --house: var(--steel, #6ea8d6); }
+
+.house.mirrored {
+    grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.house.mirrored .art {
+    order: 2;
+    transform: scaleX(-1);
+}
+
+.house.mirrored .name {
+    text-align: right;
+}
+
+.art {
+    height: clamp(110px, 19vh, 172px);
+    width: auto;
+    display: block;
+    overflow: visible;
+}
+
+.name {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--house, #d9a55f);
+}
+
+/* ---------- Resursele ---------- */
+.stats {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.34rem 0.6rem;
+    border: 1px solid var(--hairline);
+    border-radius: 7px;
+    background: rgba(20, 24, 33, 0.55);
+}
+
+.stat dt {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0;
+    font-size: 0.64rem;
+    text-transform: uppercase;
+    letter-spacing: 0.13em;
+    color: var(--text-dim);
+}
+
+.stat dd {
+    margin: 0 0 0 auto;
+    font-family: var(--font-data);
+    font-size: 1.15rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gold-lit);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Cetatea: piatră, foc, steag ---------- */
+.stone {
+    fill: #1b202b;
+    stroke: var(--house, #d9a55f);
+    stroke-opacity: 0.5;
+    stroke-width: 1.2;
+}
+
+.tower { fill: #171c25; }
+.keep  { fill: #1d222d; }
+
+.ground {
+    fill: none;
+    stroke: var(--hairline-strong, rgba(198, 161, 91, 0.5));
+    stroke-width: 1.5;
+}
+
+.win {
+    fill: #f2ca7a;
+    filter: drop-shadow(0 0 4px rgba(242, 202, 122, 0.55));
+    animation: ember 7s ease-in-out infinite;
+}
+
+.w2 { animation-delay: -1.9s; }
+.w3 { animation-delay: -3.4s; }
+.w4 { animation-delay: -5.1s; }
+.w5 { animation-delay: -6.2s; }
+
+.gate {
+    fill: #090c12;
+    stroke: var(--house, #d9a55f);
+    stroke-opacity: 0.5;
+    stroke-width: 1.2;
+}
+
+.bars {
+    fill: none;
+    stroke: var(--house, #d9a55f);
+    stroke-opacity: 0.45;
+    stroke-width: 0.8;
+}
+
+.pole {
+    fill: none;
+    stroke: var(--house, #d9a55f);
+    stroke-opacity: 0.6;
+    stroke-width: 1.6;
+}
+
+.banner {
+    fill: var(--house, #d9a55f);
+    transform-origin: 174px 24px;
+    animation: flutter 5s ease-in-out infinite;
+}
+
+@keyframes flutter {
+    0%, 100% { transform: skewY(0deg) scaleX(1); }
+    50%      { transform: skewY(-2deg) scaleX(0.95); }
+}
+
+@keyframes ember {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.72; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .banner,
+    .win {
+        animation: none;
+    }
+}
