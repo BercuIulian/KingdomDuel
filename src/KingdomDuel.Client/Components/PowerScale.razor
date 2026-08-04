@@ -1,0 +1,78 @@
+@using System.Globalization
+
+<figure class="scale">
+    <svg viewBox="0 0 200 116" role="img" aria-label="@Description">
+        <circle class="post" cx="100" cy="9" r="4" />
+        <path class="post" d="M100 13 V22" />
+
+        <g class="arm" transform="@ArmTransform">
+            <path class="beam" d="M26 22 H174" />
+
+            <path class="chain-1" d="@ChainPath(26, PanY1)" />
+            <path class="pan-1" d="@PanPath(26, PanY1)" />
+            <text class="weight weight-1" x="26" y="@Fmt(PanY1 + WeightDrop)" text-anchor="middle">@Power1</text>
+
+            <path class="chain-2" d="@ChainPath(174, PanY2)" />
+            <path class="pan-2" d="@PanPath(174, PanY2)" />
+            <text class="weight weight-2" x="174" y="@Fmt(PanY2 + WeightDrop)" text-anchor="middle">@Power2</text>
+        </g>
+    </svg>
+
+    <figcaption>
+        @if (Difference == 0)
+        {
+            <span class="eyebrow">Forțe egale</span>
+        }
+        else
+        {
+            <span class="eyebrow">Avantaj</span>
+            <span class="lead-name @(Difference > 0 ? "lead-1" : "lead-2")">
+                @(Difference > 0 ? Name1 : Name2)
+            </span>
+            <span class="lead-value">+@Math.Abs(Difference)</span>
+        }
+    </figcaption>
+</figure>
+
+@code {
+    [Parameter] public int Power1 { get; set; }
+    [Parameter] public int Power2 { get; set; }
+    [Parameter] public string Name1 { get; set; } = "Jucătorul 1";
+    [Parameter] public string Name2 { get; set; } = "Jucătorul 2";
+
+    private const double BeamY = 22;
+    private const double RestingChain = 34;
+    private const double MaxChainSwing = 20;
+    private const double MaxTiltDegrees = 5;
+    private const double PanDepth = 10;
+    private const double WeightDrop = 26;
+    private int Difference => Power1 - Power2;
+
+    private double Imbalance
+    {
+        get
+        {
+            var total = Power1 + Power2;
+            return total <= 0 ? 0 : Math.Clamp((double)Difference / total * 2, -1, 1);
+        }
+    }
+
+    private double PanY1 => BeamY + RestingChain + MaxChainSwing * Imbalance;
+    private double PanY2 => BeamY + RestingChain - MaxChainSwing * Imbalance;
+
+    private double Tilt => -Imbalance * MaxTiltDegrees;
+
+    private string ArmTransform => $"rotate({Fmt(Tilt)} 100 {Fmt(BeamY)})";
+
+    private static string ChainPath(double x, double panY) =>
+        $"M{Fmt(x)} {Fmt(BeamY)} L{Fmt(x)} {Fmt(panY)}";
+
+    private static string PanPath(double x, double panY) =>
+        $"M{Fmt(x - 22)} {Fmt(panY)} Q{Fmt(x)} {Fmt(panY + PanDepth * 2)} {Fmt(x + 22)} {Fmt(panY)}";
+
+    private static string Fmt(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private string Description => Difference == 0
+        ? $"Cumpăna e echilibrată: {Name1} și {Name2} au câte {Power1} putere."
+        : $"Cumpăna se înclină spre {(Difference > 0 ? Name1 : Name2)}: {Name1} are {Power1}, {Name2} are {Power2}.";
+}
