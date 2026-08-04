@@ -236,8 +236,17 @@ else
         }
     }
 
-    private void GoToGame() =>
-        Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(matchCode!)}");
+    private void GoToGame()
+    {
+        var url = $"/game?code={Uri.EscapeDataString(matchCode!)}&side={(isHost ? 1 : 2)}";
+
+        if (!string.IsNullOrWhiteSpace(playerId))
+        {
+            url += $"&pid={Uri.EscapeDataString(playerId)}";
+        }
+
+        Navigation.NavigateTo(url);
+    }
 
     private async Task StartMatchAsync()
     {

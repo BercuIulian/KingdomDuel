@@ -250,8 +250,14 @@
     background: rgba(198, 161, 91, 0.1);
 }
 
+.order-action {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
 .order-sent {
-    align-self: center;
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -260,6 +266,23 @@
     font-size: 0.85rem;
     color: var(--verdant);
     white-space: nowrap;
+}
+
+.order-note,
+.send-error {
+    margin: 0;
+    max-width: 15rem;
+    padding: 0 0.5rem;
+    font-size: 0.76rem;
+    line-height: 1.35;
+}
+
+.order-note {
+    color: var(--text-dim);
+}
+
+.send-error {
+    color: #e39b9b;
 }
 
 .send {
@@ -565,9 +588,11 @@
         grid-template-columns: repeat(2, 1fr);
     }
 
-    .send,
-    .order-sent {
+    .order-action {
         grid-column: span 2;
+    }
+
+    .send {
         padding: 0.7rem;
     }
 
