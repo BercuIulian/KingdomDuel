@@ -1,5 +1,6 @@
 @page "/lobby"
 @using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Domain
 @using KingdomDuel.Domain.Enums
 @using KingdomDuel.Shared.Dtos.Matches
 @using KingdomDuel.Shared.Requests.Matches
@@ -31,20 +32,24 @@ else
             </div>
         </div>
 
-        <div class="code-badge">
-            <span class="code-label">Codul meciului</span>
-            @if (isCreating)
-            {
-                <span class="code-value muted">••••••</span>
-            }
-            else if (error is not null)
-            {
-                <button type="button" class="code-retry" @onclick="CreateSessionAsync" title="@error">reîncearcă</button>
-            }
-            else
-            {
-                <span class="code-value">@matchCode</span>
-            }
+        <div class="header-aside">
+            <RulesBook />
+
+            <div class="code-badge">
+                <span class="code-label">Codul meciului</span>
+                @if (isCreating)
+                {
+                    <span class="code-value muted">••••••</span>
+                }
+                else if (error is not null)
+                {
+                    <button type="button" class="code-retry" @onclick="CreateSessionAsync" title="@error">reîncearcă</button>
+                }
+                else
+                {
+                    <span class="code-value">@matchCode</span>
+                }
+            </div>
         </div>
     </header>
 
@@ -150,7 +155,7 @@ else
 
     // --- Setări meci ---
     private string playerName = "Player 1";
-    private int rounds = 8;
+    private int rounds = GameConstants.DefaultTotalRounds;
     private int startingGold = 50;
     private int startingTroops = 50;
     private int startingMorale = 50;

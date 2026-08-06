@@ -46,6 +46,12 @@
     font-size: 0.9rem;
 }
 
+.header-aside {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
 .code-badge {
     display: flex;
     flex-direction: column;
