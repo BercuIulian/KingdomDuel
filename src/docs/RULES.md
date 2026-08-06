@@ -21,7 +21,8 @@ regula de stagnare și la decizia finală a meciului.
 
 ## 2. Runde
 
-Meciul durează maximum **8 runde**. La fiecare rundă, ambii jucători aleg
+Meciul durează un număr de runde stabilit de gazdă în lobby (implicit
+`GameConstants.DefaultTotalRounds`). La fiecare rundă, ambii jucători aleg
 simultan una din cele 4 acțiuni de mai jos; nimeni nu vede alegerea
 celuilalt înainte ca ambele să fie trimise.
 
