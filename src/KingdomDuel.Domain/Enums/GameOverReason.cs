@@ -8,5 +8,9 @@ public enum GameOverReason
     BothCollapsed,
     RoundsExhaustedPlayer1Wins,
     RoundsExhaustedPlayer2Wins,
-    RoundsExhaustedDraw
+    RoundsExhaustedDraw,
+
+    /// <summary>Abandon în timpul meciului: cel rămas câștigă fără luptă.</summary>
+    Player1Left,
+    Player2Left
 }

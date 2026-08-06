@@ -107,6 +107,34 @@
     color: var(--gold-lit);
 }
 
+/* Ieșirea din meci: discretă, dar cu avertisment la hover — încheie meciul. */
+.leave {
+    flex: 0 0 auto;
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--hairline);
+    border-radius: 999px;
+    background: rgba(12, 15, 21, 0.55);
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.leave:hover {
+    color: #e39b9b;
+    border-color: rgba(227, 155, 155, 0.55);
+    background: rgba(227, 155, 155, 0.1);
+}
+
+.leave:focus-visible {
+    outline: 2px solid var(--gold-lit);
+    outline-offset: 2px;
+}
+
 /* ---------- Arena: cetate · cumpănă · cetate ---------- */
 .arena {
     display: grid;
@@ -342,6 +370,199 @@
 .verdict .send {
     margin-left: auto;
     padding: 0.7rem 1.4rem;
+}
+
+/* ---------- Anunțul de final ---------- */
+.result-scrim {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 800;
+    background: rgba(6, 8, 13, 0.75);
+}
+
+/* Centrat pe cont propriu față de fereastră, ca să nu-l afecteze
+   overflow-ul mesei de joc. */
+.result {
+    position: fixed;
+    z-index: 801;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(34rem, calc(100% - 3rem));
+    max-height: calc(100% - 3rem);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 1.6rem 1.7rem 1.4rem;
+    text-align: center;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(20, 24, 33, 0.98), rgba(12, 15, 21, 0.98));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.result:focus {
+    outline: none;
+}
+
+.result-ico {
+    display: block;
+    font-size: 2.3rem;
+    color: var(--gold-lit);
+}
+
+.result.lost .result-ico {
+    color: var(--iron);
+}
+
+.result.draw .result-ico {
+    color: var(--steel);
+}
+
+.result h2 {
+    margin: 0.1rem 0 0;
+    font-family: var(--font-display);
+    font-size: 1.85rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gold-lit);
+}
+
+.result.lost h2 {
+    color: var(--iron);
+}
+
+.result.draw h2 {
+    color: var(--steel);
+}
+
+.result-text {
+    margin: 0.2rem 0 0.3rem;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #c2c6cf;
+}
+
+.result-scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.7rem;
+    width: 100%;
+    margin: 0.5rem 0 1rem;
+}
+
+.score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.75rem 0.6rem 0.8rem;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: rgba(12, 15, 21, 0.5);
+}
+
+.score.win {
+    border-color: var(--gold);
+    background: rgba(198, 161, 91, 0.1);
+}
+
+.score.you {
+    box-shadow: inset 0 0 0 1px var(--hairline-strong);
+}
+
+.score-name {
+    font-family: var(--font-display);
+    font-size: 0.88rem;
+    color: var(--gold-lit);
+}
+
+.score.you .score-name::after {
+    content: " (tu)";
+    font-size: 0.72rem;
+    color: var(--text-dim);
+}
+
+.score-power {
+    font-family: var(--font-data);
+    font-size: 1.55rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--gold-lit);
+    font-variant-numeric: tabular-nums;
+}
+
+.score-detail {
+    margin-top: 0.3rem;
+    font-size: 0.7rem;
+    line-height: 1.4;
+    color: var(--text-dim);
+}
+
+.result-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.result-ghost {
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid var(--hairline);
+    background: transparent;
+    color: var(--gold-lit);
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.result-ghost:hover {
+    border-color: var(--hairline-strong);
+    background: rgba(198, 161, 91, 0.1);
+}
+
+.result-ghost:focus-visible,
+.result .send:focus-visible {
+    outline: 2px solid var(--gold-lit);
+    outline-offset: 2px;
+}
+
+.result .send {
+    align-self: auto;
+    padding: 0.6rem 1.3rem;
+}
+
+/* Confirmarea abandonului: același panou, mai strâns și fără fanfară. */
+.confirm {
+    width: min(27rem, calc(100% - 3rem));
+    gap: 0.5rem;
+    padding: 1.5rem 1.6rem 1.3rem;
+}
+
+.confirm h2 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+}
+
+.confirm .result-text {
+    margin: 0 0 0.7rem;
+}
+
+.send.danger {
+    border-color: rgba(217, 99, 95, 0.7);
+    background: linear-gradient(180deg, #d97b77, #c25f5b);
+    color: #1b0a09;
 }
 
 /* ---------- Banda de jos: cronica lângă istoric ---------- */
