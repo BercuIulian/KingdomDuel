@@ -41,18 +41,11 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
 
         switch (match.Status)
         {
-            // Plecarea din timpul meciului îl încheie pe loc: cel rămas câștigă
-            // prin abandon și primește același ecran de final. Ambele sloturi
-            // rămân pe poziții, ca ecranul lui să aibă și numele, și regatele.
             case MatchStatus.InProgress when match.Player1 is not null && match.Player2 is not null:
                 match.Status = MatchStatus.Completed;
                 match.GameOverReason = isPlayer1 ? GameOverReason.Player1Left : GameOverReason.Player2Left;
                 break;
 
-            // Meci încheiat prin abandon: cel plecat nu se mai întoarce, deci
-            // ieșirea celui rămas închide meciul. Un al doilea apel al celui
-            // care a abandonat nu are voie să șteargă nimic — ar putea prinde
-            // adversarul înainte să apuce să vadă rezultatul.
             case MatchStatus.Completed when IsAbandon(match.GameOverReason):
                 var abandonedByCaller =
                     (match.GameOverReason == GameOverReason.Player1Left && isPlayer1)
@@ -65,9 +58,6 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
 
                 break;
 
-            // Meci dus până la capăt: fiecare pleacă pe cont propriu, iar meciul
-            // dispare abia când au ieșit amândoi, ca rezultatul să rămână
-            // vizibil pentru cel care mai e pe pagină.
             case MatchStatus.Completed:
                 ReleaseSlot(match, req.PlayerId);
 
@@ -78,7 +68,6 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
 
                 break;
 
-            // Încă în lobby: plecarea gazdei închide meciul pentru toți.
             default:
                 if (isPlayer1)
                 {
@@ -99,12 +88,6 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
     private static bool IsAbandon(GameOverReason reason) =>
         reason is GameOverReason.Player1Left or GameOverReason.Player2Left;
 
-    /// <summary>
-    /// Șterge meciul împreună cu sloturile lui. Sloturile trebuie scoase explicit:
-    /// cheia străină stă pe „matches” (Player1Id/Player2Id), deci în cascadă merge
-    /// invers — ștergerea unui slot ar șterge meciul, nu și viceversa. Rundele și
-    /// regatele pleacă singure, fiind dependente de meci, respectiv de slot.
-    /// </summary>
     private void RemoveMatch(Match match)
     {
         if (match.Player1 is not null)

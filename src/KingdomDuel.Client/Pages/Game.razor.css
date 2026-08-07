@@ -107,7 +107,6 @@
     color: var(--gold-lit);
 }
 
-/* Ieșirea din meci: discretă, dar cu avertisment la hover — încheie meciul. */
 .leave {
     flex: 0 0 auto;
     padding: 0.4rem 0.75rem;
@@ -383,8 +382,6 @@
     background: rgba(6, 8, 13, 0.75);
 }
 
-/* Centrat pe cont propriu față de fereastră, ca să nu-l afecteze
-   overflow-ul mesei de joc. */
 .result {
     position: fixed;
     z-index: 801;

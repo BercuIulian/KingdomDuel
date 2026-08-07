@@ -231,8 +231,6 @@ else
         </section>
     }
 
-    @* Anunțul de final, fixat față de fereastră ca să nu depindă de masa de joc.
-       Amândoi jucătorii îl primesc când starea devine Completed. *@
     @if (state.Status == MatchStatus.Completed && !resultDismissed)
     {
         <div class="result-scrim"></div>
@@ -286,21 +284,15 @@ else
 
     private MatchStateDto? state;
     private string? error;
-
     private ActionType? chosen;
     private bool sending;
     private string? sendError;
-
     private int? submittedRound;
-
-    // Anunțul de final: se poate da la o parte ca să revezi cronica, iar
-    // „leaving” ține butoanele blocate cât timp ieșim din meci.
     private bool resultDismissed;
     private bool leaving;
     private bool resultFocused;
-    private ElementReference resultPanel;
 
-    // Abandonul cere confirmare: încheie meciul și pentru adversar.
+    private ElementReference resultPanel;
     private bool confirmingLeave;
     private bool confirmFocused;
     private ElementReference confirmPanel;
@@ -535,7 +527,6 @@ else
 
     // ---------- Finalul meciului ----------
 
-    /// <summary>Tabăra câștigătoare: 1, 2 sau 0 pentru egalitate/prăbușire dublă.</summary>
     private int WinnerSide => state?.GameOverReason switch
     {
         GameOverReason.Player2Collapsed
@@ -559,7 +550,6 @@ else
         }
     }
 
-    /// <summary>Titlul e personal pentru jucători și neutru pentru cine doar privește.</summary>
     private string ResultHeadline
     {
         get
@@ -610,11 +600,6 @@ else
 
     private void DismissResult() => resultDismissed = true;
 
-    /// <summary>
-    /// Scoate jucătorul din meci și îl duce la meniu. Meciul se șterge de pe
-    /// server abia când au ieșit amândoi, ca rezultatul să rămână vizibil
-    /// pentru cel care mai e pe pagină.
-    /// </summary>
     private async Task LeaveAndGoHome()
     {
         if (leaving)
@@ -673,7 +658,6 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        // Mutăm focusul pe fiecare fereastră modală o singură dată, când apare.
         if (confirmingLeave && !confirmFocused)
         {
             confirmFocused = true;
