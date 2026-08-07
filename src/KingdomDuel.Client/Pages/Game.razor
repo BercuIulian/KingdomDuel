@@ -51,6 +51,11 @@ else
                 <span class="eyebrow">Cod</span>
                 <b>@(string.IsNullOrWhiteSpace(DisplayCode) ? "••••••" : DisplayCode)</b>
             </div>
+
+            @if (CanPlay && state.Status == MatchStatus.InProgress)
+            {
+                <button type="button" class="leave" @onclick="AskLeave">Părăsește</button>
+            }
         </header>
 
         <section class="arena">
@@ -85,7 +90,9 @@ else
             <section class="verdict">
                 <span class="verdict-ico"><Glyph Name="crown" /></span>
                 <p class="verdict-text">@VerdictText</p>
-                <button type="button" class="send" @onclick="GoHome">Înapoi la meniu</button>
+                <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
+                    @(leaving ? "Se iese…" : "Înapoi la meniu")
+                </button>
             </section>
         }
         else
@@ -196,6 +203,73 @@ else
         </section>
 
     </section>
+
+    @if (confirmingLeave)
+    {
+        <div class="result-scrim" @onclick="CancelLeave"></div>
+
+        <section class="result confirm"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="confirm-title"
+                 tabindex="-1"
+                 @ref="confirmPanel"
+                 @onkeydown="OnConfirmKeyDown">
+
+            <h2 id="confirm-title">Părăsești meciul?</h2>
+            <p class="result-text">
+                Meciul se încheie pe loc, iar @OpponentName câștigă prin abandon.
+                Nu te mai poți întoarce la masa asta.
+            </p>
+
+            <div class="result-actions">
+                <button type="button" class="result-ghost" @onclick="CancelLeave">Rămân în meci</button>
+                <button type="button" class="send danger" disabled="@leaving" @onclick="LeaveAndGoHome">
+                    @(leaving ? "Se iese…" : "Părăsesc meciul")
+                </button>
+            </div>
+        </section>
+    }
+
+    @if (state.Status == MatchStatus.Completed && !resultDismissed)
+    {
+        <div class="result-scrim"></div>
+
+        <section class="result @ResultClass"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="result-title"
+                 tabindex="-1"
+                 @ref="resultPanel">
+
+            <span class="result-ico"><Glyph Name="crown" /></span>
+            <span class="eyebrow">@ResultEyebrow</span>
+            <h2 id="result-title">@ResultHeadline</h2>
+            <p class="result-text">@VerdictText</p>
+
+            <div class="result-scores">
+                <div class="score @(WinnerSide == 1 ? "win" : "") @(Side == 1 ? "you" : "")">
+                    <span class="score-name">@Player1Name</span>
+                    <b class="score-power">@(state.Player1Kingdom?.TotalPower ?? 0)</b>
+                    <span class="eyebrow">putere</span>
+                    <span class="score-detail">@KingdomSummary(state.Player1Kingdom)</span>
+                </div>
+                <div class="score @(WinnerSide == 2 ? "win" : "") @(Side == 2 ? "you" : "")">
+                    <span class="score-name">@Player2Name</span>
+                    <b class="score-power">@(state.Player2Kingdom?.TotalPower ?? 0)</b>
+                    <span class="eyebrow">putere</span>
+                    <span class="score-detail">@KingdomSummary(state.Player2Kingdom)</span>
+                </div>
+            </div>
+
+            <div class="result-actions">
+                <button type="button" class="result-ghost" @onclick="DismissResult">Revezi cronica</button>
+                <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
+                    @(leaving ? "Se iese…" : "Înapoi la meniu")
+                </button>
+            </div>
+        </section>
+    }
 }
 
 @code {
@@ -210,12 +284,18 @@ else
 
     private MatchStateDto? state;
     private string? error;
-
     private ActionType? chosen;
     private bool sending;
     private string? sendError;
-
     private int? submittedRound;
+    private bool resultDismissed;
+    private bool leaving;
+    private bool resultFocused;
+
+    private ElementReference resultPanel;
+    private bool confirmingLeave;
+    private bool confirmFocused;
+    private ElementReference confirmPanel;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
     private readonly CancellationTokenSource pollCts = new();
@@ -445,6 +525,106 @@ else
         .Replace("Jucătorul 1", Player1Name)
         .Replace("Jucătorul 2", Player2Name);
 
+    // ---------- Finalul meciului ----------
+
+    private int WinnerSide => state?.GameOverReason switch
+    {
+        GameOverReason.Player2Collapsed
+            or GameOverReason.RoundsExhaustedPlayer1Wins
+            or GameOverReason.Player2Left => 1,
+        GameOverReason.Player1Collapsed
+            or GameOverReason.RoundsExhaustedPlayer2Wins
+            or GameOverReason.Player1Left => 2,
+        _ => 0,
+    };
+
+    private bool IsPlayer => Side is 1 or 2;
+
+    private string ResultClass
+    {
+        get
+        {
+            if (WinnerSide == 0) return "draw";
+            if (!IsPlayer) return "neutral";
+            return WinnerSide == Side ? "won" : "lost";
+        }
+    }
+
+    private string ResultHeadline
+    {
+        get
+        {
+            if (WinnerSide == 0)
+            {
+                return state!.GameOverReason == GameOverReason.BothCollapsed ? "Fără învingător" : "Egalitate";
+            }
+
+            if (!IsPlayer)
+            {
+                return WinnerSide == 1 ? $"{Player1Name} câștigă" : $"{Player2Name} câștigă";
+            }
+
+            return WinnerSide == Side ? "Victorie" : "Înfrângere";
+        }
+    }
+
+    private string ResultEyebrow => state!.GameOverReason switch
+    {
+        GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit",
+        GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed => "Regat prăbușit",
+        GameOverReason.Player1Left or GameOverReason.Player2Left => "Meci încheiat prin abandon",
+        _ => $"Rundele s-au epuizat · {state.TotalRounds} runde",
+    };
+
+    private string OpponentName => Side == 1 ? Player2Name : Player1Name;
+
+    private void AskLeave()
+    {
+        confirmingLeave = true;
+        confirmFocused = false;
+    }
+
+    private void CancelLeave() => confirmingLeave = false;
+
+    private void OnConfirmKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            CancelLeave();
+        }
+    }
+
+    private static string KingdomSummary(KingdomDto? kingdom) => kingdom is null
+        ? "—"
+        : $"{kingdom.Gold} aur · {kingdom.Troops} trupe · {kingdom.Morale} moral";
+
+    private void DismissResult() => resultDismissed = true;
+
+    private async Task LeaveAndGoHome()
+    {
+        if (leaving)
+        {
+            return;
+        }
+
+        leaving = true;
+
+        if (CanPlay && !string.IsNullOrWhiteSpace(Code))
+        {
+            try
+            {
+                await Api.LeaveMatchAsync(new LeaveMatchRequest { PlayerId = PlayerId! }, Code);
+            }
+            catch
+            {
+                // Chiar dacă serverul nu răspunde, jucătorul tot pleacă la meniu.
+            }
+        }
+
+        await pollCts.CancelAsync();
+        Navigation.NavigateTo("/");
+    }
+
     private string VerdictText => state!.GameOverReason switch
     {
         GameOverReason.Player1Collapsed => $"{Player2Name} câștigă: regatul lui {Player1Name} s-a prăbușit.",
@@ -453,6 +633,8 @@ else
         GameOverReason.RoundsExhaustedPlayer1Wins => $"{Player1Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedPlayer2Wins => $"{Player2Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",
+        GameOverReason.Player1Left => $"{Player1Name} a părăsit meciul. {Player2Name} câștigă prin abandon.",
+        GameOverReason.Player2Left => $"{Player2Name} a părăsit meciul. {Player1Name} câștigă prin abandon.",
         _ => "Meciul s-a încheiat.",
     };
 
@@ -471,6 +653,22 @@ else
         if (error is null)
         {
             _ = PollLoopAsync(pollCts.Token);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (confirmingLeave && !confirmFocused)
+        {
+            confirmFocused = true;
+            await confirmPanel.FocusAsync();
+            return;
+        }
+
+        if (!resultFocused && state?.Status == MatchStatus.Completed && !resultDismissed)
+        {
+            resultFocused = true;
+            await resultPanel.FocusAsync();
         }
     }
 

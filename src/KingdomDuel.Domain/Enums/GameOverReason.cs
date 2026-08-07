@@ -8,5 +8,7 @@ public enum GameOverReason
     BothCollapsed,
     RoundsExhaustedPlayer1Wins,
     RoundsExhaustedPlayer2Wins,
-    RoundsExhaustedDraw
+    RoundsExhaustedDraw,
+    Player1Left,
+    Player2Left
 }

@@ -122,10 +122,12 @@ evenimente (toate cu șanse egale, inclusiv „nimic special”):
 Meciul se termină imediat, indiferent de rundă, dacă:
 - **Trupele** sau **Moralul** unui regat ajung la **0** → acel regat se
   prăbușește și pierde. Dacă ambele se prăbușesc în aceeași rundă → remiză.
+- Un jucător **părăsește meciul** → adversarul câștigă prin abandon
+  (`GameOverReason.Player1Left` / `Player2Left`).
 
-Dacă niciun regat nu s-a prăbușit, meciul se termină automat după
-**runda 8**: câștigă regatul cu **puterea totală** (Aur+Trupe+Moral) mai
-mare. Egalitate exactă → remiză.
+Dacă niciun regat nu s-a prăbușit, meciul se termină automat după ultima
+rundă stabilită în lobby: câștigă regatul cu **puterea totală**
+(Aur+Trupe+Moral) mai mare. Egalitate exactă → remiză.
 
 ## 7. Ce nu e încă implementat (intenționat, pentru pașii următori)
 

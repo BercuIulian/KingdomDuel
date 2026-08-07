@@ -1,3 +1,5 @@
+using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Enums;
 using KingdomDuel.Shared.Requests.Matches;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
@@ -28,18 +30,92 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        if (match.Player1?.PlayerId == req.PlayerId)
+        var isPlayer1 = match.Player1?.PlayerId == req.PlayerId;
+        var isPlayer2 = match.Player2?.PlayerId == req.PlayerId;
+
+        if (!isPlayer1 && !isPlayer2)
         {
-            dbContext.Matches.Remove(match);
+            await Send.NoContentAsync(ct);
+            return;
         }
-        else if (match.Player2?.PlayerId == req.PlayerId)
+
+        switch (match.Status)
+        {
+            case MatchStatus.InProgress when match.Player1 is not null && match.Player2 is not null:
+                match.Status = MatchStatus.Completed;
+                match.GameOverReason = isPlayer1 ? GameOverReason.Player1Left : GameOverReason.Player2Left;
+                break;
+
+            case MatchStatus.Completed when IsAbandon(match.GameOverReason):
+                var abandonedByCaller =
+                    (match.GameOverReason == GameOverReason.Player1Left && isPlayer1)
+                    || (match.GameOverReason == GameOverReason.Player2Left && isPlayer2);
+
+                if (!abandonedByCaller)
+                {
+                    RemoveMatch(match);
+                }
+
+                break;
+
+            case MatchStatus.Completed:
+                ReleaseSlot(match, req.PlayerId);
+
+                if (match.Player1 is null && match.Player2 is null)
+                {
+                    RemoveMatch(match);
+                }
+
+                break;
+
+            default:
+                if (isPlayer1)
+                {
+                    RemoveMatch(match);
+                }
+                else
+                {
+                    ReleaseSlot(match, req.PlayerId);
+                }
+
+                break;
+        }
+
+        await dbContext.SaveChangesAsync(ct);
+        await Send.NoContentAsync(ct);
+    }
+
+    private static bool IsAbandon(GameOverReason reason) =>
+        reason is GameOverReason.Player1Left or GameOverReason.Player2Left;
+
+    private void RemoveMatch(Match match)
+    {
+        if (match.Player1 is not null)
+        {
+            dbContext.Remove(match.Player1);
+        }
+
+        if (match.Player2 is not null)
+        {
+            dbContext.Remove(match.Player2);
+        }
+
+        dbContext.Matches.Remove(match);
+    }
+
+    private void ReleaseSlot(Match match, string playerId)
+    {
+        if (match.Player1?.PlayerId == playerId)
+        {
+            var slot = match.Player1;
+            match.Player1 = null;
+            dbContext.Remove(slot);
+        }
+        else if (match.Player2?.PlayerId == playerId)
         {
             var slot = match.Player2;
             match.Player2 = null;
             dbContext.Remove(slot);
         }
-
-        await dbContext.SaveChangesAsync(ct);
-        await Send.NoContentAsync(ct);
     }
 }
