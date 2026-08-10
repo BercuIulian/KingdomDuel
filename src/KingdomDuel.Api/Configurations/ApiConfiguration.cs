@@ -53,6 +53,8 @@ public static class ApiConfiguration
             app.UseCors(ClientCorsPolicy);
         }
 
+        app.UseAuthConfiguration();
+
         app.UseFastEndpoints(c =>
         {
             c.Endpoints.RoutePrefix = "api";

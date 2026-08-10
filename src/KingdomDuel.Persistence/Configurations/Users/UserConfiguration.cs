@@ -11,14 +11,13 @@ internal sealed class UserConfiguration : IEntityTypeConfiguration<User>
         builder.ToTable("users");
         builder.HasKey(u => u.Id);
 
-        builder.Property(u => u.UserName).HasMaxLength(32).IsRequired();
+        builder.Property(u => u.UserName).HasMaxLength(24).IsRequired();
 
-        builder.Property(u => u.NormalizedUserName).HasMaxLength(32).IsRequired();
+        builder.Property(u => u.NormalizedUserName).HasMaxLength(24).IsRequired();
         builder.HasIndex(u => u.NormalizedUserName).IsUnique();
 
         builder.Property(u => u.PasswordHash).HasMaxLength(256).IsRequired();
 
-        builder.Property(u => u.DisplayName).HasMaxLength(24).IsRequired();
         builder.Property(u => u.Email).HasMaxLength(256);
         builder.Property(u => u.CreatedAt);
     }

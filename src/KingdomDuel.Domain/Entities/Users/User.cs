@@ -20,8 +20,6 @@ public sealed class User : Entity
 
     public required string PasswordHash { get; set; }
 
-    public required string DisplayName { get; set; }
-
     public string? Email { get; set; }
 
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;

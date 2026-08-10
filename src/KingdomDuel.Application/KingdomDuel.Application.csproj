@@ -7,6 +7,8 @@
 
   <ItemGroup>
     <PackageReference Include="FastEndpoints" Version="8.2.0" />
+    <!-- JWT issuing/validation; brings Microsoft.AspNetCore.Authentication.JwtBearer transitively. -->
+    <PackageReference Include="FastEndpoints.Security" Version="8.2.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.4" />
   </ItemGroup>
 

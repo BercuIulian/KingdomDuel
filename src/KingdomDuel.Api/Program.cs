@@ -3,6 +3,7 @@ using KingdomDuel.Api.Configurations;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.AddApiConfiguration();
+builder.AddAuthConfiguration();
 builder.AddDatabaseConfiguration();
 
 var app = builder.Build();
