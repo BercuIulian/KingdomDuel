@@ -2,6 +2,7 @@ using System.Text.Json.Serialization;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using KingdomDuel.Application;
+using KingdomDuel.Shared.Auth;
 
 namespace KingdomDuel.Api.Configurations;
 
@@ -25,7 +26,8 @@ public static class ApiConfiguration
             builder.Services.AddCors(o => o.AddPolicy(ClientCorsPolicy, p => p
                 .WithOrigins("http://localhost:5047", "https://localhost:7072")
                 .AllowAnyHeader()
-                .AllowAnyMethod()));
+                .AllowAnyMethod()
+                .WithExposedHeaders(AuthHeaders.RenewedToken)));
         }
 
         // OpenAPI document - dev only. It is what the NSwag client generator consumes.

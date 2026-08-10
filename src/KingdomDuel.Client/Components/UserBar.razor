@@ -1,0 +1,28 @@
+@inject AuthenticationService Auth
+
+<AuthorizeView>
+    <Authorized>
+        <div class="user-bar">
+            <span class="user-name">👑 @context.User.Identity?.Name</span>
+            <button type="button" class="btn-signout" disabled="@isSigningOut" @onclick="SignOut">Ieși</button>
+        </div>
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private bool isSigningOut;
+
+    private async Task SignOut()
+    {
+        isSigningOut = true;
+
+        try
+        {
+            await Auth.LogoutAsync();
+        }
+        finally
+        {
+            isSigningOut = false;
+        }
+    }
+}

@@ -11,4 +11,6 @@ public sealed class JwtOptions
     public string Audience { get; set; } = "KingdomDuel";
 
     public int LifetimeDays { get; set; } = 7;
+
+    public int RenewWhenRemainingDays { get; set; } = 1;
 }

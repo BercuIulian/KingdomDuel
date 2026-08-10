@@ -22,6 +22,8 @@ public sealed class User : Entity
 
     public string? Email { get; set; }
 
+    public int TokenVersion { get; set; }
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 
     public static string Normalize(string userName) => userName.Trim().ToUpperInvariant();

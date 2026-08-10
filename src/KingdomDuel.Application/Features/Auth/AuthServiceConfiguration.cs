@@ -11,6 +11,9 @@ public static class AuthServiceConfiguration
     {
         services.AddSingleton<IPasswordHasher<User>, PasswordHasher<User>>();
         services.AddScoped<TokenIssuer>();
+        services.AddScoped<TokenRenewer>();
+        services.AddScoped<TokenRevoker>();
+        services.AddScoped<TokenVersionValidator>();
         services.AddScoped<UserRegistrar>();
         services.AddScoped<UserAuthenticator>();
 

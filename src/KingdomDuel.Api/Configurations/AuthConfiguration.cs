@@ -1,6 +1,7 @@
 using System.Text;
 using FastEndpoints.Security;
 using KingdomDuel.Application.Features.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace KingdomDuel.Api.Configurations;
 
@@ -35,6 +36,19 @@ public static class AuthConfiguration
                 validation.ValidateAudience = true;
                 validation.ValidAudience = jwt.Audience;
                 validation.ClockSkew = TimeSpan.FromMinutes(1);
+
+                var events = bearer.Events ??= new JwtBearerEvents();
+                var inner = events.OnTokenValidated;
+
+                events.OnTokenValidated = async context =>
+                {
+                    if (inner is not null)
+                    {
+                        await inner(context);
+                    }
+
+                    await context.RejectStaleTokenAsync();
+                };
             });
 
         builder.Services.AddAuthorization();
@@ -45,6 +59,7 @@ public static class AuthConfiguration
     public static void UseAuthConfiguration(this WebApplication app)
     {
         app.UseAuthentication();
+        app.UseTokenRenewal();
         app.UseAuthorization();
     }
 }
