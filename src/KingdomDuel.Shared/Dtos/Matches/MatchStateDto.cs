@@ -5,6 +5,8 @@ namespace KingdomDuel.Shared.Dtos.Matches;
 public sealed class MatchStateDto
 {
     public required string Code { get; set; }
+    public int YourSide { get; set; }
+    public bool IsHost { get; set; }
     public MatchStatus Status { get; set; }
     public int Round { get; set; }
     public GameEventType CurrentEvent { get; set; }

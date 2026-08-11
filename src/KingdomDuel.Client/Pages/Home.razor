@@ -63,9 +63,8 @@
 
         try
         {
-            var response = await Api.JoinMatchAsync(new JoinMatchRequest { DisplayName = "Player 2" }, code);
-            Navigation.NavigateTo(
-                $"/lobby?code={Uri.EscapeDataString(code)}&pid={Uri.EscapeDataString(response.PlayerId)}");
+            await Api.JoinMatchAsync(code);
+            Navigation.NavigateTo($"/lobby?code={Uri.EscapeDataString(code)}");
         }
         catch (ApiException ex)
         {

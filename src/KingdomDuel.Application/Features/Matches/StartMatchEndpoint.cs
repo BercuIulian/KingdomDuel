@@ -1,38 +1,33 @@
+using KingdomDuel.Application.Features.Auth;
 using KingdomDuel.Domain;
 using KingdomDuel.Domain.Enums;
 using KingdomDuel.Shared.Dtos.Matches;
-using KingdomDuel.Shared.Requests.Matches;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
 internal sealed class StartMatchEndpoint(AppDbContext dbContext)
-    : Endpoint<StartMatchRequest, MatchStateDto>
+    : EndpointWithoutRequest<MatchStateDto>
 {
     public override void Configure()
     {
         Post("/matches/{code}/start");
-        AllowAnonymous();
         Description(b => b.WithName("StartMatch"));
     }
 
-    public override async Task HandleAsync(StartMatchRequest req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var match = await dbContext.Matches
-            .Include(m => m.Player1).ThenInclude(p => p!.Kingdom)
-            .Include(m => m.Player2).ThenInclude(p => p!.Kingdom)
-            .Include(m => m.History)
-            .FirstOrDefaultAsync(m => m.Code == req.Code.ToUpper(), ct);
+        var userId = User.GetUserId();
+        var match = await dbContext.Matches.FindByCodeAsync(Route<string>("code")!, ct);
 
-        if (match is null)
+        if (match is null || match.SideOf(userId) == 0)
         {
             await Send.NotFoundAsync(ct);
             return;
         }
 
-        if (match.Player1?.PlayerId != req.PlayerId)
+        if (match.Player1?.UserId != userId)
         {
             AddError("Doar gazda poate porni meciul.");
             await Send.ErrorsAsync(cancellation: ct);
@@ -66,6 +61,6 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
         match.CurrentEvent = engine.PickRandomEvent();
         await dbContext.SaveChangesAsync(ct);
 
-        await Send.OkAsync(match.ToStateDto(), ct);
+        await Send.OkAsync(match.ToStateDto(userId), ct);
     }
 }

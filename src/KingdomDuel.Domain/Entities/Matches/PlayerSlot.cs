@@ -1,11 +1,13 @@
 using KingdomDuel.Domain.Contracts;
+using KingdomDuel.Domain.Entities.Users;
 
 namespace KingdomDuel.Domain.Entities.Matches;
 
 public sealed class PlayerSlot : Entity
 {
-    public required string PlayerId { get; init; }
-    public required string DisplayName { get; set; }
+    public required Guid UserId { get; init; }
+
+    public User User { get; set; } = null!;
 
     public bool IsReady { get; set; }
 

@@ -129,20 +129,15 @@ namespace KingdomDuel.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
                     b.Property<bool>("IsReady")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("PlayerId")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("player_slots", (string)null);
                 });
@@ -252,6 +247,17 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Navigation("Player1");
 
                     b.Navigation("Player2");
+                });
+
+            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.PlayerSlot", b =>
+                {
+                    b.HasOne("KingdomDuel.Domain.Entities.Users.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.RoundResult", b =>

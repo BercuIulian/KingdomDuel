@@ -66,29 +66,23 @@ namespace KingdomDuel.Client.ApiClients
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<CreateMatchResponse> CreateMatchAsync(CreateMatchRequest createMatchRequest)
+        public virtual System.Threading.Tasks.Task<CreateMatchResponse> CreateMatchAsync()
         {
-            return CreateMatchAsync(createMatchRequest, System.Threading.CancellationToken.None);
+            return CreateMatchAsync(System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<CreateMatchResponse> CreateMatchAsync(CreateMatchRequest createMatchRequest, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<CreateMatchResponse> CreateMatchAsync(System.Threading.CancellationToken cancellationToken)
         {
-            if (createMatchRequest == null)
-                throw new System.ArgumentNullException("createMatchRequest");
-
             var client_ = _httpClient;
             var disposeClient_ = false;
             try
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(createMatchRequest, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
@@ -130,14 +124,10 @@ namespace KingdomDuel.Client.ApiClients
                             return objectResponse_.Object;
                         }
                         else
-                        if (status_ == 400)
+                        if (status_ == 401)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ErrorResponse>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -222,6 +212,12 @@ namespace KingdomDuel.Client.ApiClients
                             return objectResponse_.Object;
                         }
                         else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
+                        }
+                        else
                         {
                             var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
                             throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
@@ -243,21 +239,18 @@ namespace KingdomDuel.Client.ApiClients
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<JoinMatchResponse> JoinMatchAsync(JoinMatchRequest joinMatchRequest, string code)
+        public virtual System.Threading.Tasks.Task<JoinMatchResponse> JoinMatchAsync(string code)
         {
-            return JoinMatchAsync(joinMatchRequest, code, System.Threading.CancellationToken.None);
+            return JoinMatchAsync(code, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<JoinMatchResponse> JoinMatchAsync(JoinMatchRequest joinMatchRequest, string code, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<JoinMatchResponse> JoinMatchAsync(string code, System.Threading.CancellationToken cancellationToken)
         {
             if (code == null)
                 throw new System.ArgumentNullException("code");
-
-            if (joinMatchRequest == null)
-                throw new System.ArgumentNullException("joinMatchRequest");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -265,10 +258,7 @@ namespace KingdomDuel.Client.ApiClients
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(joinMatchRequest, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
@@ -312,14 +302,10 @@ namespace KingdomDuel.Client.ApiClients
                             return objectResponse_.Object;
                         }
                         else
-                        if (status_ == 400)
+                        if (status_ == 401)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<ErrorResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
-                            if (objectResponse_.Object == null)
-                            {
-                                throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
-                            }
-                            throw new ApiException<ErrorResponse>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -343,21 +329,18 @@ namespace KingdomDuel.Client.ApiClients
 
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task LeaveMatchAsync(LeaveMatchRequest leaveMatchRequest, string code)
+        public virtual System.Threading.Tasks.Task LeaveMatchAsync(string code)
         {
-            return LeaveMatchAsync(leaveMatchRequest, code, System.Threading.CancellationToken.None);
+            return LeaveMatchAsync(code, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>No Content</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task LeaveMatchAsync(LeaveMatchRequest leaveMatchRequest, string code, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task LeaveMatchAsync(string code, System.Threading.CancellationToken cancellationToken)
         {
             if (code == null)
                 throw new System.ArgumentNullException("code");
-
-            if (leaveMatchRequest == null)
-                throw new System.ArgumentNullException("leaveMatchRequest");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -365,10 +348,7 @@ namespace KingdomDuel.Client.ApiClients
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(leaveMatchRequest, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
 
                     var urlBuilder_ = new System.Text.StringBuilder();
@@ -406,6 +386,12 @@ namespace KingdomDuel.Client.ApiClients
                             return;
                         }
                         else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
+                        }
+                        else
                         {
                             var responseData_ = response_.Content == null ? null : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
                             throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
@@ -427,21 +413,18 @@ namespace KingdomDuel.Client.ApiClients
 
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<MatchStateDto> StartMatchAsync(StartMatchRequest startMatchRequest, string code)
+        public virtual System.Threading.Tasks.Task<MatchStateDto> StartMatchAsync(string code)
         {
-            return StartMatchAsync(startMatchRequest, code, System.Threading.CancellationToken.None);
+            return StartMatchAsync(code, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <returns>Success</returns>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<MatchStateDto> StartMatchAsync(StartMatchRequest startMatchRequest, string code, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<MatchStateDto> StartMatchAsync(string code, System.Threading.CancellationToken cancellationToken)
         {
             if (code == null)
                 throw new System.ArgumentNullException("code");
-
-            if (startMatchRequest == null)
-                throw new System.ArgumentNullException("startMatchRequest");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -449,10 +432,7 @@ namespace KingdomDuel.Client.ApiClients
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(startMatchRequest, JsonSerializerSettings);
-                    var content_ = new System.Net.Http.StringContent(json_);
-                    content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
-                    request_.Content = content_;
+                    request_.Content = new System.Net.Http.StringContent(string.Empty, System.Text.Encoding.UTF8, "application/json");
                     request_.Method = new System.Net.Http.HttpMethod("POST");
                     request_.Headers.Accept.Add(System.Net.Http.Headers.MediaTypeWithQualityHeaderValue.Parse("application/json"));
 
@@ -494,6 +474,12 @@ namespace KingdomDuel.Client.ApiClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -584,6 +570,12 @@ namespace KingdomDuel.Client.ApiClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -684,6 +676,12 @@ namespace KingdomDuel.Client.ApiClients
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             throw new ApiException<ErrorResponse>("Bad Request", status_, objectResponse_.Text, headers_, objectResponse_.Object, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("Unauthorized", status_, responseText_, headers_, null);
                         }
                         else
                         {

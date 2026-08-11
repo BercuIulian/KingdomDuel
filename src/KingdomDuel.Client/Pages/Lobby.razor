@@ -61,12 +61,6 @@ else
             <h2><span class="panel-icon">⚙️</span> Setări meci</h2>
 
             <div class="field">
-                <label for="playerName">Numele tău</label>
-                <input id="playerName" type="text" maxlength="24" placeholder="@(isHost ? "Player 1" : "Player 2")"
-                       @bind="playerName" @bind:after="PersistLobbyAsync" />
-            </div>
-
-            <div class="field">
                 <label for="rounds">Număr de runde</label>
                 <input id="rounds" type="number" min="1" max="20"
                        disabled="@(!isHost)" @bind="rounds" @bind:after="PersistLobbyAsync" />
@@ -107,7 +101,7 @@ else
                     <li class="player @(slot.Present ? "present" : "empty") @(isYou ? "you" : "")">
                         <span class="avatar">@(slot.Present ? slot.Emoji : "＋")</span>
                         <div class="player-info">
-                            <span class="player-name">@(slot.Present ? DisplayName(slot) : "Se așteaptă un jucător…")</span>
+                            <span class="player-name">@(slot.Present ? slot.Name : "Se așteaptă un jucător…")</span>
                             @if (slot.Present && slot.IsHost)
                             {
                                 <span class="tag-host">Gazdă</span>
@@ -151,11 +145,7 @@ else
     [SupplyParameterFromQuery]
     public string? Code { get; set; }
 
-    [SupplyParameterFromQuery(Name = "pid")]
-    public string? Pid { get; set; }
-
     // --- Setări meci ---
-    private string playerName = "Player 1";
     private int rounds = GameConstants.DefaultTotalRounds;
     private int startingGold = 50;
     private int startingTroops = 50;
@@ -174,9 +164,6 @@ else
         new(Present: false, Name: "Player 2", Emoji: "🛡️", IsHost: false, Ready: false),
     ];
 
-    private string DisplayName(PlayerSlot slot) =>
-        slot.IsHost == isHost && !string.IsNullOrWhiteSpace(playerName) ? playerName : slot.Name;
-
     private string DotClass(PlayerSlot slot, bool isYou)
     {
         if (!slot.Present) return "off";
@@ -192,7 +179,6 @@ else
 
     private bool isCreating = true;
     private string? matchCode;
-    private string? playerId;
     private string? error;
 
     private string? closedMessage;
@@ -228,14 +214,14 @@ else
 
     private async Task LeaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        if (string.IsNullOrWhiteSpace(matchCode))
         {
             return;
         }
 
         try
         {
-            await Api.LeaveMatchAsync(new LeaveMatchRequest { PlayerId = playerId }, matchCode);
+            await Api.LeaveMatchAsync(matchCode);
         }
         catch
         {
@@ -243,27 +229,18 @@ else
     }
 
     private void GoToGame()
-    {
-        var url = $"/game?code={Uri.EscapeDataString(matchCode!)}&side={(isHost ? 1 : 2)}";
-
-        if (!string.IsNullOrWhiteSpace(playerId))
-        {
-            url += $"&pid={Uri.EscapeDataString(playerId)}";
-        }
-
-        Navigation.NavigateTo(url);
-    }
+        => Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(matchCode!)}");
 
     private async Task StartMatchAsync()
     {
-        if (!isHost || !OpponentReady || string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        if (!isHost || !OpponentReady || string.IsNullOrWhiteSpace(matchCode))
         {
             return;
         }
 
         try
         {
-            var state = await Api.StartMatchAsync(new StartMatchRequest { PlayerId = playerId }, matchCode);
+            var state = await Api.StartMatchAsync(matchCode);
             if (state.Status == MatchStatus.InProgress)
             {
                 pollCts.Cancel();
@@ -282,10 +259,9 @@ else
 
         try
         {
-            var displayName = string.IsNullOrWhiteSpace(playerName) ? "Player 1" : playerName;
-            var response = await Api.CreateMatchAsync(new CreateMatchRequest { DisplayName = displayName });
+            var response = await Api.CreateMatchAsync();
             matchCode = response.MatchCode;
-            playerId = response.PlayerId;
+            ApplyState(response.State);
         }
         catch (ApiException ex)
         {
@@ -304,21 +280,20 @@ else
     private async Task LoadJoinedSessionAsync(string code)
     {
         isCreating = true;
-        isHost = false;
-        playerId = Pid;
         error = null;
 
         try
         {
             var state = await Api.GetMatchAsync(code);
             matchCode = state.Code;
-            playerName = string.IsNullOrWhiteSpace(state.Player2Name) ? "Player 2" : state.Player2Name!;
             isReady = state.Player2Ready;
             ApplyState(state);
         }
         catch (ApiException ex)
         {
-            error = $"Nu am putut încărca meciul (cod {ex.StatusCode}).";
+            error = ex.StatusCode == 404
+                ? "Meciul nu există sau nu ești în el."
+                : $"Nu am putut încărca meciul (cod {ex.StatusCode}).";
         }
         catch (Exception)
         {
@@ -332,6 +307,8 @@ else
 
     private void ApplyState(MatchStateDto state)
     {
+        isHost = state.IsHost;
+
         players[0] = players[0] with
         {
             Present = state.Player1Name is not null,
@@ -403,14 +380,9 @@ else
 
     private async Task PersistLobbyAsync()
     {
-        if (string.IsNullOrWhiteSpace(playerId) || string.IsNullOrWhiteSpace(matchCode))
+        if (string.IsNullOrWhiteSpace(matchCode))
         {
             return;
-        }
-
-        if (string.IsNullOrWhiteSpace(playerName))
-        {
-            playerName = isHost ? "Player 1" : "Player 2";
         }
 
         try
@@ -418,8 +390,6 @@ else
             var state = await Api.UpdateLobbyAsync(
                 new UpdateLobbyRequest
                 {
-                    PlayerId = playerId,
-                    DisplayName = playerName.Trim(),
                     IsReady = isReady,
                     TotalRounds = rounds,
                     StartingGold = startingGold,

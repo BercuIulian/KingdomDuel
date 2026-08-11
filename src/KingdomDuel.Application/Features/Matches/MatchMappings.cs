@@ -5,9 +5,11 @@ namespace KingdomDuel.Application.Features.Matches;
 
 internal static class MatchMappings
 {
-    public static MatchStateDto ToStateDto(this Match match) => new()
+    public static MatchStateDto ToStateDto(this Match match, Guid userId) => new()
     {
         Code = match.Code,
+        YourSide = match.SideOf(userId),
+        IsHost = match.Player1?.UserId == userId,
         Status = match.Status,
         Round = match.Round,
         CurrentEvent = match.CurrentEvent,
@@ -16,18 +18,38 @@ internal static class MatchMappings
         StartingGold = match.StartingGold,
         StartingTroops = match.StartingTroops,
         StartingMorale = match.StartingMorale,
-        Player1Name = match.Player1?.DisplayName,
-        Player2Name = match.Player2?.DisplayName,
+        Player1Name = match.Player1?.User.UserName,
+        Player2Name = match.Player2?.User.UserName,
         Player1Ready = match.Player1?.IsReady ?? false,
         Player2Ready = match.Player2?.IsReady ?? false,
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
         WaitingOnPlayer1Action =
-            match.Player1 is not null && !match.PendingActions.ContainsKey(match.Player1.PlayerId),
+            match.Player1 is not null && !match.PendingActions.ContainsKey(match.Player1.ActionKey()),
         WaitingOnPlayer2Action =
-            match.Player2 is not null && !match.PendingActions.ContainsKey(match.Player2.PlayerId),
+            match.Player2 is not null && !match.PendingActions.ContainsKey(match.Player2.ActionKey()),
         History = match.History.OrderBy(r => r.RoundNumber).Select(r => r.ToRoundResultDto()).ToList(),
     };
+
+    public static int SideOf(this Match match, Guid userId)
+    {
+        if (match.Player1?.UserId == userId)
+        {
+            return 1;
+        }
+
+        return match.Player2?.UserId == userId ? 2 : 0;
+    }
+
+    public static PlayerSlot? SlotOf(this Match match, Guid userId)
+        => match.SideOf(userId) switch
+        {
+            1 => match.Player1,
+            2 => match.Player2,
+            _ => null,
+        };
+
+    public static string ActionKey(this PlayerSlot slot) => slot.UserId.ToString();
 
     private static KingdomDto ToKingdomDto(this Kingdom kingdom) => new()
     {
