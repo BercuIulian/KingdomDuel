@@ -244,9 +244,11 @@
         }
         catch (ApiException ex)
         {
-            joinError = ex.StatusCode is 400 or 404
-                ? "Cod invalid sau meciul nu există."
-                : $"Nu ne-am putut alătura meciului (cod {ex.StatusCode}).";
+            joinError = ex.StatusCode switch
+            {
+                404 => "Cod invalid sau meciul nu există.",
+                _ => ApiErrorReader.Describe(ex, $"Nu ne-am putut alătura meciului (cod {ex.StatusCode})."),
+            };
         }
         catch (Exception)
         {

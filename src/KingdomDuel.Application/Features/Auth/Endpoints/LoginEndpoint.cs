@@ -4,6 +4,7 @@ using KingdomDuel.Shared.Requests.Auth;
 using KingdomDuel.Shared.Responses.Auth;
 using KingdomDuel.Shared.Validators.Auth;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace KingdomDuel.Application.Features.Auth.Endpoints;
 
@@ -15,6 +16,7 @@ internal sealed class LoginEndpoint(UserAuthenticator authenticator, TokenIssuer
         Post("/auth/login");
         AllowAnonymous();
         Validator<LoginValidator>();
+        Options(x => x.RequireRateLimiting(RateLimitPolicies.Login));
         Description(b => b.WithName("Login"));
     }
 

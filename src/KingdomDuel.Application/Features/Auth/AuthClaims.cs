@@ -2,7 +2,7 @@ using System.Security.Claims;
 
 namespace KingdomDuel.Application.Features.Auth;
 
-internal static class AuthClaims
+public static class AuthClaims
 {
     public const string UserId = "sub";
     public const string UserName = "name";

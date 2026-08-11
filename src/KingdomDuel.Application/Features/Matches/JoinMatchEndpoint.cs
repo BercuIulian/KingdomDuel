@@ -33,6 +33,15 @@ internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
+        var activeCode = await dbContext.Matches.FindActiveCodeAsync(userId, ct);
+
+        if (activeCode is not null)
+        {
+            AddError(MatchErrors.AlreadyPlaying(activeCode));
+            await Send.ErrorsAsync(cancellation: ct);
+            return;
+        }
+
         if (match.Player1 is null)
         {
             AddError("Meciul nu are încă un prim jucător.");

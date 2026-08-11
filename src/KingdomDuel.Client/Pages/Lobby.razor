@@ -265,7 +265,7 @@ else
         }
         catch (ApiException ex)
         {
-            error = $"Nu am putut crea meciul (cod {ex.StatusCode}).";
+            error = ApiErrorReader.Describe(ex, $"Nu am putut crea meciul (cod {ex.StatusCode}).");
         }
         catch (Exception)
         {

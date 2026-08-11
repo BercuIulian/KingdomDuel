@@ -57,6 +57,8 @@ public static class ApiConfiguration
 
         app.UseAuthConfiguration();
 
+        app.UseRateLimiter();
+
         app.UseFastEndpoints(c =>
         {
             c.Endpoints.RoutePrefix = "api";
