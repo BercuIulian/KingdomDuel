@@ -1,0 +1,10 @@
+/* Aceeași regulă ca în MainLayout.razor.css: CSS-ul scoped nu se moștenește între
+   componente, iar bundle-ul scoped e versionat de Blazor, deci nu rămâne în cache
+   ca un fișier din wwwroot. Repetarea a șase linii e mai ieftină decât asta. */
+.app-shell {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
