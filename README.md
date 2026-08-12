@@ -3,7 +3,7 @@
 Joc de duel pentru doi jucători: două regate, un număr fix de runde, iar în
 fiecare rundă fiecare jucător alege în secret una din patru acțiuni — atac,
 fortificare, comerț sau diplomație. Runda se rezolvă când amândoi au trimis
-ordinul. Regulile complete sunt în [RULES.md](RULES.md).
+ordinul. Regulile complete sunt în [RULES.md](src/docs/RULES.md).
 
 Proiectul e un **ASP.NET Core** care servește și API-ul, și un client
 **Blazor WebAssembly**, cu persistență în **PostgreSQL**. Contul e obligatoriu:
@@ -103,7 +103,7 @@ lipsește sau are sub 32 de octeți. În dezvoltare e fixă în
 `appsettings.Development.json`, ca token-urile să supraviețuiască repornirilor;
 în producție se dă prin `Jwt__SigningKey`.
 
-Deciziile, cu alternativele respinse și motivele lor, sunt în [AUTH.md](AUTH.md).
+Deciziile, cu alternativele respinse și motivele lor, sunt în [AUTH.md](src/docs/AUTH.md).
 
 ## Endpoint-uri
 
@@ -129,6 +129,17 @@ cer `Authorization: Bearer <token>`.
 
 Identitatea nu circulă niciodată prin body sau prin URL: fiecare endpoint o
 citește din token.
+
+În afara prefixului `/api`, anonime și scoase de sub rate limiting:
+
+| Rută | Ce face |
+|---|---|
+| `/health` | liveness — doar „procesul răspunde", **fără** atingerea bazei |
+| `/health/ready` | readiness — verifică și conexiunea la bază |
+
+Liveness-ul nu atinge baza intenționat: baza managed se suspendă la
+inactivitate, iar o sondă care ar da unhealthy la trezirea ei ar reporni degeaba
+un container sănătos.
 
 ## Clientul API se regenerează, nu se scrie de mână
 
@@ -168,15 +179,15 @@ id-ul contului când cererea e autentificată și pe IP altfel.
 > La publicare: partiționarea pe IP folosește `Connection.RemoteIpAddress`,
 > care în spatele unui reverse proxy e adresa proxy-ului — toți utilizatorii
 > ajung în aceeași partiție. Se rezolvă cu `ForwardedHeaders`. Vezi
-> [DEPLOYMENT.md](DEPLOYMENT.md).
+> [DEPLOYMENT.md](src/docs/DEPLOYMENT.md).
 
 ## Documentație
 
 | Document | Ce conține |
 |---|---|
-| [RULES.md](RULES.md) | regulile complete ale jocului |
-| [AUTH.md](AUTH.md) | planul de autentificare pe etape, cu deciziile luate |
-| [DEPLOYMENT.md](DEPLOYMENT.md) | ce trebuie rezolvat pentru expunerea publică |
+| [RULES.md](src/docs/RULES.md) | regulile complete ale jocului |
+| [AUTH.md](src/docs/AUTH.md) | planul de autentificare pe etape, cu deciziile luate |
+| [DEPLOYMENT.md](src/docs/DEPLOYMENT.md) | ce trebuie rezolvat pentru expunerea publică |
 
 ## Ce nu e făcut, intenționat
 

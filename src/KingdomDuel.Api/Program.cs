@@ -2,12 +2,18 @@ using KingdomDuel.Api.Configurations;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddProxyConfiguration();
 builder.AddApiConfiguration();
 builder.AddAuthConfiguration();
 builder.AddRateLimitConfiguration();
 builder.AddDatabaseConfiguration();
+builder.AddHealthConfiguration();
 
 var app = builder.Build();
+
+app.UseForwardedHeaders();
+
+app.UseExceptionConfiguration();
 
 // Serve the hosted Blazor WASM client (its static assets + framework files).
 app.UseBlazorFrameworkFiles();
@@ -19,6 +25,8 @@ app.UseApiConfiguration();
 await app.GenerateApiClientAndExitAsync();
 
 await app.ApplyDatabaseMigrations();
+
+app.MapHealthEndpoints();
 
 // Any non-API, non-file route falls back to the SPA so client-side routing works.
 app.MapFallbackToFile("index.html");
