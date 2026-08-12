@@ -1,0 +1,123 @@
+@page "/login"
+@using KingdomDuel.Shared.Requests.Auth
+@using KingdomDuel.Shared.Validators.Auth
+@inject AuthenticationService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Kingdom Duel — intră în cont</PageTitle>
+
+<section class="gate">
+    <div class="crest">🏰</div>
+    <h1>Kingdom Duel</h1>
+    <p class="tagline">Intră în cetate ca să joci</p>
+
+    <div class="tabs" role="tablist">
+        <button type="button" role="tab" class="@TabClass(false)" @onclick="() => SwitchTo(false)">Intră</button>
+        <button type="button" role="tab" class="@TabClass(true)" @onclick="() => SwitchTo(true)">Cont nou</button>
+    </div>
+
+    <form @onsubmit="Submit" @onsubmit:preventDefault>
+        <label class="field">
+            <span>Nume de utilizator</span>
+            <input type="text" class="gate-input" autocomplete="username"
+                   maxlength="@AuthRules.UserNameMaxLength" disabled="@isBusy" @bind="userName" @bind:event="oninput" />
+        </label>
+
+        <label class="field">
+            <span>Parolă</span>
+            <input type="password" class="gate-input"
+                   autocomplete="@(isRegistering ? "new-password" : "current-password")"
+                   maxlength="@AuthRules.PasswordMaxLength" disabled="@isBusy" @bind="password" @bind:event="oninput" />
+        </label>
+
+        @if (isRegistering)
+        {
+            <label class="field">
+                <span>Confirmă parola</span>
+                <input type="password" class="gate-input" autocomplete="new-password"
+                       maxlength="@AuthRules.PasswordMaxLength" disabled="@isBusy"
+                       @bind="passwordConfirmation" @bind:event="oninput" />
+            </label>
+
+            <label class="field">
+                <span>Email <em>(opțional)</em></span>
+                <input type="email" class="gate-input" autocomplete="email"
+                       maxlength="@AuthRules.EmailMaxLength" disabled="@isBusy" @bind="email" @bind:event="oninput" />
+            </label>
+        }
+
+        @if (error is not null)
+        {
+            <p class="gate-error">@error</p>
+        }
+
+        <button type="submit" class="btn-gate" disabled="@isBusy">
+            @(isBusy ? "…" : isRegistering ? "Creează cont" : "Intră")
+        </button>
+    </form>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = LoginRoute.ReturnUrlParameter)]
+    private string? ReturnUrl { get; set; }
+
+    private bool isRegistering;
+    private bool isBusy;
+    private string? error;
+
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private string passwordConfirmation = string.Empty;
+    private string email = string.Empty;
+
+    private string TabClass(bool registerTab) => registerTab == isRegistering ? "tab active" : "tab";
+
+    private void SwitchTo(bool registerTab)
+    {
+        isRegistering = registerTab;
+        error = null;
+    }
+
+    private async Task Submit()
+    {
+        if (isBusy)
+        {
+            return;
+        }
+
+        error = null;
+
+        if (isRegistering && password != passwordConfirmation)
+        {
+            error = "Parolele nu coincid.";
+            return;
+        }
+
+        isBusy = true;
+
+        try
+        {
+            error = isRegistering ? await RegisterAsync() : await LoginAsync();
+        }
+        finally
+        {
+            isBusy = false;
+        }
+
+        if (error is null)
+        {
+            Navigation.NavigateTo(ReturnUrl ?? LoginRoute.AfterSignIn, replace: true);
+        }
+    }
+
+    private Task<string?> LoginAsync()
+        => Auth.LoginAsync(new LoginRequest { UserName = userName.Trim(), Password = password });
+
+    private Task<string?> RegisterAsync()
+        => Auth.RegisterAsync(new RegisterRequest
+        {
+            UserName = userName.Trim(),
+            Password = password,
+            Email = string.IsNullOrWhiteSpace(email) ? null : email.Trim(),
+        });
+}

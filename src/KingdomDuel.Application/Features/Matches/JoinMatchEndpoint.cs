@@ -1,7 +1,6 @@
+using KingdomDuel.Application.Features.Auth;
 using KingdomDuel.Domain.Entities.Matches;
-using KingdomDuel.Shared.Requests.Matches;
 using KingdomDuel.Shared.Responses.Matches;
-using KingdomDuel.Shared.Validators.Matches;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using FastEndpoints;
@@ -9,27 +8,37 @@ using FastEndpoints;
 namespace KingdomDuel.Application.Features.Matches;
 
 internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
-    : Endpoint<JoinMatchRequest, JoinMatchResponse>
+    : EndpointWithoutRequest<JoinMatchResponse>
 {
     public override void Configure()
     {
         Post("/matches/{code}/join");
-        AllowAnonymous();
-        Validator<JoinMatchValidator>();
         Description(b => b.WithName("JoinMatch"));
     }
 
-    public override async Task HandleAsync(JoinMatchRequest req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var match = await dbContext.Matches
-            .Include(m => m.Player1).ThenInclude(p => p!.Kingdom)
-            .Include(m => m.Player2).ThenInclude(p => p!.Kingdom)
-            .Include(m => m.History)
-            .FirstOrDefaultAsync(m => m.Code == req.Code.ToUpper(), ct);
+        var userId = User.GetUserId();
+        var match = await dbContext.Matches.FindByCodeAsync(Route<string>("code")!, ct);
 
         if (match is null)
         {
             await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        if (match.SideOf(userId) != 0)
+        {
+            await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId) }, ct);
+            return;
+        }
+
+        var activeCode = await dbContext.Matches.FindActiveCodeAsync(userId, ct);
+
+        if (activeCode is not null)
+        {
+            AddError(MatchErrors.AlreadyPlaying(activeCode));
+            await Send.ErrorsAsync(cancellation: ct);
             return;
         }
 
@@ -47,10 +56,17 @@ internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        var playerId = Guid.NewGuid().ToString("N");
-        match.Player2 = new PlayerSlot { PlayerId = playerId, DisplayName = req.DisplayName };
+        var user = await dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+
+        if (user is null)
+        {
+            await Send.UnauthorizedAsync(ct);
+            return;
+        }
+
+        match.Player2 = new PlayerSlot { UserId = userId, User = user };
         await dbContext.SaveChangesAsync(ct);
 
-        await Send.OkAsync(new JoinMatchResponse { PlayerId = playerId, State = match.ToStateDto() }, ct);
+        await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId) }, ct);
     }
 }

@@ -1,6 +1,7 @@
 @page "/"
+@attribute [Authorize]
 @using KingdomDuel.Client.ApiClients
-@using KingdomDuel.Shared.Requests.Matches
+@using KingdomDuel.Shared.Dtos.Matches
 @inject ApiClient Api
 @inject NavigationManager Navigation
 
@@ -11,16 +12,35 @@
     <h1>Kingdom Duel</h1>
     <p class="tagline">Două regate. Un duel. Un singur învingător.</p>
 
+    <AuthorizeView>
+        <Authorized>
+            <p class="welcome">Bun venit, @context.User.Identity?.Name</p>
+        </Authorized>
+    </AuthorizeView>
+
+    @if (activeMatch is not null)
+    {
+        <div class="active-match">
+            <div class="active-info">
+                <span class="active-title">⏳ Meci în desfășurare</span>
+                <span class="active-round">
+                    <strong>@activeMatch.Code</strong> · runda @activeMatch.Round din @activeMatch.TotalRounds
+                </span>
+            </div>
+            <button type="button" class="btn-resume" @onclick="Resume">Continuă →</button>
+        </div>
+    }
+
     <div class="join-row">
         <button type="button" class="btn-check" title="Alătură-te meciului"
-                disabled="@isJoining" @onclick="JoinMatch">
-            @(isJoining ? "…" : "✓")
+                disabled="@isBusy" @onclick="JoinMatch">
+            @(isBusy ? "…" : "✓")
         </button>
         <input type="text"
                class="code-input"
                placeholder="Codul meciului"
                maxlength="12"
-               disabled="@isJoining"
+               disabled="@isBusy"
                @bind="matchCode"
                @bind:event="oninput"
                @onkeydown="OnCodeKeyDown" />
@@ -31,15 +51,92 @@
         <p class="join-error">@joinError</p>
     }
 
-    <button type="button" class="btn-create" @onclick="CreateMatch">Crează meci</button>
+    <button type="button" class="btn-create" disabled="@isBusy" @onclick="CreateMatch">Crează meci</button>
 </section>
+
+@if (isWarning && activeMatch is not null)
+{
+    <div class="modal-scrim" @onclick="DismissWarning"></div>
+
+    <section class="modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="active-match-title"
+             tabindex="-1"
+             @ref="warningPanel"
+             @onkeydown="OnWarningKeyDown">
+
+        <span class="modal-ico">⚠️</span>
+        <h2 id="active-match-title">Ai deja un meci în desfășurare</h2>
+        <p class="modal-text">
+            Meciul <strong>@activeMatch.Code</strong> e la runda @activeMatch.Round din
+            @activeMatch.TotalRounds. Nu poți juca două meciuri deodată. Dacă îl părăsești,
+            se încheie pe loc și adversarul câștigă prin abandon.
+        </p>
+
+        @if (warningError is not null)
+        {
+            <p class="modal-error">@warningError</p>
+        }
+
+        <div class="modal-actions">
+            <button type="button" class="btn-resume" disabled="@isBusy" @onclick="Resume">
+                Reintră în meci
+            </button>
+            <button type="button" class="btn-abandon" disabled="@isBusy" @onclick="AbandonMatch">
+                @(isBusy ? "Se iese…" : "Părăsește meciul")
+            </button>
+        </div>
+    </section>
+}
 
 @code {
     private string matchCode = string.Empty;
-    private bool isJoining;
+    private bool isBusy;
     private string? joinError;
 
-    private void CreateMatch() => Navigation.NavigateTo("/lobby");
+    private ActiveMatchDto? activeMatch;
+    private bool isWarning;
+    private bool warningFocused;
+    private string? warningError;
+    private ElementReference warningPanel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            activeMatch = (await Api.GetMyMatchAsync()).Match;
+        }
+        catch (Exception)
+        {
+            // Cardul lipsește, restul paginii funcționează. Un 401 e tratat de BearerTokenHandler.
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isWarning && !warningFocused)
+        {
+            warningFocused = true;
+            await warningPanel.FocusAsync();
+        }
+    }
+
+    private void CreateMatch()
+    {
+        if (isBusy)
+        {
+            return;
+        }
+
+        if (activeMatch is not null)
+        {
+            Warn();
+            return;
+        }
+
+        Navigation.NavigateTo("/lobby");
+    }
 
     private async Task OnCodeKeyDown(KeyboardEventArgs e)
     {
@@ -52,25 +149,106 @@
     private async Task JoinMatch()
     {
         var code = matchCode.Trim();
-        if (code.Length == 0 || isJoining)
+
+        if (code.Length == 0 || isBusy)
         {
             return;
         }
 
-        isJoining = true;
+        if (activeMatch is not null)
+        {
+            if (code.Equals(activeMatch.Code, StringComparison.OrdinalIgnoreCase))
+            {
+                Resume();
+            }
+            else
+            {
+                Warn();
+            }
+
+            return;
+        }
+
+        await JoinAsync(code);
+    }
+
+    private void Warn()
+    {
+        isWarning = true;
+        warningFocused = false;
+        warningError = null;
+        joinError = null;
+    }
+
+    private void DismissWarning()
+    {
+        if (!isBusy)
+        {
+            isWarning = false;
+        }
+    }
+
+    private void OnWarningKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            DismissWarning();
+        }
+    }
+
+    private void Resume()
+    {
+        if (activeMatch is not null)
+        {
+            Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(activeMatch.Code)}");
+        }
+    }
+
+    private async Task AbandonMatch()
+    {
+        if (activeMatch is null || isBusy)
+        {
+            return;
+        }
+
+        isBusy = true;
+        warningError = null;
+
+        try
+        {
+            await Api.LeaveMatchAsync(activeMatch.Code);
+        }
+        catch (Exception)
+        {
+            warningError = "Nu am putut părăsi meciul. Încearcă din nou.";
+            return;
+        }
+        finally
+        {
+            isBusy = false;
+        }
+
+        activeMatch = null;
+        isWarning = false;
+    }
+
+    private async Task JoinAsync(string code)
+    {
+        isBusy = true;
         joinError = null;
 
         try
         {
-            var response = await Api.JoinMatchAsync(new JoinMatchRequest { DisplayName = "Player 2" }, code);
-            Navigation.NavigateTo(
-                $"/lobby?code={Uri.EscapeDataString(code)}&pid={Uri.EscapeDataString(response.PlayerId)}");
+            await Api.JoinMatchAsync(code);
+            Navigation.NavigateTo($"/lobby?code={Uri.EscapeDataString(code)}");
         }
         catch (ApiException ex)
         {
-            joinError = ex.StatusCode is 400 or 404
-                ? "Cod invalid sau meciul nu există."
-                : $"Nu ne-am putut alătura meciului (cod {ex.StatusCode}).";
+            joinError = ex.StatusCode switch
+            {
+                404 => "Cod invalid sau meciul nu există.",
+                _ => ApiErrorReader.Describe(ex, $"Nu ne-am putut alătura meciului (cod {ex.StatusCode})."),
+            };
         }
         catch (Exception)
         {
@@ -78,7 +256,7 @@
         }
         finally
         {
-            isJoining = false;
+            isBusy = false;
         }
     }
 }

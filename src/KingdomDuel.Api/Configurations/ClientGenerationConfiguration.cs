@@ -26,6 +26,9 @@ internal static class ClientGenerationConfiguration
         "KingdomDuel.Shared.Dtos.Matches",
         "KingdomDuel.Shared.Requests.Matches",
         "KingdomDuel.Shared.Responses.Matches",
+        "KingdomDuel.Shared.Dtos.Auth",
+        "KingdomDuel.Shared.Requests.Auth",
+        "KingdomDuel.Shared.Responses.Auth",
         "KingdomDuel.Domain.Enums",
     ];
 

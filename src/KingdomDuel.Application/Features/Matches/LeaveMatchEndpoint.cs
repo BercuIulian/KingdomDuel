@@ -1,28 +1,24 @@
+using KingdomDuel.Application.Features.Auth;
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
-using KingdomDuel.Shared.Requests.Matches;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.EntityFrameworkCore;
 using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
 internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
-    : Endpoint<LeaveMatchRequest>
+    : EndpointWithoutRequest
 {
     public override void Configure()
     {
         Post("/matches/{code}/leave");
-        AllowAnonymous();
         Description(b => b.WithName("LeaveMatch"));
     }
 
-    public override async Task HandleAsync(LeaveMatchRequest req, CancellationToken ct)
+    public override async Task HandleAsync(CancellationToken ct)
     {
-        var match = await dbContext.Matches
-            .Include(m => m.Player1).ThenInclude(p => p!.Kingdom)
-            .Include(m => m.Player2).ThenInclude(p => p!.Kingdom)
-            .FirstOrDefaultAsync(m => m.Code == req.Code.ToUpper(), ct);
+        var userId = User.GetUserId();
+        var match = await dbContext.Matches.FindByCodeAsync(Route<string>("code")!, ct);
 
         if (match is null)
         {
@@ -30,14 +26,15 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        var isPlayer1 = match.Player1?.PlayerId == req.PlayerId;
-        var isPlayer2 = match.Player2?.PlayerId == req.PlayerId;
+        var side = match.SideOf(userId);
 
-        if (!isPlayer1 && !isPlayer2)
+        if (side == 0)
         {
             await Send.NoContentAsync(ct);
             return;
         }
+
+        var isPlayer1 = side == 1;
 
         switch (match.Status)
         {
@@ -49,7 +46,7 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
             case MatchStatus.Completed when IsAbandon(match.GameOverReason):
                 var abandonedByCaller =
                     (match.GameOverReason == GameOverReason.Player1Left && isPlayer1)
-                    || (match.GameOverReason == GameOverReason.Player2Left && isPlayer2);
+                    || (match.GameOverReason == GameOverReason.Player2Left && !isPlayer1);
 
                 if (!abandonedByCaller)
                 {
@@ -59,7 +56,7 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
                 break;
 
             case MatchStatus.Completed:
-                ReleaseSlot(match, req.PlayerId);
+                ReleaseSlot(match, userId);
 
                 if (match.Player1 is null && match.Player2 is null)
                 {
@@ -75,7 +72,7 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
                 }
                 else
                 {
-                    ReleaseSlot(match, req.PlayerId);
+                    ReleaseSlot(match, userId);
                 }
 
                 break;
@@ -103,15 +100,15 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
         dbContext.Matches.Remove(match);
     }
 
-    private void ReleaseSlot(Match match, string playerId)
+    private void ReleaseSlot(Match match, Guid userId)
     {
-        if (match.Player1?.PlayerId == playerId)
+        if (match.Player1?.UserId == userId)
         {
             var slot = match.Player1;
             match.Player1 = null;
             dbContext.Remove(slot);
         }
-        else if (match.Player2?.PlayerId == playerId)
+        else if (match.Player2?.UserId == userId)
         {
             var slot = match.Player2;
             match.Player2 = null;

@@ -11,10 +11,12 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
         builder.ToTable("player_slots");
         builder.HasKey(p => p.Id);
 
-        builder.Property(p => p.PlayerId).HasMaxLength(64).IsRequired();
-        builder.Property(p => p.DisplayName).HasMaxLength(64).IsRequired();
+        builder.HasOne(p => p.User)
+            .WithMany()
+            .HasForeignKey(p => p.UserId)
+            .OnDelete(DeleteBehavior.Restrict);
+        builder.HasIndex(p => p.UserId);
 
-        // Each slot has exactly one Kingdom, stored in its own "kingdoms" table (FK there).
         builder.HasOne(p => p.Kingdom)
             .WithOne()
             .HasForeignKey<Kingdom>("PlayerSlotId")

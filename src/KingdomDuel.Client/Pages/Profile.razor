@@ -1,0 +1,354 @@
+@page "/profile"
+@attribute [Authorize]
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Shared.Dtos.Auth
+@using KingdomDuel.Shared.Requests.Auth
+@using KingdomDuel.Shared.Validators.Auth
+@inject ApiClient Api
+@inject AuthenticationService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Kingdom Duel — contul tău</PageTitle>
+
+@if (signInNotice is not null)
+{
+    <section class="gate-again">
+        <div class="crest">🔐</div>
+        <h1>Intră din nou în cont</h1>
+        <p class="notice">@signInNotice</p>
+        <p class="notice dim">Toate sesiunile contului au fost închise, inclusiv aceasta.</p>
+        <button type="button" class="btn-gold" @onclick="SignInAgain">Intră din nou</button>
+    </section>
+}
+else
+{
+    <section class="profile">
+        <div class="profile-nav">
+            <button type="button" class="btn-back" @onclick="GoHome">← Înapoi</button>
+        </div>
+
+        <header class="profile-head">
+            <div class="crest">👑</div>
+            <AuthorizeView>
+                <Authorized>
+                    <h1>Împărăția @context.User.Identity?.Name</h1>
+                </Authorized>
+            </AuthorizeView>
+        </header>
+
+        @if (loadError is not null)
+        {
+            <p class="centered load-error">@loadError</p>
+        }
+        else if (profile is null)
+        {
+            <p class="centered loading">Se încarcă…</p>
+        }
+        else
+        {
+            <div class="panel">
+                <div class="row">
+                    <span class="row-text">
+                        <span class="row-label">Nume de utilizator</span>
+                        <span class="row-value">@profile.UserName</span>
+                    </span>
+                    <button type="button" class="btn-edit" @onclick="() => Open(Editable.UserName)">Schimbă</button>
+                </div>
+
+                <div class="row">
+                    <span class="row-text">
+                        <span class="row-label">Email</span>
+                        @if (string.IsNullOrEmpty(profile.Email))
+                        {
+                            <span class="row-value empty">nespecificat</span>
+                        }
+                        else
+                        {
+                            <span class="row-value">@profile.Email</span>
+                        }
+                    </span>
+                    <button type="button" class="btn-edit" @onclick="() => Open(Editable.Email)">Schimbă</button>
+                </div>
+
+                <div class="row">
+                    <span class="row-text">
+                        <span class="row-label">Parolă</span>
+                        <span class="row-value">••••••••</span>
+                    </span>
+                    <button type="button" class="btn-edit" @onclick="() => Open(Editable.Password)">Schimbă</button>
+                </div>
+            </div>
+        }
+    </section>
+
+    @if (editing != Editable.None)
+    {
+        <div class="modal-scrim" @onclick="Close"></div>
+
+        <section class="modal"
+                 role="dialog"
+                 aria-modal="true"
+                 aria-labelledby="edit-title"
+                 tabindex="-1"
+                 @ref="modalPanel"
+                 @onkeydown="OnModalKeyDown">
+
+            <form @onsubmit="Submit" @onsubmit:preventDefault>
+                @if (editing == Editable.UserName)
+                {
+                    <span class="modal-ico">🏷️</span>
+                    <h2 id="edit-title">Schimbă numele</h2>
+                    <p class="modal-text">
+                        E și numele sub care te vede adversarul. După schimbare va trebui să intri din nou în cont.
+                    </p>
+
+                    <label class="field">
+                        <span>Nume de utilizator</span>
+                        <input type="text" class="gate-input" autocomplete="off"
+                               maxlength="@AuthRules.UserNameMaxLength" disabled="@isBusy"
+                               @bind="draftUserName" @bind:event="oninput" />
+                    </label>
+                }
+                else if (editing == Editable.Email)
+                {
+                    <span class="modal-ico">✉️</span>
+                    <h2 id="edit-title">Schimbă emailul</h2>
+                    <p class="modal-text">
+                        Opțional, dar e singura cale prin care contul ar putea fi recuperat vreodată. Lasă câmpul gol ca să-l ștergi.
+                    </p>
+
+                    <label class="field">
+                        <span>Email</span>
+                        <input type="email" class="gate-input" autocomplete="off"
+                               maxlength="@AuthRules.EmailMaxLength" disabled="@isBusy"
+                               @bind="draftEmail" @bind:event="oninput" />
+                    </label>
+                }
+                else
+                {
+                    <span class="modal-ico">🔑</span>
+                    <h2 id="edit-title">Schimbă parola</h2>
+                    <p class="modal-text">
+                        După schimbare va trebui să intri din nou în cont.
+                    </p>
+
+                    <label class="field">
+                        <span>Parola curentă</span>
+                        <input type="password" class="gate-input" autocomplete="current-password"
+                               maxlength="@AuthRules.PasswordMaxLength" disabled="@isBusy"
+                               @bind="currentPassword" @bind:event="oninput" />
+                    </label>
+
+                    <label class="field">
+                        <span>Parola nouă</span>
+                        <input type="password" class="gate-input" autocomplete="new-password"
+                               maxlength="@AuthRules.PasswordMaxLength" disabled="@isBusy"
+                               @bind="newPassword" @bind:event="oninput" />
+                    </label>
+
+                    <label class="field">
+                        <span>Confirmă parola nouă</span>
+                        <input type="password" class="gate-input" autocomplete="new-password"
+                               maxlength="@AuthRules.PasswordMaxLength" disabled="@isBusy"
+                               @bind="newPasswordConfirmation" @bind:event="oninput" />
+                    </label>
+                }
+
+                @if (modalError is not null)
+                {
+                    <p class="modal-error">@modalError</p>
+                }
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-ghost" disabled="@isBusy" @onclick="Close">Anulează</button>
+                    <button type="submit" class="btn-gold" disabled="@(isBusy || !CanSubmit)">
+                        @(isBusy ? "…" : "Salvează")
+                    </button>
+                </div>
+            </form>
+        </section>
+    }
+}
+
+@code {
+    private enum Editable { None, UserName, Email, Password }
+
+    private UserProfileDto? profile;
+    private string? loadError;
+    private string? signInNotice;
+
+    private Editable editing = Editable.None;
+    private bool isBusy;
+    private string? modalError;
+    private bool modalFocused;
+    private ElementReference modalPanel;
+
+    private string draftUserName = string.Empty;
+    private string draftEmail = string.Empty;
+    private string currentPassword = string.Empty;
+    private string newPassword = string.Empty;
+    private string newPasswordConfirmation = string.Empty;
+
+    private string? TrimmedEmail => string.IsNullOrWhiteSpace(draftEmail) ? null : draftEmail.Trim();
+
+    private bool CanSubmit => editing switch
+    {
+        Editable.UserName => draftUserName.Trim().Length > 0
+                             && !string.Equals(draftUserName.Trim(), profile?.UserName, StringComparison.Ordinal),
+        Editable.Email => !string.Equals(TrimmedEmail, profile?.Email, StringComparison.Ordinal),
+        Editable.Password => currentPassword.Length > 0
+                             && newPassword.Length > 0
+                             && newPasswordConfirmation.Length > 0,
+        _ => false,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            profile = await Api.GetProfileAsync();
+        }
+        catch (ApiException ex)
+        {
+            loadError = ApiErrorReader.Describe(ex, $"Nu am putut încărca profilul (cod {ex.StatusCode}).");
+        }
+        catch (Exception)
+        {
+            loadError = "Nu am putut contacta serverul.";
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (editing != Editable.None && !modalFocused)
+        {
+            modalFocused = true;
+            await modalPanel.FocusAsync();
+        }
+    }
+
+    private void GoHome() => Navigation.NavigateTo("/");
+
+    private Task SignInAgain() => Auth.SignOutLocallyAsync();
+
+    private void Open(Editable field)
+    {
+        editing = field;
+        modalFocused = false;
+        modalError = null;
+
+        draftUserName = profile?.UserName ?? string.Empty;
+        draftEmail = profile?.Email ?? string.Empty;
+        currentPassword = string.Empty;
+        newPassword = string.Empty;
+        newPasswordConfirmation = string.Empty;
+    }
+
+    private void Close()
+    {
+        if (!isBusy)
+        {
+            editing = Editable.None;
+        }
+    }
+
+    private void OnModalKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    private Task Submit() => editing switch
+    {
+        Editable.UserName => SaveIdentityAsync(draftUserName.Trim(), profile!.Email, "Nu am putut schimba numele"),
+        Editable.Email => SaveIdentityAsync(profile!.UserName, TrimmedEmail, "Nu am putut salva emailul"),
+        Editable.Password => ChangePasswordAsync(),
+        _ => Task.CompletedTask,
+    };
+
+    private async Task SaveIdentityAsync(string userName, string? email, string fallback)
+    {
+        if (isBusy || !CanSubmit)
+        {
+            return;
+        }
+
+        isBusy = true;
+        modalError = null;
+
+        try
+        {
+            var response = await Api.UpdateProfileAsync(new UpdateProfileRequest
+            {
+                UserName = userName,
+                Email = email,
+            });
+
+            profile = response.User;
+
+            if (response.RequiresSignIn)
+            {
+                signInNotice = $"Numele contului tău e acum „{response.User.UserName}”.";
+            }
+            else
+            {
+                editing = Editable.None;
+            }
+        }
+        catch (ApiException ex)
+        {
+            modalError = ApiErrorReader.Describe(ex, $"{fallback} (cod {ex.StatusCode}).");
+        }
+        catch (Exception)
+        {
+            modalError = "Nu am putut contacta serverul.";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        if (isBusy || !CanSubmit)
+        {
+            return;
+        }
+
+        modalError = null;
+
+        if (newPassword != newPasswordConfirmation)
+        {
+            modalError = "Parolele nu coincid.";
+            return;
+        }
+
+        isBusy = true;
+
+        try
+        {
+            await Api.ChangePasswordAsync(new ChangePasswordRequest
+            {
+                CurrentPassword = currentPassword,
+                NewPassword = newPassword,
+            });
+
+            signInNotice = "Parola a fost schimbată.";
+        }
+        catch (ApiException ex)
+        {
+            modalError = ApiErrorReader.Describe(ex, $"Nu am putut schimba parola (cod {ex.StatusCode}).");
+        }
+        catch (Exception)
+        {
+            modalError = "Nu am putut contacta serverul.";
+        }
+        finally
+        {
+            isBusy = false;
+        }
+    }
+}
