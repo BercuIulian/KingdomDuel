@@ -10,4 +10,5 @@ public static class RateLimitPolicies
     public const string CreateMatch = "create-match";
     public const string Login = "login";
     public const string Register = "register";
+    public const string ChangePassword = "change-password";
 }

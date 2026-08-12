@@ -124,17 +124,6 @@ h1 {
     border-color: rgba(198, 161, 91, 0.7);
 }
 
-.panel-note {
-    margin: 0.75rem 0.35rem 0;
-    color: #767d88;
-    font-size: 0.82rem;
-    line-height: 1.4;
-}
-
-.panel-note.ok {
-    color: #6fbf73;
-}
-
 .modal-scrim {
     position: fixed;
     inset: 0;

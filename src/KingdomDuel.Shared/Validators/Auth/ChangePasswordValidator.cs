@@ -13,6 +13,9 @@ public sealed class ChangePasswordValidator : AbstractValidator<ChangePasswordRe
             .MaximumLength(AuthRules.PasswordMaxLength)
             .WithMessage($"Parola nu poate depăși {AuthRules.PasswordMaxLength} de caractere.");
 
-        RuleFor(x => x.NewPassword).NewPassword();
+        RuleFor(x => x.NewPassword)
+            .NewPassword()
+            .NotEqual(x => x.CurrentPassword)
+            .WithMessage("Parola nouă trebuie să fie diferită de cea curentă.");
     }
 }

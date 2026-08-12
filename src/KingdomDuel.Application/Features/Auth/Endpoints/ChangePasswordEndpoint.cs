@@ -3,6 +3,7 @@ using KingdomDuel.Application.Features.Auth.Services;
 using KingdomDuel.Shared.Requests.Auth;
 using KingdomDuel.Shared.Validators.Auth;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace KingdomDuel.Application.Features.Auth.Endpoints;
 
@@ -12,6 +13,7 @@ internal sealed class ChangePasswordEndpoint(UserProfileEditor editor) : Endpoin
     {
         Put("/auth/profile/password");
         Validator<ChangePasswordValidator>();
+        Options(x => x.RequireRateLimiting(RateLimitPolicies.ChangePassword));
         Description(b => b.WithName("ChangePassword"));
     }
 

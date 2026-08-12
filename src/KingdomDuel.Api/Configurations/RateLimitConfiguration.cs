@@ -32,6 +32,10 @@ public static class RateLimitConfiguration
             options.AddPolicy(
                 RateLimitPolicies.Register,
                 context => FixedWindow(IpKey(context), permitLimit: 5, window: TimeSpan.FromHours(1)));
+
+            options.AddPolicy(
+                RateLimitPolicies.ChangePassword,
+                context => FixedWindow(CallerKey(context), permitLimit: 10, window: TimeSpan.FromHours(1)));
         });
 
         return builder;
@@ -87,6 +91,8 @@ public static class RateLimitConfiguration
                 "Prea multe încercări de autentificare. Așteaptă un minut și încearcă din nou.",
             RateLimitPolicies.Register =>
                 "Prea multe conturi create de pe această rețea. Încearcă din nou mai târziu.",
+            RateLimitPolicies.ChangePassword =>
+                "Prea multe încercări de schimbare a parolei. Încearcă din nou peste o oră.",
             _ => GenericMessage,
         };
     }
