@@ -30,6 +30,11 @@ public sealed class AuthenticationService(
             // leave the user looking signed in.
         }
 
+        await SignOutLocallyAsync();
+    }
+
+    public async Task SignOutLocallyAsync()
+    {
         await authentication.SignOutAsync();
 
         navigation.NavigateTo($"/{LoginRoute.Path}");

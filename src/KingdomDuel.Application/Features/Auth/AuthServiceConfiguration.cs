@@ -16,6 +16,7 @@ public static class AuthServiceConfiguration
         services.AddScoped<TokenVersionValidator>();
         services.AddScoped<UserRegistrar>();
         services.AddScoped<UserAuthenticator>();
+        services.AddScoped<UserProfileEditor>();
 
         return services;
     }

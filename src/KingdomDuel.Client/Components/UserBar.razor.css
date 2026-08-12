@@ -4,35 +4,82 @@
     top: 1rem;
     right: 1.25rem;
     z-index: 5;
+}
+
+.user-chip {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-}
-
-.user-name {
+    gap: 0.5rem;
+    padding: 0.35rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    background: transparent;
     color: #e9d9a8;
+    font-family: inherit;
     font-size: 0.95rem;
     letter-spacing: 0.01em;
-}
-
-.btn-signout {
-    padding: 0.35rem 0.75rem;
-    border: 1px solid rgba(198, 161, 91, 0.4);
-    border-radius: 8px;
-    background: rgba(12, 15, 21, 0.6);
-    color: #9ea4af;
-    font-family: inherit;
-    font-size: 0.85rem;
     cursor: pointer;
-    transition: color 0.15s ease, border-color 0.15s ease;
+    transition: background 0.15s ease, border-color 0.15s ease;
 }
 
-.btn-signout:hover:enabled {
+.user-chip:hover,
+.user-chip[aria-expanded="true"] {
+    border-color: rgba(198, 161, 91, 0.45);
+    background: rgba(12, 15, 21, 0.6);
+}
+
+.caret {
+    color: #9ea4af;
+    font-size: 0.8rem;
+    line-height: 1;
+}
+
+.menu-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+}
+
+.user-menu {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    min-width: 11rem;
+    padding: 0.3rem;
+    border: 1px solid rgba(198, 161, 91, 0.4);
+    border-radius: 10px;
+    background: rgba(16, 20, 28, 0.97);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.5);
+}
+
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.5rem 0.65rem;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    color: #c9ccd3;
+    font-family: inherit;
+    font-size: 0.92rem;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.menu-item:hover:enabled {
+    background: rgba(198, 161, 91, 0.14);
     color: #e9d9a8;
-    border-color: rgba(198, 161, 91, 0.8);
 }
 
-.btn-signout:disabled {
+.menu-item:disabled {
     cursor: default;
     opacity: 0.6;
+}
+
+.menu-ico {
+    font-size: 0.95rem;
+    line-height: 1;
 }

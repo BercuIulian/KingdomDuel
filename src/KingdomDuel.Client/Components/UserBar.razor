@@ -1,16 +1,59 @@
 @inject AuthenticationService Auth
+@inject NavigationManager Navigation
 
 <AuthorizeView>
     <Authorized>
-        <div class="user-bar">
-            <span class="user-name">👑 @context.User.Identity?.Name</span>
-            <button type="button" class="btn-signout" disabled="@isSigningOut" @onclick="SignOut">Ieși</button>
+        <div class="user-bar" @onkeydown="OnKeyDown">
+            <button type="button" class="user-chip" aria-haspopup="menu" aria-expanded="@isOpen" @onclick="Toggle">
+                <span class="user-name">👑 @context.User.Identity?.Name</span>
+                <span class="caret">▾</span>
+            </button>
+
+            @if (isOpen)
+            {
+                <div class="menu-scrim" @onclick="Close"></div>
+
+                <div class="user-menu" role="menu">
+                    <button type="button" class="menu-item" role="menuitem" @onclick="GoToProfile">
+                        <span class="menu-ico">🛡️</span> Profil
+                    </button>
+                    <button type="button" class="menu-item" role="menuitem"
+                            disabled="@isSigningOut" @onclick="SignOut">
+                        <span class="menu-ico">🚪</span> @(isSigningOut ? "Se iese…" : "Deconectare")
+                    </button>
+                </div>
+            }
         </div>
     </Authorized>
 </AuthorizeView>
 
 @code {
+    private bool isOpen;
     private bool isSigningOut;
+
+    private void Toggle() => isOpen = !isOpen;
+
+    private void Close()
+    {
+        if (!isSigningOut)
+        {
+            isOpen = false;
+        }
+    }
+
+    private void OnKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            Close();
+        }
+    }
+
+    private void GoToProfile()
+    {
+        isOpen = false;
+        Navigation.NavigateTo("/profile");
+    }
 
     private async Task SignOut()
     {
@@ -23,6 +66,7 @@
         finally
         {
             isSigningOut = false;
+            isOpen = false;
         }
     }
 }
