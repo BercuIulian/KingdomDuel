@@ -16,8 +16,7 @@ app.UseForwardedHeaders();
 app.UseExceptionConfiguration();
 
 // Serve the hosted Blazor WASM client (its static assets + framework files).
-app.UseBlazorFrameworkFiles();
-app.UseStaticFiles();
+app.MapStaticAssets();
 
 app.UseApiConfiguration();
 
