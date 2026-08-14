@@ -200,7 +200,7 @@
 /* ---------- Ordinele ---------- */
 .orders {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) auto;
+    grid-template-columns: repeat(4, 1fr) 0.72fr auto;
     gap: 0.7rem;
     align-items: stretch;
 }
@@ -804,6 +804,10 @@
 
     .orders {
         grid-template-columns: repeat(2, 1fr);
+    }
+
+    .orders .order:nth-child(5) {
+        grid-column: span 2;
     }
 
     .order-action {

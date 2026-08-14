@@ -23,7 +23,7 @@ regula de stagnare și la decizia finală a meciului.
 
 Meciul durează un număr de runde stabilit de gazdă în lobby (implicit
 `GameConstants.DefaultTotalRounds`). La fiecare rundă, ambii jucători aleg
-simultan una din cele 4 acțiuni de mai jos; nimeni nu vede alegerea
+simultan una din cele 5 acțiuni de mai jos; nimeni nu vede alegerea
 celuilalt înainte ca ambele să fie trimise.
 
 ## 3. Acțiunile
@@ -54,7 +54,13 @@ celuilalt înainte ca ambele să fie trimise.
 - Cost: **5 aur**.
 - Câștig de moral: **+10** normal, **+20** dacă evenimentul e Târg diplomatic.
 
-## 4. Interacțiunea dintre acțiuni
+### Fără ordin
+- Cost: **nimic**. Câștig: **nimic**.
+- Rupe streak-ul de Apărare, ca orice altă acțiune care nu e Apărare. Altfel
+  alternarea Apărare–Fără ordin ar ocoli costul crescător de aur, iar o acțiune
+  care nu aduce nimic ar deveni pe ascuns un avantaj.
+- Nu oferă nicio protecție: în fața unui atac se comportă ca Comerț — vezi
+  secțiunea 4.
 
 ### Atac vs Atac (ciocnire directă)
 Pierderea de bază e **15 trupe** pentru fiecare parte, dar diferența de
@@ -87,9 +93,10 @@ Aurul acumulat se traduce în **nivel de echipament/fortificație**: fiecare
 Practic: un regat sărac care doar se apără nu mai e un zid sigur dacă
 adversarul lui are mult mai mult aur decât el — poate fi străpuns.
 
-### Atac vs Comerț / Atac vs Diplomație
+### Atac vs Comerț / Atac vs Diplomație / Atac vs Fără ordin
 Atacul reușește direct, fără nicio șansă implicată:
-- Dacă victima era la Comerț: atacatorul fură **15 aur** și **10 trupe**.
+- Dacă victima era la Comerț sau Fără ordin: atacatorul fură **15 aur** și
+  **10 trupe**.
 - Dacă victima era la Diplomație: atacatorul fură **20 aur** și **15 trupe**
   (penalizare mai mare — diplomația nu oferă nicio protecție militară).
 - Atacatorul primește **+5 moral** în ambele cazuri.
@@ -100,8 +107,9 @@ Alianță: ambii jucători primesc **+10 aur**.
 
 ### Orice altă combinație fără atac
 (Apărare vs Comerț, Apărare vs Diplomație, Comerț vs Comerț, Comerț vs
-Diplomație etc.) — nu există interacțiune directă; fiecare parte primește
-doar efectele proprii ale acțiunii alese (secțiunea 3).
+Diplomație, orice vs Fără ordin etc.) — nu există interacțiune directă;
+fiecare parte primește doar efectele proprii ale acțiunii alese (secțiunea 3).
+Dacă amândoi aleg Fără ordin, runda trece fără nicio schimbare.
 
 ## 5. Evenimente aleatorii
 

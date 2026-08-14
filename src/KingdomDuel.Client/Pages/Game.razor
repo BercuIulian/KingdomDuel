@@ -420,6 +420,11 @@ else
                 current == GameEventType.DiplomaticFair
                     ? $"Târgul ridică câștigul la +{GameConstants.DiplomacyFairMoraleGain} moral."
                     : null);
+
+            yield return new(
+                ActionType.Idle, "Fără ordin", "hourglass",
+                "Nu primești nimic și rămâi descoperit unui atac.",
+                null);
         }
     }
 
@@ -428,7 +433,9 @@ else
         ActionType.Attack => "Atac",
         ActionType.Defend => "Fortificare",
         ActionType.Trade => "Comerț",
-        _ => "Diplomație",
+        ActionType.Diplomacy => "Diplomație",
+        ActionType.Idle => "Fără ordin",
+        _ => action.ToString(),
     };
 
     private static string OrderVerb(ActionType action) => action switch
@@ -436,7 +443,9 @@ else
         ActionType.Attack => "a lansat un atac",
         ActionType.Defend => "s-a fortificat",
         ActionType.Trade => "a deschis drumurile comerciale",
-        _ => "a trimis soli",
+        ActionType.Diplomacy => "a trimis soli",
+        ActionType.Idle => "nu a dat niciun ordin oastei",
+        _ => action.ToString(),
     };
 
     private void ChooseOrder(ActionType action) => chosen = action;
