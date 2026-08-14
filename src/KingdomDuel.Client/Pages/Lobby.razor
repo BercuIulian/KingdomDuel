@@ -84,6 +84,18 @@ else
                        disabled="@(!isHost)" @bind="startingMorale" @bind:after="PersistLobbyAsync" />
             </div>
 
+            <div class="field">
+                <label for="round-seconds">Timp pe rundă <span class="unit">sec</span></label>
+                <input id="round-seconds" type="number"
+                       min="@GameConstants.MinRoundSeconds" max="@GameConstants.MaxRoundSeconds" step="15"
+                       disabled="@(!isHost)" @bind="roundSeconds" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            @if (settingsError is not null)
+            {
+                <p class="settings-error" role="alert">@settingsError</p>
+            }
+
             @if (!isHost)
             {
                 <p class="settings-hint">🔒 Doar gazda poate schimba setările meciului.</p>
@@ -150,6 +162,11 @@ else
     private int startingGold = 50;
     private int startingTroops = 50;
     private int startingMorale = 50;
+    private int roundSeconds = GameConstants.DefaultRoundSeconds;
+
+    private (int Rounds, int Gold, int Troops, int Morale, int Seconds)? confirmedSettings;
+
+    private string? settingsError;
 
     private bool isHost = true;
 
@@ -322,13 +339,33 @@ else
             Ready = state.Player2Ready,
         };
 
-        if (!isHost)
+        var firstLoad = confirmedSettings is null;
+
+        confirmedSettings = (
+            state.TotalRounds,
+            state.StartingGold,
+            state.StartingTroops,
+            state.StartingMorale,
+            state.RoundSeconds);
+
+        if (!isHost || firstLoad)
         {
             rounds = state.TotalRounds;
             startingGold = state.StartingGold;
             startingTroops = state.StartingTroops;
             startingMorale = state.StartingMorale;
+            roundSeconds = state.RoundSeconds;
         }
+    }
+
+    private void RevertSettings()
+    {
+        if (confirmedSettings is not { } confirmed)
+        {
+            return;
+        }
+
+        (rounds, startingGold, startingTroops, startingMorale, roundSeconds) = confirmed;
     }
 
     private async Task PollLoopAsync(CancellationToken ct)
@@ -395,13 +432,25 @@ else
                     StartingGold = startingGold,
                     StartingTroops = startingTroops,
                     StartingMorale = startingMorale,
+                    RoundSeconds = roundSeconds,
                 },
                 matchCode);
+
+            settingsError = null;
             ApplyState(state);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            settingsError = ApiErrorReader.Describe(ex, "Setarea nu e validă.");
+            RevertSettings();
+        }
+        catch (ApiException ex)
+        {
+            settingsError = ApiErrorReader.Describe(ex, $"Setarea n-a fost salvată (cod {ex.StatusCode}).");
         }
         catch
         {
-            // Dacă eșuează, următorul tick de polling va reconcilia starea.
+            settingsError = "Setarea n-a fost salvată. Verifică legătura și încearcă din nou.";
         }
     }
 

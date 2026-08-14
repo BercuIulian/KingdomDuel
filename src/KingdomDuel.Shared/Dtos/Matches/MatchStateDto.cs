@@ -15,6 +15,7 @@ public sealed class MatchStateDto
     public int StartingGold { get; set; }
     public int StartingTroops { get; set; }
     public int StartingMorale { get; set; }
+    public int RoundSeconds { get; set; }
     public string? Player1Name { get; set; }
     public string? Player2Name { get; set; }
     public bool Player1Ready { get; set; }

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +24,9 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
         builder.Property(m => m.Code).HasMaxLength(16).IsRequired();
         builder.HasIndex(m => m.Code).IsUnique();
+
+        builder.Property(m => m.RoundSeconds)
+            .HasDefaultValue(GameConstants.DefaultRoundSeconds);
 
         builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(m => m.CurrentEvent).HasConversion<string>().HasMaxLength(32);

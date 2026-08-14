@@ -18,6 +18,7 @@ internal static class MatchMappings
         StartingGold = match.StartingGold,
         StartingTroops = match.StartingTroops,
         StartingMorale = match.StartingMorale,
+        RoundSeconds = match.RoundSeconds,
         Player1Name = match.Player1?.User.UserName,
         Player2Name = match.Player2?.User.UserName,
         Player1Ready = match.Player1?.IsReady ?? false,

@@ -90,6 +90,14 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<int>("Round")
                         .HasColumnType("integer");
 
+                    b.Property<DateTimeOffset?>("RoundDeadline")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("RoundSeconds")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(45);
+
                     b.Property<int>("StartingGold")
                         .HasColumnType("integer");
 
@@ -131,6 +139,9 @@ namespace KingdomDuel.Persistence.Migrations
 
                     b.Property<bool>("IsReady")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("MissedRounds")
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
