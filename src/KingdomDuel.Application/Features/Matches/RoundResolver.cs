@@ -40,12 +40,17 @@ internal static class RoundResolver
         {
             match.Round += 1;
             match.CurrentEvent = engine.PickRandomEvent();
+            StartRoundClock(match);
         }
         else
         {
             match.Status = MatchStatus.Completed;
+            match.RoundDeadline = null;
         }
 
         return true;
     }
+
+    public static void StartRoundClock(Match match)
+        => match.RoundDeadline = DateTimeOffset.UtcNow.AddSeconds(match.RoundSeconds);
 }

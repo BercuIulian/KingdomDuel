@@ -1,4 +1,5 @@
 using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Enums;
 using KingdomDuel.Shared.Dtos.Matches;
 
 namespace KingdomDuel.Application.Features.Matches;
@@ -19,6 +20,7 @@ internal static class MatchMappings
         StartingTroops = match.StartingTroops,
         StartingMorale = match.StartingMorale,
         RoundSeconds = match.RoundSeconds,
+        SecondsRemaining = match.SecondsRemaining(),
         Player1Name = match.Player1?.User.UserName,
         Player2Name = match.Player2?.User.UserName,
         Player1Ready = match.Player1?.IsReady ?? false,
@@ -31,6 +33,18 @@ internal static class MatchMappings
             match.Player2 is not null && !match.PendingActions.ContainsKey(match.Player2.ActionKey()),
         History = match.History.OrderBy(r => r.RoundNumber).Select(r => r.ToRoundResultDto()).ToList(),
     };
+
+    public static int? SecondsRemaining(this Match match)
+    {
+        if (match.Status != MatchStatus.InProgress || match.RoundDeadline is not { } deadline)
+        {
+            return null;
+        }
+
+        var left = (deadline - DateTimeOffset.UtcNow).TotalSeconds;
+
+        return left <= 0 ? 0 : (int)Math.Ceiling(left);
+    }
 
     public static int SideOf(this Match match, Guid userId)
     {

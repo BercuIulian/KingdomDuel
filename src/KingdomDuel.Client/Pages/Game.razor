@@ -87,6 +87,13 @@ else
             <span class="eyebrow">Evenimentul rundei</span>
         </section>
 
+        <div class="timer-row">
+            @if (state.Status == MatchStatus.InProgress)
+            {
+                <RoundTimer SecondsRemaining="state.SecondsRemaining" RoundSeconds="state.RoundSeconds" />
+            }
+        </div>
+
         @if (state.Status == MatchStatus.Completed)
         {
             <section class="verdict">

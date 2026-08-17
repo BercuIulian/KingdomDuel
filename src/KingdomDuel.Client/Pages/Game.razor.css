@@ -3,7 +3,7 @@
     height: calc(100dvh - 3rem);
     overflow: hidden;
     display: grid;
-    grid-template-rows: auto auto auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
     gap: 0.85rem;
 }
 
