@@ -22,6 +22,12 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
         builder.ToTable("matches");
         builder.HasKey(m => m.Id);
 
+        builder.Property<uint>("Version")
+            .HasColumnName("xmin")
+            .HasColumnType("xid")
+            .ValueGeneratedOnAddOrUpdate()
+            .IsConcurrencyToken();
+
         builder.Property(m => m.Code).HasMaxLength(16).IsRequired();
         builder.HasIndex(m => m.Code).IsUnique();
 

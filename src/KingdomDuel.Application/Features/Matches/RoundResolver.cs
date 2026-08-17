@@ -6,6 +6,27 @@ namespace KingdomDuel.Application.Features.Matches;
 
 internal static class RoundResolver
 {
+    public static bool ExpireIfDue(Match match)
+    {
+        if (match.Status != MatchStatus.InProgress
+            || match.Player1 is null
+            || match.Player2 is null
+            || match.RoundDeadline is not { } deadline)
+        {
+            return false;
+        }
+
+        if (DateTimeOffset.UtcNow <= deadline.AddSeconds(GameConstants.RoundGraceSeconds))
+        {
+            return false;
+        }
+
+        match.PendingActions.TryAdd(match.Player1.ActionKey(), ActionType.Idle);
+        match.PendingActions.TryAdd(match.Player2.ActionKey(), ActionType.Idle);
+
+        return ResolveIfReady(match);
+    }
+
     public static bool ResolveIfReady(Match match)
     {
         if (match.Status != MatchStatus.InProgress
