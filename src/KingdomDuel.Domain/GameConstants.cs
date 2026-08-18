@@ -11,6 +11,8 @@ public static class GameConstants
     public const int MaxRoundSeconds = 180;
     public const int RoundGraceSeconds = 2;
 
+    public const int MissedRoundsBeforeForfeit = 3;
+
     public const int GoldPerEquipmentLevel = 20;
     public const int MaxEquipmentLevel = 5;
 

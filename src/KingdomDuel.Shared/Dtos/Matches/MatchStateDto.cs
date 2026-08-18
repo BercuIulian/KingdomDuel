@@ -21,6 +21,8 @@ public sealed class MatchStateDto
     public string? Player2Name { get; set; }
     public bool Player1Ready { get; set; }
     public bool Player2Ready { get; set; }
+    public int Player1MissedRounds { get; set; }
+    public int Player2MissedRounds { get; set; }
     public KingdomDto? Player1Kingdom { get; set; }
     public KingdomDto? Player2Kingdom { get; set; }
     public bool WaitingOnPlayer1Action { get; set; }

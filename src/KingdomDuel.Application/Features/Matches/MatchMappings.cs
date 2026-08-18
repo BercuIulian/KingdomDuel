@@ -25,6 +25,8 @@ internal static class MatchMappings
         Player2Name = match.Player2?.User.UserName,
         Player1Ready = match.Player1?.IsReady ?? false,
         Player2Ready = match.Player2?.IsReady ?? false,
+        Player1MissedRounds = match.Player1?.MissedRounds ?? 0,
+        Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
         WaitingOnPlayer1Action =

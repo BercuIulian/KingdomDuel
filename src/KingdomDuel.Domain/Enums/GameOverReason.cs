@@ -10,5 +10,8 @@ public enum GameOverReason
     RoundsExhaustedPlayer2Wins,
     RoundsExhaustedDraw,
     Player1Left,
-    Player2Left
+    Player2Left,
+    Player1Disconnected,
+    Player2Disconnected,
+    BothDisconnected
 }

@@ -26,6 +26,13 @@ Meciul durează un număr de runde stabilit de gazdă în lobby (implicit
 simultan una din cele 5 acțiuni de mai jos; nimeni nu vede alegerea
 celuilalt înainte ca ambele să fie trimise.
 
+Fiecare rundă are o **limită de timp**, stabilită de gazdă în lobby (implicit
+`GameConstants.DefaultRoundSeconds`, între `MinRoundSeconds` și
+`MaxRoundSeconds`). Nu există variantă fără limită. La expirare, cine n-a
+trimis nimic primește automat *Fără ordin*, iar ordinul celui care a apucat să
+trimită rămâne valabil. Peste termen se acordă o mică perioadă de grație
+(`RoundGraceSeconds`), pentru latența rețelei — invizibilă în interfață.
+
 ## 3. Acțiunile
 
 ### Atac
@@ -132,6 +139,16 @@ Meciul se termină imediat, indiferent de rundă, dacă:
   prăbușește și pierde. Dacă ambele se prăbușesc în aceeași rundă → remiză.
 - Un jucător **părăsește meciul** → adversarul câștigă prin abandon
   (`GameOverReason.Player1Left` / `Player2Left`).
+- Un jucător **ratează 3 runde** → adversarul câștigă prin inactivitate
+  (`GameOverReason.Player1Disconnected` / `Player2Disconnected`). Dacă amândoi
+  ating pragul, meciul se încheie fără învingător (`BothDisconnected`).
+  Ratările sunt **cumulate pe tot meciul**, nu consecutive, și numără doar
+  rundele în care jucătorul **n-a trimis nimic**. Alegerea deliberată a
+  acțiunii *Fără ordin* nu intră în contor.
+
+Dacă runda în care s-a atins pragul se încheie oricum pe teren — un regat
+prăbușit, de pildă — verdictul de acolo rămâne; deconectarea se aplică doar
+când runda nu produce singură un final.
 
 Dacă niciun regat nu s-a prăbușit, meciul se termină automat după ultima
 rundă stabilită în lobby: câștigă regatul cu **puterea totală**

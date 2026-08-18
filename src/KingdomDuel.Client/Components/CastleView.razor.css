@@ -52,6 +52,18 @@
     white-space: nowrap;
 }
 
+.tag-missed {
+    padding: 0.1rem 0.4rem;
+    border: 1px solid rgba(227, 155, 155, 0.55);
+    border-radius: 999px;
+    font-size: 0.56rem;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #e39b9b;
+    background: rgba(227, 155, 155, 0.1);
+    white-space: nowrap;
+}
+
 .order-state {
     display: inline-flex;
     align-items: center;
