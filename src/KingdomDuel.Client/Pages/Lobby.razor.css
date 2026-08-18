@@ -174,7 +174,17 @@
     color: #8b909b;
 }
 
-/* Fără săgețile de increment/decrement la câmpurile numerice */
+.settings-error {
+    margin: 0.9rem 0 0;
+    padding: 0.5rem 0.7rem;
+    border-left: 2px solid #e39b9b;
+    border-radius: 4px;
+    background: rgba(227, 155, 155, 0.08);
+    font-size: 0.8rem;
+    line-height: 1.4;
+    color: #e39b9b;
+}
+
 .field input[type="number"] {
     -moz-appearance: textfield;
     appearance: textfield;
@@ -447,4 +457,46 @@
     .start-hint {
         max-width: none;
     }
+}
+
+/* Unitatea stă în interiorul casetei, la dreapta valorii. Caseta trece pe
+   wrapper, nu pe input, ca acest câmp să rămână aliniat cu celelalte patru. */
+.field-input {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+    width: 6rem;
+    padding: 0.5rem 0.65rem;
+    border: 1px solid rgba(198, 161, 91, 0.3);
+    border-radius: 8px;
+    background: rgba(12, 15, 21, 0.75);
+}
+
+.field-input:focus-within {
+    border-color: rgba(198, 161, 91, 0.85);
+    box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.18);
+}
+
+.field-input input {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+}
+
+.field-input input:focus {
+    box-shadow: none;
+}
+
+.field-input .unit {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #7d8393;
+}
+
+.field-input:has(input:disabled) {
+    opacity: 0.55;
 }

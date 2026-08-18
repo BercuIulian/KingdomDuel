@@ -171,6 +171,13 @@ public class GameEngine
                 log.Add($"{label} — diplomație: -{GameConstants.DiplomacyGoldCost} aur, +{moraleGain} moral");
                 break;
             }
+
+            case ActionType.Idle:
+            {
+                side.DefenseStreak = 0;
+                log.Add($"{label} — fără ordin: nimic nu se schimbă");
+                break;
+            }
         }
     }
 

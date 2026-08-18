@@ -1,3 +1,4 @@
+@using KingdomDuel.Domain
 @using KingdomDuel.Shared.Dtos.Matches
 
 <article class="house house-@House @(Mirrored ? "mirrored" : "")">
@@ -42,6 +43,13 @@
                 @if (IsYou)
                 {
                     <span class="tag-you">casa ta</span>
+                }
+                @if (MissedRounds > 0)
+                {
+                    <span class="tag-missed"
+                          title="Runde ratate. La @GameConstants.MissedRoundsBeforeForfeit, meciul se încheie prin abandon.">
+                        @MissedRounds/@GameConstants.MissedRoundsBeforeForfeit ratate
+                    </span>
                 }
             </div>
 
@@ -89,6 +97,9 @@
 
     [Parameter]
     public bool? OrderPending { get; set; }
+
+    [Parameter]
+    public int MissedRounds { get; set; }
 
     private static string Value(int? amount) => amount?.ToString() ?? "—";
 }

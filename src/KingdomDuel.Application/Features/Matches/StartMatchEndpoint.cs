@@ -59,6 +59,7 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
         match.Round = 1;
         match.Status = MatchStatus.InProgress;
         match.CurrentEvent = engine.PickRandomEvent();
+        RoundResolver.StartRoundClock(match);
         await dbContext.SaveChangesAsync(ct);
 
         await Send.OkAsync(match.ToStateDto(userId), ct);

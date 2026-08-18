@@ -1,0 +1,90 @@
+@using System.Globalization
+@implements IAsyncDisposable
+
+@if (left is not null && RoundSeconds > 0)
+{
+    <div class="round-timer @(Expired ? "expired" : Urgent ? "urgent" : null)">
+        <div class="track" role="progressbar"
+             aria-label="Timp rămas din rundă"
+             aria-valuemin="0" aria-valuemax="@RoundSeconds" aria-valuenow="@Whole">
+            <div class="fill" style="width: @Width%"></div>
+        </div>
+
+        @if (Expired)
+        {
+            <span class="note">Timpul a expirat, se așteaptă rezolvarea</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public int? SecondsRemaining { get; set; }
+
+    [Parameter, EditorRequired]
+    public int RoundSeconds { get; set; }
+
+    private const double TickSeconds = 0.25;
+    private const double ResyncDrift = 1.5;
+    private const int UrgentUnder = 10;
+
+    private static readonly TimeSpan Tick = TimeSpan.FromSeconds(TickSeconds);
+
+    private readonly CancellationTokenSource cts = new();
+
+    private double? left;
+
+    private bool Expired => left <= 0;
+
+    private bool Urgent => left <= UrgentUnder;
+
+    private int Whole => (int)Math.Ceiling(left ?? 0);
+
+    private string Width => Math.Clamp((left ?? 0) / RoundSeconds * 100, 0, 100)
+        .ToString("0.##", CultureInfo.InvariantCulture);
+
+    protected override void OnParametersSet()
+    {
+        if (SecondsRemaining is not { } fromServer)
+        {
+            left = null;
+            return;
+        }
+
+        if (left is null || Math.Abs(left.Value - fromServer) > ResyncDrift)
+        {
+            left = fromServer;
+        }
+    }
+
+    protected override void OnInitialized() => _ = TickLoopAsync(cts.Token);
+
+    private async Task TickLoopAsync(CancellationToken ct)
+    {
+        using var timer = new PeriodicTimer(Tick);
+
+        try
+        {
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                if (left is not > 0)
+                {
+                    continue;
+                }
+
+                left = Math.Max(0, left.Value - TickSeconds);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Componenta a fost distrusă.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await cts.CancelAsync();
+        cts.Dispose();
+    }
+}

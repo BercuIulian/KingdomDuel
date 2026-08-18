@@ -65,7 +65,8 @@ else
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
-                        OrderPending="OrderPendingFor(1)" />
+                        OrderPending="OrderPendingFor(1)"
+                        MissedRounds="state.Player1MissedRounds" />
 
             <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
                         Power2="state.Player2Kingdom?.TotalPower ?? 0"
@@ -77,7 +78,8 @@ else
                         Kingdom="state.Player2Kingdom"
                         Mirrored="true"
                         IsYou="Side == 2"
-                        OrderPending="OrderPendingFor(2)" />
+                        OrderPending="OrderPendingFor(2)"
+                        MissedRounds="state.Player2MissedRounds" />
         </section>
 
         <section class="event">
@@ -86,6 +88,13 @@ else
             <p>@CurrentEvent.Note</p>
             <span class="eyebrow">Evenimentul rundei</span>
         </section>
+
+        <div class="timer-row">
+            @if (state.Status == MatchStatus.InProgress)
+            {
+                <RoundTimer SecondsRemaining="state.SecondsRemaining" RoundSeconds="state.RoundSeconds" />
+            }
+        </div>
 
         @if (state.Status == MatchStatus.Completed)
         {
@@ -420,6 +429,11 @@ else
                 current == GameEventType.DiplomaticFair
                     ? $"Târgul ridică câștigul la +{GameConstants.DiplomacyFairMoraleGain} moral."
                     : null);
+
+            yield return new(
+                ActionType.Idle, "Fără ordin", "hourglass",
+                "Nu primești nimic și rămâi descoperit unui atac.",
+                null);
         }
     }
 
@@ -428,7 +442,9 @@ else
         ActionType.Attack => "Atac",
         ActionType.Defend => "Fortificare",
         ActionType.Trade => "Comerț",
-        _ => "Diplomație",
+        ActionType.Diplomacy => "Diplomație",
+        ActionType.Idle => "Fără ordin",
+        _ => action.ToString(),
     };
 
     private static string OrderVerb(ActionType action) => action switch
@@ -436,7 +452,9 @@ else
         ActionType.Attack => "a lansat un atac",
         ActionType.Defend => "s-a fortificat",
         ActionType.Trade => "a deschis drumurile comerciale",
-        _ => "a trimis soli",
+        ActionType.Diplomacy => "a trimis soli",
+        ActionType.Idle => "nu a dat niciun ordin oastei",
+        _ => action.ToString(),
     };
 
     private void ChooseOrder(ActionType action) => chosen = action;
@@ -529,10 +547,12 @@ else
     {
         GameOverReason.Player2Collapsed
             or GameOverReason.RoundsExhaustedPlayer1Wins
-            or GameOverReason.Player2Left => 1,
+            or GameOverReason.Player2Left
+            or GameOverReason.Player2Disconnected => 1,
         GameOverReason.Player1Collapsed
             or GameOverReason.RoundsExhaustedPlayer2Wins
-            or GameOverReason.Player1Left => 2,
+            or GameOverReason.Player1Left
+            or GameOverReason.Player1Disconnected => 2,
         _ => 0,
     };
 
@@ -554,7 +574,11 @@ else
         {
             if (WinnerSide == 0)
             {
-                return state!.GameOverReason == GameOverReason.BothCollapsed ? "Fără învingător" : "Egalitate";
+                return state!.GameOverReason
+                    is GameOverReason.BothCollapsed
+                    or GameOverReason.BothDisconnected
+                    ? "Fără învingător"
+                    : "Egalitate";
             }
 
             if (!IsPlayer)
@@ -571,6 +595,8 @@ else
         GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit",
         GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed => "Regat prăbușit",
         GameOverReason.Player1Left or GameOverReason.Player2Left => "Meci încheiat prin abandon",
+        GameOverReason.Player1Disconnected or GameOverReason.Player2Disconnected => "Meci încheiat prin inactivitate",
+        GameOverReason.BothDisconnected => "Ambele tabere au încetat să dea ordine",
         _ => $"Rundele s-au epuizat · {state.TotalRounds} runde",
     };
 
@@ -633,6 +659,9 @@ else
         GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",
         GameOverReason.Player1Left => $"{Player1Name} a părăsit meciul. {Player2Name} câștigă prin abandon.",
         GameOverReason.Player2Left => $"{Player2Name} a părăsit meciul. {Player1Name} câștigă prin abandon.",
+        GameOverReason.Player1Disconnected => $"{Player1Name} este inactiv, {Player2Name} câștigă.",
+        GameOverReason.Player2Disconnected => $"{Player2Name} este inactiv, {Player1Name} câștigă.",
+        GameOverReason.BothDisconnected => "Ambii jucători sunt inactivi. Meciul se încheie fără învingător.",
         _ => "Meciul s-a încheiat.",
     };
 

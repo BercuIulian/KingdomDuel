@@ -15,8 +15,7 @@ app.UseForwardedHeaders();
 
 app.UseExceptionConfiguration();
 
-// Serve the hosted Blazor WASM client (its static assets + framework files).
-app.MapStaticAssets();
+app.MapStaticAssets().DisableRateLimiting();
 
 app.UseApiConfiguration();
 
@@ -28,6 +27,6 @@ await app.ApplyDatabaseMigrations();
 app.MapHealthEndpoints();
 
 // Any non-API, non-file route falls back to the SPA so client-side routing works.
-app.MapFallbackToFile("index.html");
+app.MapFallbackToFile("index.html").DisableRateLimiting();
 
 await app.RunAsync();

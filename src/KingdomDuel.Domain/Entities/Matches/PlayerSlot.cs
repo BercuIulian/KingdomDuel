@@ -11,5 +11,7 @@ public sealed class PlayerSlot : Entity
 
     public bool IsReady { get; set; }
 
+    public int MissedRounds { get; set; }
+
     public Kingdom Kingdom { get; set; } = new();
 }
