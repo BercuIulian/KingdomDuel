@@ -53,6 +53,8 @@ internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
                 RoundResolver.ResolveIfReady(match);
             }
 
+            MatchRecorder.RecordCompleted(dbContext, match);
+
             try
             {
                 await dbContext.SaveChangesAsync(ct);

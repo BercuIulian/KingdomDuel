@@ -41,6 +41,7 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
             case MatchStatus.InProgress when match.Player1 is not null && match.Player2 is not null:
                 match.Status = MatchStatus.Completed;
                 match.GameOverReason = isPlayer1 ? GameOverReason.Player1Left : GameOverReason.Player2Left;
+                MatchRecorder.RecordCompleted(dbContext, match);
                 break;
 
             case MatchStatus.Completed when IsAbandon(match.GameOverReason):
