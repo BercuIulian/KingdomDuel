@@ -659,12 +659,9 @@ else
         GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",
         GameOverReason.Player1Left => $"{Player1Name} a părăsit meciul. {Player2Name} câștigă prin abandon.",
         GameOverReason.Player2Left => $"{Player2Name} a părăsit meciul. {Player1Name} câștigă prin abandon.",
-        GameOverReason.Player1Disconnected =>
-            $"{Player1Name} n-a mai dat ordine {GameConstants.MissedRoundsBeforeForfeit} runde. {Player2Name} câștigă.",
-        GameOverReason.Player2Disconnected =>
-            $"{Player2Name} n-a mai dat ordine {GameConstants.MissedRoundsBeforeForfeit} runde. {Player1Name} câștigă.",
-        GameOverReason.BothDisconnected =>
-            $"Niciunul n-a mai dat ordine {GameConstants.MissedRoundsBeforeForfeit} runde. Meciul se încheie fără învingător.",
+        GameOverReason.Player1Disconnected => $"{Player1Name} este inactiv, {Player2Name} câștigă.",
+        GameOverReason.Player2Disconnected => $"{Player2Name} este inactiv, {Player1Name} câștigă.",
+        GameOverReason.BothDisconnected => "Ambii jucători sunt inactivi. Meciul se încheie fără învingător.",
         _ => "Meciul s-a încheiat.",
     };
 

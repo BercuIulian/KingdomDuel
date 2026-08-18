@@ -85,10 +85,13 @@ else
             </div>
 
             <div class="field">
-                <label for="round-seconds">Timp pe rundă <span class="unit">sec</span></label>
-                <input id="round-seconds" type="number"
-                       min="@GameConstants.MinRoundSeconds" max="@GameConstants.MaxRoundSeconds" step="15"
-                       disabled="@(!isHost)" @bind="roundSeconds" @bind:after="PersistLobbyAsync" />
+                <label for="round-seconds">Timp pe rundă</label>
+                <div class="field-input">
+                    <input id="round-seconds" type="number"
+                           min="@GameConstants.MinRoundSeconds" max="@GameConstants.MaxRoundSeconds" step="15"
+                           disabled="@(!isHost)" @bind="roundSeconds" @bind:after="PersistLobbyAsync" />
+                    <span class="unit">sec</span>
+                </div>
             </div>
 
             @if (settingsError is not null)
