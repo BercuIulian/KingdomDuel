@@ -157,7 +157,7 @@ else
 </section>
 
 @code {
-    [SupplyParameterFromQuery]
+    [SupplyParameterFromQuery(Name = Routes.CodeParameter)]
     public string? Code { get; set; }
 
     // --- Setări meci ---
@@ -227,10 +227,10 @@ else
     {
         pollCts.Cancel();
         await LeaveAsync();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo(Routes.Play);
     }
 
-    private void GoHome() => Navigation.NavigateTo("/");
+    private void GoHome() => Navigation.NavigateTo(Routes.Play);
 
     private async Task LeaveAsync()
     {
@@ -249,7 +249,7 @@ else
     }
 
     private void GoToGame()
-        => Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(matchCode!)}");
+        => Navigation.NavigateTo(Routes.GameFor(matchCode!));
 
     private async Task StartMatchAsync()
     {

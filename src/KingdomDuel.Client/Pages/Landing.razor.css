@@ -1,0 +1,488 @@
+/* ---------- Bara de sus ---------- */
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    background: #0f1219;
+    border-bottom: 1px solid var(--rule);
+}
+
+.topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: 0.8rem 1.5rem;
+}
+
+.mark {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.55rem;
+}
+
+.mark-ico {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--gold);
+}
+
+.mark-name {
+    font-family: var(--font-display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    color: var(--gold-lit);
+}
+
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.link-signin {
+    font-family: var(--font-data);
+    font-size: 0.74rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    text-decoration: none;
+    padding: 0.4rem 0.2rem;
+    border-bottom: 1px solid transparent;
+    transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.link-signin:hover {
+    color: var(--gold-lit);
+    border-bottom-color: var(--hairline-strong);
+}
+
+/* ---------- Butoane ---------- */
+
+.btn-primary,
+.btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.72rem 1.4rem;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    transition: filter 0.15s ease, border-color 0.15s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.btn-primary {
+    border: 1px solid rgba(198, 161, 91, 0.65);
+    background: linear-gradient(180deg, #d9bd72, #c6a15b);
+    color: #1b1408;
+}
+
+.btn-primary:hover {
+    filter: brightness(1.07);
+}
+
+.btn-primary.compact {
+    padding: 0.45rem 0.9rem;
+    font-family: var(--font-display);
+    font-size: 0.74rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border-radius: 999px;
+}
+
+.btn-ghost {
+    border: 1px solid var(--hairline);
+    background: rgba(12, 15, 21, 0.55);
+    color: var(--gold-lit);
+}
+
+.btn-ghost:hover {
+    border-color: var(--hairline-strong);
+    background: rgba(198, 161, 91, 0.1);
+}
+
+.btn-primary:focus-visible,
+.btn-ghost:focus-visible,
+.link-signin:focus-visible {
+    outline: 2px solid var(--gold-lit);
+    outline-offset: 2px;
+}
+
+.cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+    justify-content: center;
+}
+
+/* ---------- Etichete și titluri ---------- */
+
+.eyebrow {
+    margin: 0 0 0.9rem;
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 7.5vw, 4.5rem);
+    font-weight: 700;
+    line-height: 0.99;
+    letter-spacing: 0.005em;
+    color: var(--gold-lit);
+    text-wrap: balance;
+}
+
+h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(1.6rem, 3.4vw, 2.3rem);
+    font-weight: 600;
+    line-height: 1.1;
+    letter-spacing: 0.01em;
+    color: var(--gold-lit);
+    text-wrap: balance;
+}
+
+h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.06rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--gold-lit);
+}
+
+/* ---------- Eroul ---------- */
+
+.hero {
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: clamp(2rem, 6vh, 4rem) 1.5rem clamp(3rem, 8vh, 5rem);
+    text-align: center;
+}
+
+.lead {
+    max-width: 38rem;
+    margin: 1.5rem auto 0;
+    font-size: 1.08rem;
+    line-height: 1.62;
+    color: var(--text);
+}
+
+.hero .cta-row {
+    margin-top: 2rem;
+}
+
+.duel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(0.9rem, 4vw, 2.5rem);
+    margin: clamp(2.5rem, 7vh, 4rem) auto 0;
+}
+
+.order {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.55rem;
+    width: clamp(8.5rem, 26vw, 11rem);
+    margin: 0;
+    padding: 1.15rem 0.9rem 1rem;
+    border-radius: 14px;
+}
+
+.order-slot {
+    display: grid;
+    place-items: center;
+    min-height: 2.6em;
+    line-height: 1.3;
+    text-align: center;
+    font-family: var(--font-data);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+.order-face,
+.wax {
+    display: grid;
+    place-items: center;
+    width: clamp(2.9rem, 9.5vw, 4rem);
+    height: clamp(2.9rem, 9.5vw, 4rem);
+}
+
+.order-face {
+    font-size: clamp(2.4rem, 8vw, 3.4rem);
+}
+
+.order figcaption {
+    font-family: var(--font-display);
+    font-size: 0.98rem;
+    letter-spacing: 0.06em;
+}
+
+.order.revealed {
+    border: 1px solid var(--hairline-strong);
+    background: rgba(198, 161, 91, 0.07);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+}
+
+.order.revealed .order-face,
+.order.revealed figcaption {
+    color: var(--gold-lit);
+}
+
+.order.sealed {
+    border: 1px solid rgba(122, 49, 48, 0.75);
+    background:
+        radial-gradient(circle at 50% 46%, rgba(122, 49, 48, 0.28) 0%, rgba(122, 49, 48, 0.05) 62%, transparent 100%),
+        rgba(12, 15, 21, 0.6);
+}
+
+.wax {
+    border-radius: 50%;
+    border: 1px solid rgba(196, 117, 108, 0.45);
+    background: radial-gradient(circle at 38% 32%, #96413d 0%, #7a3130 55%, #5c2422 100%);
+    box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.12), 0 4px 10px rgba(0, 0, 0, 0.4);
+    font-size: 1.5rem;
+    color: rgba(28, 10, 10, 0.62);
+}
+
+.order.sealed figcaption {
+    color: var(--wax-lit);
+    font-style: italic;
+}
+
+.duel-vs {
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+.duel-note {
+    max-width: 26rem;
+    margin: 1.4rem auto 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .order {
+        animation: approach 560ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    }
+
+    .order.revealed {
+        --from: -1.75rem;
+    }
+
+    .order.sealed {
+        --from: 1.75rem;
+        animation-delay: 130ms;
+    }
+
+    .duel-vs,
+    .duel-note {
+        animation: settle 500ms ease-out 320ms both;
+    }
+
+    @keyframes approach {
+        from {
+            opacity: 0;
+            transform: translateX(var(--from));
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes settle {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+}
+
+/* ---------- Benzile de conținut ---------- */
+
+.band {
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: clamp(2.5rem, 7vh, 4rem) 1.5rem;
+    border-top: 1px solid var(--rule);
+}
+
+.band-lead {
+    max-width: var(--column);
+    margin: 1rem 0 0;
+    font-size: 1rem;
+    line-height: 1.62;
+    color: var(--text-dim);
+}
+
+/* ---------- Pașii rundei (o secvență reală, deci numerotată) ---------- */
+
+.steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.75rem;
+    margin: 2.25rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.steps li {
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--hairline);
+}
+
+.step-head {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    margin-bottom: 0.8rem;
+}
+
+.step-no {
+    font-family: var(--font-display);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    color: var(--gold);
+}
+
+.step-ico {
+    display: block;
+    font-size: 1.35rem;
+    color: var(--gold);
+}
+
+.steps h3 {
+    margin-bottom: 0.5rem;
+}
+
+.steps p {
+    margin: 0;
+    font-size: 0.94rem;
+    line-height: 1.58;
+    color: var(--text-dim);
+}
+
+/* ---------- Tabla și finalul meciului ---------- */
+
+.board-art {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(10rem, 0.55fr) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2.25rem;
+    padding: 1.25rem;
+    border: 1px solid var(--hairline);
+    border-radius: 14px;
+    background: rgba(12, 15, 21, 0.4);
+}
+
+.board-art ::deep .scale figcaption {
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+}
+
+.board-art ::deep .house .art {
+    height: clamp(96px, 11vw, 132px);
+}
+
+.board-art ::deep .house .name {
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+}
+
+.ending {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1.5rem 2rem;
+    margin: 2rem 0 0;
+}
+
+.ending dt {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--gold);
+}
+
+.ending dd {
+    margin: 0.45rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    color: var(--text-dim);
+}
+
+/* ---------- Închiderea ---------- */
+
+.close {
+    max-width: var(--page);
+    margin: 0 auto;
+    padding: clamp(2.75rem, 8vh, 4.5rem) 1.5rem clamp(3rem, 9vh, 5rem);
+    border-top: 1px solid var(--rule);
+    text-align: center;
+}
+
+.close p {
+    max-width: 34rem;
+    margin: 1.1rem auto 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-dim);
+}
+
+.close-note {
+    font-size: 0.9rem;
+    color: var(--text-faint);
+}
+
+/* ---------- Ecrane înguste ---------- */
+
+@media (max-width: 62rem) {
+    .board-art {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 34rem) {
+    .topbar-inner {
+        padding: 0.75rem 1rem;
+    }
+
+    .hero,
+    .band,
+    .close {
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+
+    .cta-row .btn-primary,
+    .cta-row .btn-ghost {
+        flex: 1 1 100%;
+    }
+}

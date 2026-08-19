@@ -1,0 +1,8 @@
+.landing-shell {
+    min-height: 100dvh;
+    display: flow-root;
+    --wax-lit: #c4756c;
+    --rule: rgba(198, 161, 91, 0.16);
+    --page: 68rem;
+    --column: 46rem;
+}

@@ -90,7 +90,6 @@
     filter: brightness(1.07);
 }
 
-/* Pop-up: același scrim + panou centrat ca overlay-urile din pagina de meci */
 .modal-scrim {
     position: fixed;
     inset: 0;
@@ -233,7 +232,6 @@
     box-shadow: 0 0 0 2px rgba(198, 161, 91, 0.2);
 }
 
-/* Mesaj de eroare la alăturare */
 .join-error {
     max-width: 22rem;
     margin: 0.6rem auto 0;
@@ -241,7 +239,6 @@
     font-size: 0.9rem;
 }
 
-/* Buton principal sub input */
 .btn-create {
     display: block;
     margin: 0.9rem auto 0;
