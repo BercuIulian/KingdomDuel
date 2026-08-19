@@ -1,4 +1,5 @@
 @page "/profile"
+@page "/profile/{Section?}"
 @attribute [Authorize]
 @using KingdomDuel.Client.ApiClients
 @using KingdomDuel.Shared.Dtos.Auth
@@ -46,6 +47,24 @@ else
         }
         else
         {
+            <div class="profile-body">
+
+                <nav class="side-nav" aria-label="Secțiunile contului">
+                    <button type="button" class="nav-item @(IsHistory ? "" : "active")" @onclick="@(() => Go(null))">
+                        <span class="nav-icon">👤</span> General
+                    </button>
+                    <button type="button" class="nav-item @(IsHistory ? "active" : "")" @onclick="@(() => Go(HistorySection))">
+                        <span class="nav-icon">📜</span> Istoricul meciurilor
+                    </button>
+                </nav>
+
+                <div class="section">
+                @if (IsHistory)
+                {
+                    <MatchHistory />
+                }
+                else
+                {
             <div class="panel">
                 <div class="row">
                     <span class="row-text">
@@ -77,6 +96,10 @@ else
                     </span>
                     <button type="button" class="btn-edit" @onclick="() => Open(Editable.Password)">Schimbă</button>
                 </div>
+            </div>
+                }
+                </div>
+
             </div>
         }
     </section>
@@ -172,6 +195,17 @@ else
 
 @code {
     private enum Editable { None, UserName, Email, Password }
+
+    private const string HistorySection = "istoric";
+
+    [Parameter]
+    public string? Section { get; set; }
+
+    private bool IsHistory =>
+        string.Equals(Section, HistorySection, StringComparison.OrdinalIgnoreCase);
+
+    private void Go(string? section) =>
+        Navigation.NavigateTo(section is null ? "/profile" : $"/profile/{section}");
 
     private UserProfileDto? profile;
     private string? loadError;

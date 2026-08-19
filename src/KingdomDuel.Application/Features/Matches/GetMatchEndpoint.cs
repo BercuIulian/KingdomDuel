@@ -29,6 +29,8 @@ internal sealed class GetMatchEndpoint(AppDbContext dbContext)
 
         if (RoundResolver.ExpireIfDue(match))
         {
+            MatchRecorder.RecordCompleted(dbContext, match);
+
             try
             {
                 await dbContext.SaveChangesAsync(ct);

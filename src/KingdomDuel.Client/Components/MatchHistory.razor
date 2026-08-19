@@ -1,0 +1,152 @@
+@using System.Globalization
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Shared.Dtos.Matches
+@inject ApiClient Api
+
+<section class="history">
+
+    <header class="history-head">
+        <h2>Istoricul meciurilor</h2>
+
+        @if (history is { Played: > 0 })
+        {
+            <dl class="tally">
+                <div class="stat won">
+                    <dt>Victorii</dt>
+                    <dd>@history.Won</dd>
+                </div>
+                <div class="stat lost">
+                    <dt>Înfrângeri</dt>
+                    <dd>@history.Lost</dd>
+                </div>
+                @if (history.Draw > 0)
+                {
+                    <div class="stat">
+                        <dt>Egaluri</dt>
+                        <dd>@history.Draw</dd>
+                    </div>
+                }
+                <div class="stat rate">
+                    <dt>Winrate</dt>
+                    <dd>@WinRate%</dd>
+                </div>
+            </dl>
+        }
+    </header>
+
+    @if (loadError is not null)
+    {
+        <p class="history-note error">@loadError</p>
+    }
+    else if (history is null)
+    {
+        <p class="history-note">Se încarcă…</p>
+    }
+    else if (history.Entries.Count == 0)
+    {
+        <p class="history-note">Niciun meci înregistrat încă. Primul duel îți deschide cronica.</p>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-outcome">Rezultat</th>
+                        <th class="col-opponent">Adversar</th>
+                        <th class="col-reason">Cum s-a încheiat</th>
+                        <th class="col-rounds" title="Runda la care s-a oprit, din câte erau stabilite">Runde</th>
+                        <th class="col-power" title="Puterea finală: a ta față de a adversarului">Putere (tu · adv)</th>
+                        <th class="col-when">Data</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var entry in history.Entries)
+                    {
+                        <tr class="@OutcomeClass(entry.Outcome)">
+                            <td class="col-outcome">
+                                <span class="badge">@OutcomeLabel(entry.Outcome)</span>
+                            </td>
+                            <td class="col-opponent">@entry.OpponentName</td>
+                            <td class="col-reason">@ReasonText(entry)</td>
+                            <td class="col-rounds">@entry.RoundsPlayed/@entry.TotalRounds</td>
+                            <td class="col-power">
+                                <span class="mine">@entry.YourPower</span><span class="versus">·</span><span class="theirs">@entry.OpponentPower</span>
+                            </td>
+                            <td class="col-when">@Moment(entry.StartedAt)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private MatchHistoryDto? history;
+    private string? loadError;
+
+    private int WinRate => history is { Played: > 0 }
+        ? (int)Math.Round(history.Won * 100.0 / history.Played)
+        : 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            history = await Api.GetMatchHistoryAsync();
+        }
+        catch (ApiException ex)
+        {
+            loadError = ApiErrorReader.Describe(ex, $"Nu am putut încărca istoricul (cod {ex.StatusCode}).");
+        }
+        catch (Exception)
+        {
+            loadError = "Nu am putut încărca istoricul.";
+        }
+    }
+
+    private static string OutcomeClass(MatchOutcome outcome) => outcome switch
+    {
+        MatchOutcome.Won => "won",
+        MatchOutcome.Lost => "lost",
+        MatchOutcome.Draw => "draw",
+        _ => string.Empty,
+    };
+
+    private static string OutcomeLabel(MatchOutcome outcome) => outcome switch
+    {
+        MatchOutcome.Won => "Victorie",
+        MatchOutcome.Lost => "Înfrângere",
+        MatchOutcome.Draw => "Egalitate",
+        _ => outcome.ToString(),
+    };
+
+    private static string ReasonText(MatchHistoryEntryDto entry) => entry.Reason switch
+    {
+        GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed =>
+            entry.Outcome == MatchOutcome.Won ? "regatul adversarului s-a prăbușit" : "regatul tău s-a prăbușit",
+
+        GameOverReason.BothCollapsed => "ambele regate s-au prăbușit",
+
+        GameOverReason.Player1Left or GameOverReason.Player2Left =>
+            entry.Outcome == MatchOutcome.Won ? "adversarul a părăsit meciul" : "ai părăsit meciul",
+
+        GameOverReason.Player1Disconnected or GameOverReason.Player2Disconnected =>
+            entry.Outcome == MatchOutcome.Won ? "adversarul a fost inactiv" : "ai fost inactiv",
+
+        GameOverReason.BothDisconnected => "ambii au fost inactivi",
+
+        GameOverReason.RoundsExhaustedDraw => "egalitate la putere",
+
+        GameOverReason.RoundsExhaustedPlayer1Wins or GameOverReason.RoundsExhaustedPlayer2Wins =>
+            "decis la putere",
+
+        _ => "meciul s-a încheiat",
+    };
+
+    private static string Moment(DateTimeOffset startedAt) =>
+        startedAt.ToLocalTime().ToString("dd.MM.yyyy, HH:mm", CultureInfo.InvariantCulture);
+}

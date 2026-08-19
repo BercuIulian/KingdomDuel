@@ -25,5 +25,7 @@ public sealed class Match : Entity
 
     public List<RoundResult> History { get; private set; } = new();
 
+    public DateTimeOffset? StartedAt { get; set; }
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 }

@@ -98,6 +98,9 @@ namespace KingdomDuel.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(45);
 
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<int>("StartingGold")
                         .HasColumnType("integer");
 
@@ -135,6 +138,54 @@ namespace KingdomDuel.Persistence.Migrations
                     b.HasIndex("Status");
 
                     b.ToTable("matches", (string)null);
+                });
+
+            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.MatchRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OpponentName")
+                        .IsRequired()
+                        .HasMaxLength(24)
+                        .HasColumnType("character varying(24)");
+
+                    b.Property<int>("OpponentPower")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Outcome")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)");
+
+                    b.Property<int>("RoundsPlayed")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("StartedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("TotalRounds")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("YourPower")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "StartedAt")
+                        .IsUnique()
+                        .IsDescending(false, true);
+
+                    b.ToTable("match_records", (string)null);
                 });
 
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.PlayerSlot", b =>
@@ -264,6 +315,15 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Navigation("Player1");
 
                     b.Navigation("Player2");
+                });
+
+            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.MatchRecord", b =>
+                {
+                    b.HasOne("KingdomDuel.Domain.Entities.Users.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.PlayerSlot", b =>

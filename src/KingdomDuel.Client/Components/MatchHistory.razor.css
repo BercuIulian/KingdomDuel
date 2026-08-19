@@ -1,0 +1,177 @@
+.history {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(198, 161, 91, 0.35);
+    border-radius: 14px;
+    background: rgba(20, 24, 33, 0.55);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.history-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.35rem;
+    border-bottom: 1px solid rgba(198, 161, 91, 0.18);
+}
+
+.history-head h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #e9d9a8;
+}
+
+.tally {
+    display: flex;
+    gap: 1.6rem;
+    margin: 0;
+}
+
+.stat {
+    text-align: right;
+}
+
+.stat dt {
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #767d88;
+}
+
+.stat dd {
+    margin: 0.1rem 0 0;
+    font-size: 1.35rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #e9d9a8;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat.won dd { color: #6fbf73; }
+.stat.lost dd { color: #e39b9b; }
+
+.history-note {
+    margin: 0;
+    padding: 2.5rem 1.35rem;
+    text-align: center;
+    color: #767d88;
+    font-size: 0.9rem;
+}
+
+.history-note.error {
+    color: #e39b9b;
+}
+
+.table-scroll {
+    overflow: auto;
+    min-height: 0;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0.6rem 1rem;
+    text-align: left;
+    white-space: nowrap;
+    font-size: 0.64rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #767d88;
+    background: #171b24;
+    border-bottom: 1px solid rgba(198, 161, 91, 0.22);
+}
+
+tbody td {
+    padding: 0.62rem 1rem;
+    color: #c9ccd3;
+    vertical-align: middle;
+}
+
+tbody tr + tr td {
+    border-top: 1px solid rgba(198, 161, 91, 0.1);
+}
+
+tbody tr:hover td {
+    background: rgba(198, 161, 91, 0.05);
+}
+
+.col-opponent {
+    color: #e9d9a8;
+    overflow-wrap: anywhere;
+}
+
+.col-reason {
+    color: #9ea4af;
+    width: 100%;
+}
+
+.col-rounds,
+.col-power,
+.col-when {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.col-when {
+    color: #9ea4af;
+}
+
+.col-power .mine {
+    color: #e9d9a8;
+    font-weight: 600;
+}
+
+.col-power .versus {
+    margin: 0 0.35rem;
+    color: #565b66;
+}
+
+.col-power .theirs {
+    color: #8b909b;
+}
+
+.badge {
+    display: inline-block;
+    min-width: 5.9rem;
+    padding: 0.16rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid currentColor;
+    font-size: 0.62rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+tbody tr.won .badge { color: #6fbf73; background: rgba(111, 191, 115, 0.1); }
+tbody tr.lost .badge { color: #e39b9b; background: rgba(227, 155, 155, 0.1); }
+tbody tr.draw .badge { color: #9ea4af; background: rgba(158, 164, 175, 0.1); }
+
+@media (max-width: 900px) {
+    .col-power {
+        display: none;
+    }
+}
+
+@media (max-width: 700px) {
+    .col-rounds {
+        display: none;
+    }
+
+    .tally {
+        gap: 1.1rem;
+    }
+}

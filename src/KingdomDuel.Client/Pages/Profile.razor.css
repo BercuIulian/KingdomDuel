@@ -1,8 +1,82 @@
 .profile {
     width: 100%;
-    max-width: 34rem;
+    max-width: 68rem;
     max-height: calc(100dvh - 3rem);
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.profile-body {
+    display: grid;
+    grid-template-columns: 15rem minmax(0, 1fr);
+    gap: 1.5rem;
+    min-height: 0;
+}
+
+.side-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 0.9rem;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: none;
+    color: #9ea4af;
+    font: inherit;
+    font-size: 0.92rem;
+    text-align: left;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.nav-item:hover {
+    color: #e9d9a8;
+    background: rgba(198, 161, 91, 0.07);
+}
+
+.nav-item.active {
+    color: #e9d9a8;
+    border-color: rgba(198, 161, 91, 0.35);
+    background: rgba(198, 161, 91, 0.12);
+}
+
+.nav-item:focus-visible {
+    outline: 2px solid #e9d9a8;
+    outline-offset: 2px;
+}
+
+.nav-icon {
+    font-size: 1rem;
+}
+
+.section {
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+@media (max-width: 820px) {
+    .profile-body {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .side-nav {
+        flex-direction: row;
+    }
+
+    .nav-item {
+        flex: 1 1 0;
+        justify-content: center;
+    }
 }
 
 .profile-nav {
