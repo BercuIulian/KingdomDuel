@@ -1,0 +1,196 @@
+@page "/"
+@layout LandingLayout
+@using KingdomDuel.Shared.Dtos.Matches
+@inject NavigationManager Navigation
+
+<PageTitle>Kingdom Duel — duel de strategie 1v1</PageTitle>
+
+@if (isAuthenticationKnown)
+{
+    <header class="topbar">
+        <div class="topbar-inner">
+            <span class="mark">
+                <span class="mark-ico"><Glyph Name="swords" /></span>
+                <span class="mark-name">Kingdom Duel</span>
+            </span>
+
+            <nav class="topbar-nav">
+                <RulesBook />
+                <a class="link-signin" href="@Routes.Login">Intră în cont</a>
+                <a class="btn-primary compact" href="@Routes.NewAccount">Creează cont</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <p class="eyebrow">Duel 1v1 · direct în browser</p>
+
+            <h1>
+                Două regate.<br />
+                Un singur învingător.
+            </h1>
+
+            <p class="lead">
+                Kingdom Duel e un joc de strategie pentru doi jucători. Fiecare
+                conduce un regat gestionând resursele disponibile. În fiecare rundă dați
+                câte un ordin, fără să vedeți ce alege celălalt — și ciocnirea celor
+                două ordine decide ce se întâmplă.
+            </p>
+
+            <div class="cta-row">
+                <a class="btn-primary" href="@Routes.NewAccount">Creează cont și joacă</a>
+                <a class="btn-ghost" href="@Routes.Login">Am deja cont</a>
+            </div>
+
+            <div class="duel">
+                <figure class="order revealed">
+                    <span class="order-slot">ordinul tău</span>
+                    <span class="order-face"><Glyph Name="sword" /></span>
+                    <figcaption>Atac</figcaption>
+                </figure>
+
+                <span class="duel-vs" aria-hidden="true">vs</span>
+
+                <figure class="order sealed">
+                    <span class="order-slot">ordinul adversarului</span>
+                    <span class="wax"><Glyph Name="crown" /></span>
+                    <figcaption>sigilat</figcaption>
+                </figure>
+            </div>
+
+            <p class="duel-note">
+                Ordinele se dezvăluie abia după ce le-ați trimis amândoi.
+            </p>
+        </section>
+
+        <section class="band">
+            <p class="eyebrow">Anatomia unei runde</p>
+            <h2>Cele 3 etape ale unei runde</h2>
+
+            <ol class="steps">
+                <li>
+                    <span class="step-head">
+                        <span class="step-no">I</span>
+                        <span class="step-ico"><Glyph Name="moon" /></span>
+                    </span>
+                    <h3>Se trage evenimentul</h3>
+                    <p>
+                        În fiecare rundă se va petrece un eveniment aleatoriu. Efectul ține doar o rundă
+                        și e același pentru ambii jucători.
+                    </p>
+                </li>
+                <li>
+                    <span class="step-head">
+                        <span class="step-no">II</span>
+                        <span class="step-ico"><Glyph Name="seal" /></span>
+                    </span>
+                    <h3>Trimiteți ordinele</h3>
+                    <p>
+                        Alegeți fiecare una din ordinele valabile în timpul oferit.
+                    </p>
+                </li>
+                <li>
+                    <span class="step-head">
+                        <span class="step-no">III</span>
+                        <span class="step-ico"><Glyph Name="scales" /></span>
+                    </span>
+                    <h3>Se rezolvă runda</h3>
+                    <p>
+                        Se aplică costurile și câștigurile fiecărui ordin, apoi
+                        interacțiunea dintre ele. Vezi ce s-a întâmplat și cum au rămas
+                        cele două regate.
+                    </p>
+                </li>
+            </ol>
+        </section>
+
+        <section class="band">
+            <p class="eyebrow">Tabla de joc</p>
+            <h2>Vezi mereu starea regatelor</h2>
+            <p class="band-lead">
+                Cele două regate stau față în față, cu resursele la vedere. Balanța din
+                mijloc cântărește puterea totală — aur plus trupe plus moral — și ea
+                departajează meciul dacă se termină rundele fără o prăbușire.
+            </p>
+
+            <div class="board-art">
+                <CastleView House="amber" Name="Regatul tău" Kingdom="preview1" />
+
+                <PowerScale Power1="preview1.TotalPower" Power2="preview2.TotalPower"
+                            Name1="Regatul tău" Name2="Adversarul" />
+
+                <CastleView House="steel" Name="Adversarul" Kingdom="preview2" Mirrored="true" />
+            </div>
+
+            <dl class="ending">
+                <div>
+                    <dt>un regat se prăbușește</dt>
+                    <dd>Trupele sau moralul ajung la 0. Meciul se oprește instant.</dd>
+                </div>
+                <div>
+                    <dt>se termină rundele</dt>
+                    <dd>Câștigă puterea totală mai mare. Egalitate între puteri este o remiză.</dd>
+                </div>
+                <div>
+                    <dt>cineva pleacă sau tace</dt>
+                    <dd>
+                        Cine părăsește meciul sau nu mai trimite ordine îl pierde.
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <section class="close">
+            <div class="cta-row">
+                <a class="btn-primary" href="@Routes.NewAccount">Creează cont</a>
+                <a class="btn-ghost" href="@Routes.Login">Intră în cont</a>
+            </div>
+
+            <p class="close-note">
+                Ca să jucați, unul dintre voi creează meciul și îi trimite oponentului codul primit.
+            </p>
+        </section>
+    </main>
+}
+
+@code {
+    [CascadingParameter]
+    private Task<AuthenticationState>? AuthenticationStateTask { get; set; }
+    private bool isAuthenticationKnown;
+
+    private readonly KingdomDto preview1 = new()
+    {
+        Gold = 74,
+        Troops = 41,
+        Morale = 58,
+        TotalPower = 173,
+    };
+
+    private readonly KingdomDto preview2 = new()
+    {
+        Gold = 32,
+        Troops = 55,
+        Morale = 46,
+        TotalPower = 133,
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (AuthenticationStateTask is null)
+        {
+            isAuthenticationKnown = true;
+            return;
+        }
+
+        var state = await AuthenticationStateTask;
+
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo(Routes.Play, replace: true);
+            return;
+        }
+
+        isAuthenticationKnown = true;
+    }
+}

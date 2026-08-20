@@ -1,4 +1,4 @@
-@page "/"
+@page "/play"
 @attribute [Authorize]
 @using KingdomDuel.Client.ApiClients
 @using KingdomDuel.Shared.Dtos.Matches
@@ -51,7 +51,7 @@
         <p class="join-error">@joinError</p>
     }
 
-    <button type="button" class="btn-create" disabled="@isBusy" @onclick="CreateMatch">Crează meci</button>
+    <button type="button" class="btn-create" disabled="@isBusy" @onclick="CreateMatch">Creează meci</button>
 </section>
 
 @if (isWarning && activeMatch is not null)
@@ -135,7 +135,7 @@
             return;
         }
 
-        Navigation.NavigateTo("/lobby");
+        Navigation.NavigateTo(Routes.Lobby);
     }
 
     private async Task OnCodeKeyDown(KeyboardEventArgs e)
@@ -200,7 +200,7 @@
     {
         if (activeMatch is not null)
         {
-            Navigation.NavigateTo($"/game?code={Uri.EscapeDataString(activeMatch.Code)}");
+            Navigation.NavigateTo(Routes.GameFor(activeMatch.Code));
         }
     }
 
@@ -240,7 +240,7 @@
         try
         {
             await Api.JoinMatchAsync(code);
-            Navigation.NavigateTo($"/lobby?code={Uri.EscapeDataString(code)}");
+            Navigation.NavigateTo(Routes.LobbyFor(code));
         }
         catch (ApiException ex)
         {

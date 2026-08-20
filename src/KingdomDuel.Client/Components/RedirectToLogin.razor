@@ -3,6 +3,6 @@
 @code {
     protected override void OnInitialized()
         => Navigation.NavigateTo(
-            LoginRoute.WithReturnUrl(Navigation.ToBaseRelativePath(Navigation.Uri)),
+            Routes.LoginWithReturnUrl(Navigation.ToBaseRelativePath(Navigation.Uri)),
             replace: true);
 }

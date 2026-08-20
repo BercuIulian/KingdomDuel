@@ -37,7 +37,7 @@ public sealed class AuthenticationService(
     {
         await authentication.SignOutAsync();
 
-        navigation.NavigateTo($"/{LoginRoute.Path}");
+        navigation.NavigateTo(Routes.Login);
     }
 
     private async Task<string?> SignInAsync(Func<Task<Shared.Responses.Auth.AuthResponse>> call, string fallback)

@@ -284,7 +284,7 @@ else
 }
 
 @code {
-    [SupplyParameterFromQuery]
+    [SupplyParameterFromQuery(Name = Routes.CodeParameter)]
     public string? Code { get; set; }
 
     private int Side => state?.YourSide ?? 0;
@@ -457,6 +457,16 @@ else
         _ => action.ToString(),
     };
 
+    private static string OrderVerbTogether(ActionType action) => action switch
+    {
+        ActionType.Attack => "s-au atacat reciproc",
+        ActionType.Defend => "s-au fortificat",
+        ActionType.Trade => "au deschis drumurile comerciale",
+        ActionType.Diplomacy => "au trimis soli unul la altul",
+        ActionType.Idle => "nu au dat niciun ordin oștilor",
+        _ => action.ToString(),
+    };
+
     private void ChooseOrder(ActionType action) => chosen = action;
 
     private async Task SendOrder()
@@ -532,9 +542,15 @@ else
 
     // ---------- Cronică ----------
 
-    private string ChronicleLead(RoundResultDto round) =>
-        $"Runda {round.RoundNumber} s-a încheiat. {Player1Name} {OrderVerb(round.Player1Action)}, "
-        + $"iar {Player2Name} {OrderVerb(round.Player2Action)}.";
+    private string ChronicleLead(RoundResultDto round)
+    {
+        var opening = $"Runda {round.RoundNumber} s-a încheiat.";
+
+        return round.Player1Action == round.Player2Action
+            ? $"{opening} {Player1Name} și {Player2Name} {OrderVerbTogether(round.Player1Action)}."
+            : $"{opening} {Player1Name} {OrderVerb(round.Player1Action)}, "
+              + $"iar {Player2Name} {OrderVerb(round.Player2Action)}.";
+    }
 
 
     private string Humanize(string line) => line
@@ -646,7 +662,7 @@ else
         }
 
         await pollCts.CancelAsync();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo(Routes.Play);
     }
 
     private string VerdictText => state!.GameOverReason switch
@@ -699,7 +715,7 @@ else
         }
     }
 
-    private void GoHome() => Navigation.NavigateTo("/");
+    private void GoHome() => Navigation.NavigateTo(Routes.Play);
 
     private async Task LoadStateAsync()
     {

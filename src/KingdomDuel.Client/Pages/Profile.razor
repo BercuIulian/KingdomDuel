@@ -205,7 +205,7 @@ else
         string.Equals(Section, HistorySection, StringComparison.OrdinalIgnoreCase);
 
     private void Go(string? section) =>
-        Navigation.NavigateTo(section is null ? "/profile" : $"/profile/{section}");
+        Navigation.NavigateTo(Routes.ProfileSection(section));
 
     private UserProfileDto? profile;
     private string? loadError;
@@ -261,7 +261,7 @@ else
         }
     }
 
-    private void GoHome() => Navigation.NavigateTo("/");
+    private void GoHome() => Navigation.NavigateTo(Routes.Play);
 
     private Task SignInAgain() => Auth.SignOutLocallyAsync();
 

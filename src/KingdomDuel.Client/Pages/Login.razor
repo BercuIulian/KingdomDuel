@@ -58,8 +58,11 @@
 </section>
 
 @code {
-    [SupplyParameterFromQuery(Name = LoginRoute.ReturnUrlParameter)]
+    [SupplyParameterFromQuery(Name = Routes.ReturnUrlParameter)]
     private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = Routes.NewAccountParameter)]
+    private bool NewAccount { get; set; }
 
     private bool isRegistering;
     private bool isBusy;
@@ -69,6 +72,8 @@
     private string password = string.Empty;
     private string passwordConfirmation = string.Empty;
     private string email = string.Empty;
+
+    protected override void OnInitialized() => isRegistering = NewAccount;
 
     private string TabClass(bool registerTab) => registerTab == isRegistering ? "tab active" : "tab";
 
@@ -106,7 +111,7 @@
 
         if (error is null)
         {
-            Navigation.NavigateTo(ReturnUrl ?? LoginRoute.AfterSignIn, replace: true);
+            Navigation.NavigateTo(Routes.SafeReturnUrl(ReturnUrl), replace: true);
         }
     }
 

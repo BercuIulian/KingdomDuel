@@ -54,11 +54,11 @@ public sealed class BearerTokenHandler(
 
         var current = navigation.ToBaseRelativePath(navigation.Uri);
 
-        if (current.StartsWith(LoginRoute.Path, StringComparison.OrdinalIgnoreCase))
+        if (Routes.IsLogin(current))
         {
             return;
         }
 
-        navigation.NavigateTo(LoginRoute.WithReturnUrl(current));
+        navigation.NavigateTo(Routes.LoginWithReturnUrl(current));
     }
 }
