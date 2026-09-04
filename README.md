@@ -63,11 +63,12 @@ de nimic extern.
 ## Cerințe
 
 - **.NET 10 SDK**
-- **PostgreSQL 18** pe `localhost:5432`, cu o bază numită `KingdomDuel`
+- **Docker Desktop** — Postgres rulează în container, nu instalat pe mașină
 
 ## Cum rulezi
 
 ```bash
+docker compose up -d
 dotnet build
 dotnet run --project src/KingdomDuel.Api
 ```
@@ -76,13 +77,44 @@ Pornește pe `http://localhost:5080` (vezi `Properties/launchSettings.json`) și
 servește acolo și clientul Blazor. În dezvoltare, Swagger UI e la
 `/swagger`; în producție documentul OpenAPI nu se generează deloc.
 
-Migrările EF se aplică automat la pornire.
+Migrările EF se aplică automat la pornire, deci baza goală din container e
+suficientă — nu trebuie pregătită în niciun fel.
 
 ## Baza de date
 
-Connection string-ul e în `src/KingdomDuel.Api/appsettings.json`, cheia
-`ConnectionStrings:KingdomDuelDb`. În producție se dă prin variabila de mediu
-`ConnectionStrings__KingdomDuelDb`.
+Local, Postgres vine din `compose.yaml`; în producție e pe **Neon**. Aplicația
+nu știe diferența: primește doar un connection string.
+
+```bash
+docker compose up -d          # pornește baza (urcă singură și la restart)
+docker compose ps             # „healthy” = e gata de conexiuni
+docker compose logs postgres
+docker compose down           # oprește containerul, păstrează datele
+docker compose down -v        # șterge și volumul: bază goală la următoarea pornire
+```
+
+Datele stau în volumul `kingdomduel-pgdata`, deci supraviețuiesc oprii
+containerului. Portul publicat e **5433**, nu 5432: pe o mașină cu un serviciu
+Postgres nativ pornit, containerul n-ar putea lega 5432, iar aplicația s-ar
+conecta în tăcere la serverul nativ și și-ar face baza acolo. Un client extern
+(pgAdmin, DataGrip) se conectează la `localhost:5433`, user și parolă `postgres`.
+
+Connection string-ul se suprapune în trei straturi, în ordinea în care câștigă:
+
+| Unde | Când se aplică |
+|---|---|
+| `appsettings.Development.json` | în dezvoltare, containerul local pe 5433 |
+| user secrets (`kingdomduel-server`) | doar pe mașina ta, peste cel de sus |
+| `ConnectionStrings__KingdomDuelDb` | în producție, din Secret Manager |
+
+`appsettings.json` **nu** are o valoare implicită, deliberat: o revizie de
+producție fără secret eșuează la pornire cu cauza în log, în loc să pornească
+spre `localhost`. Dacă ai nevoie de altceva pe mașina ta — alt port, altă bază —
+suprascrie local, fără să atingi repo-ul:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:KingdomDuelDb" "Host=localhost;Port=5434;Database=KingdomDuel;Username=postgres;Password=postgres" --project src/KingdomDuel.Api
+```
 
 DbContext-ul e în `Application`, migrările în `Persistence`, startup project-ul
 e `Api`:
@@ -91,6 +123,9 @@ e `Api`:
 dotnet ef migrations add <Nume> --project src/KingdomDuel.Persistence --startup-project src/KingdomDuel.Api
 dotnet ef database update --project src/KingdomDuel.Persistence --startup-project src/KingdomDuel.Api
 ```
+
+Comenzile `dotnet ef` rulează în environment `Development` (îl iau din
+`launchSettings.json`), deci văd același connection string ca aplicația.
 
 ## Autentificare
 
@@ -201,6 +236,9 @@ Imaginea se construiește din `Dockerfile` — `sdk:10.0` pentru build,
 `aspnet:10.0` pentru rulare, ca utilizator fără privilegii. Migrările EF se
 aplică la pornirea containerului, iar serviciul rulează cu o singură instanță,
 ca migrările să nu se poată suprapune.
+
+Fișierul `compose.yaml` e strict pentru dezvoltare: e în `.dockerignore`, deci
+nu ajunge nici în contextul de build, nici în imagine.
 
 Secretele de producție — connection string-ul și cheia JWT — stau în Secret
 Manager și se injectează ca variabile de mediu.
