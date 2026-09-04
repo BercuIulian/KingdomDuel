@@ -10,3 +10,4 @@ src/docs/
 README.md
 Dockerfile
 .dockerignore
+compose.yaml
