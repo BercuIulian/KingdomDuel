@@ -848,3 +848,76 @@
         transform: none;
     }
 }
+
+/* ---------- Expediția: câte trupe pleacă ---------- */
+
+/* Rând propriu sub butoane, apărut doar cât e ales Atacul. */
+.expedition {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.45rem 1.25rem;
+    padding: 0.6rem 0.9rem;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: rgba(12, 15, 21, 0.55);
+}
+
+.expedition-dial {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    flex: 1 1 20rem;
+    min-width: 0;
+    cursor: pointer;
+}
+
+.expedition-dial input[type="range"] {
+    flex: 1 1 auto;
+    min-width: 6rem;
+    accent-color: var(--gold);
+    cursor: pointer;
+}
+
+.expedition-count {
+    flex: 0 0 auto;
+    font-family: var(--font-data);
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--gold-lit);
+}
+
+.expedition-count span {
+    font-weight: 400;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+}
+
+.expedition-odds {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 0.9rem;
+    margin: 0;
+}
+
+.expedition-odds span {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+}
+
+.expedition-odds b {
+    font-size: 0.85rem;
+    color: var(--amber);
+}
+
+.expedition-note {
+    flex: 1 1 100%;
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    color: var(--text-faint);
+}

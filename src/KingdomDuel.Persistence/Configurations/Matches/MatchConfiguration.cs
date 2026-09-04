@@ -59,10 +59,10 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             .HasColumnName("PendingActions")
             .HasColumnType("jsonb")
             .HasConversion(
-                new ValueConverter<Dictionary<string, ActionType>, string>(
+                new ValueConverter<Dictionary<string, PendingOrder>, string>(
                     v => JsonSerializer.Serialize(v, JsonOptions),
-                    v => JsonSerializer.Deserialize<Dictionary<string, ActionType>>(v, JsonOptions) ?? new()),
-                CreateComparer<Dictionary<string, ActionType>>());
+                    v => JsonSerializer.Deserialize<Dictionary<string, PendingOrder>>(v, JsonOptions) ?? new()),
+                CreateComparer<Dictionary<string, PendingOrder>>());
     }
 
     private static ValueComparer<T> CreateComparer<T>() => new(

@@ -2,6 +2,8 @@ using KingdomDuel.Application.Features.Auth;
 using KingdomDuel.Domain.Enums;
 using KingdomDuel.Shared.Dtos.Matches;
 using KingdomDuel.Shared.Requests.Matches;
+using KingdomDuel.Shared.Validators.Matches;
+using KingdomDuel.Domain;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using FastEndpoints;
@@ -16,6 +18,7 @@ internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
     public override void Configure()
     {
         Post("/matches/{code}/actions");
+        Validator<SubmitActionValidator>();
         Description(b => b.WithName("SubmitAction"));
     }
 
@@ -49,7 +52,7 @@ internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
 
             if (!RoundResolver.ExpireIfDue(match))
             {
-                match.PendingActions[userId.ToString()] = req.Action;
+                match.PendingActions[userId.ToString()] = new PendingOrder(req.Action, req.Troops);
                 RoundResolver.ResolveIfReady(match);
             }
 

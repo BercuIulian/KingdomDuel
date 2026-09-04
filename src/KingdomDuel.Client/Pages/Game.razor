@@ -126,6 +126,32 @@ else
                     </button>
                 }
 
+                @if (chosen == ActionType.Attack && CanPlay && !OrderSent)
+                {
+                    <div class="expedition">
+                        <label class="expedition-dial">
+                            <span class="eyebrow">Trimiți în expediție</span>
+                            <input type="range"
+                                   min="@GameConstants.MinAttackTroops"
+                                   max="@MaxTroopsToSend"
+                                   step="1"
+                                   disabled="@sending"
+                                   @bind="attackTroops"
+                                   @bind:event="oninput" />
+                            <b class="expedition-count">@attackTroops<span>/@MaxTroopsToSend trupe</span></b>
+                        </label>
+
+                        <p class="expedition-odds">
+                            <span><b>@RaidOdds%</b> dacă nu se fortifică</span>
+                            <span><b>@BreakthroughOdds%</b> dacă se fortifică</span>
+                        </p>
+
+                        <p class="expedition-note">
+                            Cele care nu se întorc sunt pierdute. Un asalt frânt de ziduri se pierde întreg.
+                        </p>
+                    </div>
+                }
+
                 <div class="order-action">
                     @if (sendError is not null)
                     {
@@ -194,9 +220,9 @@ else
                                     <span class="entry-round">Runda @round.RoundNumber</span>
                                     <span class="entry-event">@EventOf(round.Event).Name</span>
                                     <span class="entry-acts">
-                                        <span class="act-1">@OrderName(round.Player1Action)</span>
+                                        <span class="act-1">@OrderLabel(round.Player1Action, round.Player1AttackTroops)</span>
                                         <span class="versus">·</span>
-                                        <span class="act-2">@OrderName(round.Player2Action)</span>
+                                        <span class="act-2">@OrderLabel(round.Player2Action, round.Player2AttackTroops)</span>
                                     </span>
                                 </summary>
                                 <ul class="entry-log">
@@ -292,6 +318,10 @@ else
     private MatchStateDto? state;
     private string? error;
     private ActionType? chosen;
+
+    // Câte trupe pleacă dacă ordinul e Atac. Pornește de la plafon și se retaie la
+    // ce are regatul de fiecare dată când se deschide selectorul sau începe o rundă.
+    private int attackTroops = GameConstants.MaxAttackTroops;
     private bool sending;
     private string? sendError;
     private int? submittedRound;
@@ -382,7 +412,7 @@ else
             $"Nemulțumirea crește. Cine are moralul sub {GameConstants.RebellionMoraleThreshold} pierde {GameConstants.RebellionTroopLoss} trupe."),
         GameEventType.PeaceRumors => new(
             "Zvonuri de pace", "dove",
-            $"Armatele ezită. Atacul costă {GameConstants.AttackTroopCostDuringPeaceRumors} trupe în loc de {GameConstants.AttackTroopCost}."),
+            $"Armatele ezită. Într-o expediție pot pleca cel mult {GameConstants.MaxAttackTroopsDuringPeaceRumors} trupe în loc de {GameConstants.MaxAttackTroops}."),
         GameEventType.DiplomaticFair => new(
             "Târg diplomatic", "pavilion",
             $"Solii se adună. Diplomația aduce +{GameConstants.DiplomacyFairMoraleGain} moral în loc de +{GameConstants.DiplomacyBaseMoraleGain}."),
@@ -403,9 +433,9 @@ else
 
             yield return new(
                 ActionType.Attack, "Atac", "sword",
-                $"Costă {GameConstants.AttackTroopCost} trupe. Dacă nu se apără, îi iei aur și trupe.",
+                $"Trimiți până la {MaxTroopsToSend} trupe. Cu cât mai multe, cu atât mai mari șansele.",
                 current == GameEventType.PeaceRumors
-                    ? $"Zvonurile de pace urcă costul la {GameConstants.AttackTroopCostDuringPeaceRumors} trupe."
+                    ? $"Zvonurile de pace coboară plafonul la {GameConstants.MaxAttackTroopsDuringPeaceRumors} trupe."
                     : null);
 
             yield return new(
@@ -447,9 +477,16 @@ else
         _ => action.ToString(),
     };
 
-    private static string OrderVerb(ActionType action) => action switch
+    /// <summary>Numele ordinului pentru istoric, cu mărimea expediției dacă a fost atac.</summary>
+    private static string OrderLabel(ActionType action, int attackTroops)
+        => action == ActionType.Attack && attackTroops > 0
+            ? $"{OrderName(action)} · {attackTroops}"
+            : OrderName(action);
+
+    private static string OrderVerb(ActionType action, int attackTroops = 0) => action switch
     {
-        ActionType.Attack => "a lansat un atac",
+        ActionType.Attack when attackTroops > 0 => $"a trimis {attackTroops} trupe în expediție",
+        ActionType.Attack => "a vrut să atace, dar n-a avut cu ce",
         ActionType.Defend => "s-a fortificat",
         ActionType.Trade => "a deschis drumurile comerciale",
         ActionType.Diplomacy => "a trimis soli",
@@ -459,7 +496,6 @@ else
 
     private static string OrderVerbTogether(ActionType action) => action switch
     {
-        ActionType.Attack => "s-au atacat reciproc",
         ActionType.Defend => "s-au fortificat",
         ActionType.Trade => "au deschis drumurile comerciale",
         ActionType.Diplomacy => "au trimis soli unul la altul",
@@ -467,7 +503,17 @@ else
         _ => action.ToString(),
     };
 
-    private void ChooseOrder(ActionType action) => chosen = action;
+    private void ChooseOrder(ActionType action)
+    {
+        chosen = action;
+
+        if (action == ActionType.Attack)
+        {
+            // Pornim de la oastea maximă: e echivalentul atacului de dinainte, iar de
+            // acolo jucătorul coboară dacă vrea să riște mai puțin.
+            attackTroops = Math.Clamp(attackTroops, GameConstants.MinAttackTroops, Math.Max(GameConstants.MinAttackTroops, MaxTroopsToSend));
+        }
+    }
 
     private async Task SendOrder()
     {
@@ -484,7 +530,11 @@ else
         try
         {
             var fresh = await Api.SubmitActionAsync(
-                new SubmitActionRequest { Action = chosen.Value },
+                new SubmitActionRequest
+                {
+                    Action = chosen.Value,
+                    Troops = chosen == ActionType.Attack ? attackTroops : 0,
+                },
                 Code!);
 
             submittedRound = roundAtSubmit;
@@ -535,6 +585,10 @@ else
         {
             chosen = null;
             sendError = null;
+
+            // Runda nouă poate avea alt plafon (zvonurile de pace îl coboară) și altă
+            // oaste, deci pornim iar de la maximul disponibil.
+            attackTroops = GameConstants.MaxAttackTroops;
         }
 
         state = fresh;
@@ -546,10 +600,15 @@ else
     {
         var opening = $"Runda {round.RoundNumber} s-a încheiat.";
 
-        return round.Player1Action == round.Player2Action
+        // Ordinele identice se contopesc într-o propoziție la plural, dar două atacuri
+        // rămân separate: mărimea celor două expediții e tocmai ce a decis runda.
+        var merge = round.Player1Action == round.Player2Action
+            && round.Player1Action != ActionType.Attack;
+
+        return merge
             ? $"{opening} {Player1Name} și {Player2Name} {OrderVerbTogether(round.Player1Action)}."
-            : $"{opening} {Player1Name} {OrderVerb(round.Player1Action)}, "
-              + $"iar {Player2Name} {OrderVerb(round.Player2Action)}.";
+            : $"{opening} {Player1Name} {OrderVerb(round.Player1Action, round.Player1AttackTroops)}, "
+              + $"iar {Player2Name} {OrderVerb(round.Player2Action, round.Player2AttackTroops)}.";
     }
 
 
@@ -617,6 +676,22 @@ else
     };
 
     private string OpponentName => Side == 1 ? Player2Name : Player1Name;
+
+    // ---------- Expediția ----------
+
+    private KingdomDto? MyKingdom => Side == 2 ? state?.Player2Kingdom : state?.Player1Kingdom;
+
+    private KingdomDto? TheirKingdom => Side == 2 ? state?.Player1Kingdom : state?.Player2Kingdom;
+
+    /// <summary>Cel mult câte trupe pot pleca: plafonul rundei, tăiat la oastea de acasă.</summary>
+    private int MaxTroopsToSend => Math.Min(
+        GameEngine.MaxAttackTroopsFor(state?.CurrentEvent ?? GameEventType.None),
+        MyKingdom?.Troops ?? 0);
+
+    private int BreakthroughOdds => (int)Math.Round(100 * GameEngine.BreakthroughChanceFor(
+        attackTroops, MyKingdom?.EquipmentLevel ?? 0, TheirKingdom?.EquipmentLevel ?? 0));
+
+    private int RaidOdds => (int)Math.Round(100 * GameEngine.RaidChanceFor(attackTroops));
 
     private void AskLeave()
     {

@@ -238,10 +238,16 @@ namespace KingdomDuel.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<int>("Player1AttackTroops")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Player2Action")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
+
+                    b.Property<int>("Player2AttackTroops")
+                        .HasColumnType("integer");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("integer");

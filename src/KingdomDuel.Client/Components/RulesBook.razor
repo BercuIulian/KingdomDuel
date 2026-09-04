@@ -52,7 +52,10 @@
                     <dd>Plătește fortificarea și diplomația. Îți dă și nivelul de echipament.</dd>
 
                     <dt>Trupe</dt>
-                    <dd>Se consumă la atac și se pierd în lupte. Dacă ajung la 0, regatul se prăbușește.</dd>
+                    <dd>
+                        Pleacă în expediții și se pierd în lupte; se câștigă doar luându-le adversarului.
+                        Dacă ajung la 0, regatul se prăbușește.
+                    </dd>
 
                     <dt>Moral</dt>
                     <dd>Decide ciocnirile directe. Sub @GameConstants.RebellionMoraleThreshold ești vulnerabil la rebeliune; la 0 regatul se prăbușește.</dd>
@@ -74,13 +77,26 @@
             <article class="rule-card">
                 <h3><span class="rule-ico"><Glyph Name="sword" /></span> Atac</h3>
                 <ul class="rule-list">
-                    <li>Costă <b>@GameConstants.AttackTroopCost trupe</b>, plătite indiferent de rezultat.</li>
-                    <li>Dacă adversarul nu se apără, îi iei aur și trupe — ele trec la tine, nu se pierd.</li>
-                    <li>Fiecare atac reușit aduce <b>+@GameConstants.UndefendedAttackerMoraleGain moral</b>.</li>
+                    <li>
+                        Alegi câte trupe pleacă: între <b>@GameConstants.MinAttackTroops</b> și
+                        <b>@GameConstants.MaxAttackTroops</b>, dar niciodată mai multe decât are regatul.
+                    </li>
+                    <li>
+                        Cu cât trimiți mai mult, cu atât cresc șansele <i>și</i> prada — amândouă
+                        se socotesc proporțional cu cât ai trimis din maximul de
+                        @GameConstants.MaxAttackTroops.
+                    </li>
+                    <li>
+                        Trupele nu se pierd toate: pleacă în expediție și se întorc cele care scapă.
+                        Cât nu se mai întoarce depinde de ce a găsit oastea acolo.
+                    </li>
+                    <li>Un atac reușit aduce până la <b>+@GameConstants.UndefendedAttackerMoraleGain moral</b>.</li>
                     <li>Rupe seria de fortificări (vezi Fortificare).</li>
                 </ul>
                 <p class="rule-shift">
-                    La <b>Zvonuri de pace</b> costul urcă la @GameConstants.AttackTroopCostDuringPeaceRumors trupe.
+                    La <b>Zvonuri de pace</b> plafonul coboară la
+                    @GameConstants.MaxAttackTroopsDuringPeaceRumors trupe: armatele ezită, deci nu poți
+                    strânge o oaste mare.
                 </p>
             </article>
 
@@ -138,38 +154,60 @@
 
                 <div class="rule-pairs">
                     <div class="pair">
-                        <b class="pair-title">Atac ⚔ Atac — ciocnire directă</b>
+                        <b class="pair-title">Atac ⚔ Atac — ciocnire în câmp deschis</b>
                         <p>
-                            Fiecare tabără pierde din start @GameConstants.MutualClashBaseTroopLoss trupe.
-                            Diferența de moral se împarte la @GameConstants.MutualClashMoralePerShiftPoint,
-                            se rotunjește și se plafonează la ±@GameConstants.MutualClashMaxMoraleShiftFactor:
-                            atât scade din pierderea taberei cu moral mai mare și atât se adaugă celeilalte.
+                            Cele două expediții se întâlnesc. Fiecare pierde o parte din <i>ce a trimis</i>:
+                            între @ClashMinLossPercent% și @ClashMaxLossPercent%, după cum se împarte
+                            câmpul între cele două oști. Diferența de moral se împarte la
+                            @GameConstants.MutualClashMoralePerShiftPoint, se rotunjește și se plafonează la
+                            ±@GameConstants.MutualClashMaxMoraleShiftFactor — atâtea trupe în plus valorează
+                            pe câmp tabăra cu moral mai bun, fără să schimbe câte au plecat.
                             Ambele tabere pierd @GameConstants.MutualClashMoraleLoss moral.
                         </p>
                         <span class="pair-eg">
-                            Exemplu: cu @(GameConstants.MutualClashMoralePerShiftPoint * 3) moral peste adversar pierzi
-                            @(GameConstants.MutualClashBaseTroopLoss - 3) trupe, iar el @(GameConstants.MutualClashBaseTroopLoss + 3).
+                            Exemplu: oști egale — amândoi pierd cam jumătate. Cine trimite de cinci ori mai
+                            mult scapă cu pierderi mici, iar cel mic e aproape șters.
                         </span>
                     </div>
 
                     <div class="pair">
                         <b class="pair-title">Atac ⚔ Fortificare — asediu</b>
                         <p>
-                            Șansa de străpungere pornește de la @BaseBreakthroughPercent% și se mișcă cu
-                            @BreakthroughStepPercent puncte procentuale pentru fiecare nivel de echipament
-                            pe care atacatorul îl are peste apărător (sau sub el), între
-                            @MinBreakthroughPercent% și @MaxBreakthroughPercent%.
+                            Șansa de străpungere pornește de la @MinBreakthroughPercent% pentru o oaste
+                            neînsemnată și urcă până la @FullCommitBreakthroughPercent% dacă trimiți tot
+                            plafonul, plus @BreakthroughStepPercent puncte procentuale pentru fiecare nivel
+                            de echipament pe care atacatorul îl are peste apărător (sau sub el). Plafonată
+                            între @MinBreakthroughPercent% și @MaxBreakthroughPercent%.
                         </p>
                         <ul class="rule-list tight">
                             <li>
-                                <b>Străpungere:</b> atacatorul ia @GameConstants.BreakthroughStealGold aur și
-                                @GameConstants.BreakthroughStealTroops trupe, plus @GameConstants.UndefendedAttackerMoraleGain moral.
+                                <b>Străpungere:</b> atacatorul ia până la @GameConstants.BreakthroughStealGold aur și
+                                @GameConstants.BreakthroughStealTroops trupe, proporțional cu cât a trimis, plus moral.
+                                Din expediție se pierd @BreakthroughLossPercent%.
                             </li>
                             <li>
-                                <b>Respins:</b> atacatorul mai pierde @GameConstants.RepelledExtraTroopLossBase trupe,
-                                minus câte o trupă pentru fiecare nivel de echipament al lui
-                                (niciodată mai puțin de @GameConstants.RepelledExtraTroopLossMin);
-                                apărătorul câștigă @GameConstants.RepelledDefenderMoraleBase moral plus nivelul propriu de fortificație.
+                                <b>Respins:</b> asaltul se frânge pe ziduri și <b>toată expediția se pierde</b>.
+                                De aici vine riscul: cine trimite toată oastea și e respins rămâne fără ea, iar
+                                regatul cade. Apărătorul câștigă @GameConstants.RepelledDefenderMoraleBase moral
+                                plus nivelul propriu de fortificație.
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="pair">
+                        <b class="pair-title">Atac ⚔ un regat nefortificat</b>
+                        <p>
+                            Chiar fără ziduri, un regat alungă o oaste prea mică. Reușita pornește de la
+                            @RaidMinPercent% și ajunge la 100% dacă trimiți plafonul întreg.
+                        </p>
+                        <ul class="rule-list tight">
+                            <li>
+                                <b>Reușit:</b> prada e proporțională cu cât ai trimis; din expediție se pierd
+                                @RaidSuccessLossPercent%.
+                            </li>
+                            <li>
+                                <b>Alungat:</b> pierzi @RaidChasedOffLossPercent% din oastea trimisă și
+                                apărătorul câștigă @GameConstants.ChasedOffDefenderMoraleGain moral.
                             </li>
                         </ul>
                     </div>
@@ -241,7 +279,7 @@
                     <li>
                         <span class="ev-ico"><Glyph Name="dove" /></span>
                         <b>Zvonuri de pace</b>
-                        <span>Atacul costă @GameConstants.AttackTroopCostDuringPeaceRumors trupe în loc de @GameConstants.AttackTroopCost.</span>
+                        <span>Într-o expediție pot pleca cel mult @GameConstants.MaxAttackTroopsDuringPeaceRumors trupe în loc de @GameConstants.MaxAttackTroops.</span>
                     </li>
                     <li>
                         <span class="ev-ico"><Glyph Name="pavilion" /></span>
@@ -327,8 +365,22 @@
             GameConstants.DefenseMinMoraleGain,
             GameConstants.DefenseBaseMoraleGain - step * GameConstants.DefenseMoraleGainStep)));
 
-    private static int BaseBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughBaseChance * 100);
-    private static int BreakthroughStepPercent => (int)Math.Round(GameConstants.BreakthroughChancePerLevel * 100);
-    private static int MinBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughMinChance * 100);
-    private static int MaxBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughMaxChance * 100);
+    private static int BreakthroughStepPercent => Percent(GameConstants.BreakthroughChancePerLevel);
+    private static int MinBreakthroughPercent => Percent(GameConstants.BreakthroughMinChance);
+    private static int MaxBreakthroughPercent => Percent(GameConstants.BreakthroughMaxChance);
+
+    private static int FullCommitBreakthroughPercent =>
+        Percent(GameConstants.BreakthroughMinChance + GameConstants.BreakthroughCommitmentSpan);
+
+    private static int RaidMinPercent => Percent(GameConstants.RaidMinChance);
+    private static int RaidSuccessLossPercent => Percent(GameConstants.RaidSuccessLossFraction);
+    private static int RaidChasedOffLossPercent => Percent(GameConstants.RaidChasedOffLossFraction);
+    private static int BreakthroughLossPercent => Percent(GameConstants.BreakthroughLossFraction);
+
+    private static int ClashMinLossPercent => Percent(GameConstants.ClashBaseLossFraction);
+
+    private static int ClashMaxLossPercent =>
+        Percent(GameConstants.ClashBaseLossFraction + GameConstants.ClashLossSwing);
+
+    private static int Percent(double value) => (int)Math.Round(value * 100);
 }

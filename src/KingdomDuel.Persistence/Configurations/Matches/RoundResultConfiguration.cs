@@ -15,6 +15,8 @@ internal sealed class RoundResultConfiguration : IEntityTypeConfiguration<RoundR
         builder.Property(r => r.Event).HasConversion<string>().HasMaxLength(32);
         builder.Property(r => r.Player1Action).HasConversion<string>().HasMaxLength(32);
         builder.Property(r => r.Player2Action).HasConversion<string>().HasMaxLength(32);
+        builder.Property(r => r.Player1AttackTroops);
+        builder.Property(r => r.Player2AttackTroops);
         builder.Property(r => r.GameOverReason).HasConversion<string>().HasMaxLength(32);
 
         // The per-round log lines are primitives - stored as a Postgres text[] column.

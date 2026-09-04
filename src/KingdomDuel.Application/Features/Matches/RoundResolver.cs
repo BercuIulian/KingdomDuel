@@ -24,8 +24,8 @@ internal static class RoundResolver
         var player1Missed = !match.PendingActions.ContainsKey(match.Player1.ActionKey());
         var player2Missed = !match.PendingActions.ContainsKey(match.Player2.ActionKey());
 
-        match.PendingActions.TryAdd(match.Player1.ActionKey(), ActionType.Idle);
-        match.PendingActions.TryAdd(match.Player2.ActionKey(), ActionType.Idle);
+        match.PendingActions.TryAdd(match.Player1.ActionKey(), PendingOrder.Of(ActionType.Idle));
+        match.PendingActions.TryAdd(match.Player2.ActionKey(), PendingOrder.Of(ActionType.Idle));
 
         if (!ResolveIfReady(match))
         {
@@ -82,8 +82,8 @@ internal static class RoundResolver
             return false;
         }
 
-        if (!match.PendingActions.TryGetValue(match.Player1.ActionKey(), out var player1Action)
-            || !match.PendingActions.TryGetValue(match.Player2.ActionKey(), out var player2Action))
+        if (!match.PendingActions.TryGetValue(match.Player1.ActionKey(), out var player1Order)
+            || !match.PendingActions.TryGetValue(match.Player2.ActionKey(), out var player2Order))
         {
             return false;
         }
@@ -96,8 +96,8 @@ internal static class RoundResolver
             match.CurrentEvent,
             match.Player1.Kingdom,
             match.Player2.Kingdom,
-            player1Action,
-            player2Action);
+            player1Order,
+            player2Order);
 
         match.History.Add(result);
         match.PendingActions.Clear();

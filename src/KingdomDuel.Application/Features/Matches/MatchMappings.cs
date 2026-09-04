@@ -83,6 +83,8 @@ internal static class MatchMappings
         Event = result.Event,
         Player1Action = result.Player1Action,
         Player2Action = result.Player2Action,
+        Player1AttackTroops = result.Player1AttackTroops,
+        Player2AttackTroops = result.Player2AttackTroops,
         Log = result.Log.ToList(),
     };
 }
