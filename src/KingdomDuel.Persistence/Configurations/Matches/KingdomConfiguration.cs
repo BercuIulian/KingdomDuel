@@ -14,10 +14,7 @@ internal sealed class KingdomConfiguration : IEntityTypeConfiguration<Kingdom>
         builder.Property(k => k.Gold);
         builder.Property(k => k.Troops);
         builder.Property(k => k.Morale);
-        builder.Property(k => k.DefenseStreak);
 
-        // Derived from the resource values - never stored.
         builder.Ignore(k => k.TotalPower);
-        builder.Ignore(k => k.EquipmentLevel);
     }
 }

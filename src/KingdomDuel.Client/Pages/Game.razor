@@ -1,12 +1,9 @@
 @page "/game"
 @attribute [Authorize]
 @layout GameLayout
-@using System.Text.Json
 @using KingdomDuel.Client.ApiClients
-@using KingdomDuel.Domain
 @using KingdomDuel.Domain.Enums
 @using KingdomDuel.Shared.Dtos.Matches
-@using KingdomDuel.Shared.Requests.Matches
 @implements IAsyncDisposable
 @inject ApiClient Api
 @inject NavigationManager Navigation
@@ -65,7 +62,6 @@ else
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
-                        OrderPending="OrderPendingFor(1)"
                         MissedRounds="state.Player1MissedRounds" />
 
             <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
@@ -78,14 +74,12 @@ else
                         Kingdom="state.Player2Kingdom"
                         Mirrored="true"
                         IsYou="Side == 2"
-                        OrderPending="OrderPendingFor(2)"
                         MissedRounds="state.Player2MissedRounds" />
         </section>
 
         <section class="event">
             <span class="event-ico"><Glyph Name="@CurrentEvent.Glyph" /></span>
             <h2>@CurrentEvent.Name</h2>
-            <p>@CurrentEvent.Note</p>
             <span class="eyebrow">Evenimentul rundei</span>
         </section>
 
@@ -106,112 +100,6 @@ else
                 </button>
             </section>
         }
-        else
-        {
-            <section class="orders">
-                @foreach (var order in Orders)
-                {
-                    <button type="button"
-                            class="order"
-                            aria-pressed="@(chosen == order.Action ? "true" : "false")"
-                            disabled="@(OrderSent || sending || !CanPlay)"
-                            @onclick="() => ChooseOrder(order.Action)">
-                        <span class="order-ico"><Glyph Name="@order.Glyph" /></span>
-                        <b>@order.Name</b>
-                        <small>@order.Effect</small>
-                        @if (order.Shift is not null)
-                        {
-                            <span class="shift">@order.Shift</span>
-                        }
-                    </button>
-                }
-
-                <div class="order-action">
-                    @if (sendError is not null)
-                    {
-                        <p class="send-error">@sendError</p>
-                    }
-
-                    @if (!CanPlay)
-                    {
-                        <p class="order-note">Urmărești meciul. Ca să dai ordine, intră din lobby.</p>
-                    }
-                    else if (OrderSent)
-                    {
-                        <p class="order-sent">
-                            <Glyph Name="seal" />
-                            <span>Așteptăm adversarul</span>
-                        </p>
-                    }
-                    else
-                    {
-                        <button type="button" class="send" disabled="@(chosen is null || sending)" @onclick="SendOrder">
-                            @(sending ? "Se trimite…" : "Trimite ordinul")
-                        </button>
-                    }
-                </div>
-            </section>
-        }
-
-        <section class="bottom">
-
-            <article class="chronicle">
-                @if (LastRound is null)
-                {
-                    <span class="eyebrow">Cronica</span>
-                    <p class="chronicle-empty">
-                        Nicio rundă nu s-a încheiat încă. Trimite un ordin și cronica începe.
-                    </p>
-                }
-                else
-                {
-                    <span class="eyebrow">Cronica rundei @LastRound.RoundNumber</span>
-                    <p class="chronicle-lead">@ChronicleLead(LastRound)</p>
-                    <ul class="chronicle-log">
-                        @foreach (var line in LastRound.Log)
-                        {
-                            <li>@Humanize(line)</li>
-                        }
-                    </ul>
-                }
-            </article>
-
-            <section class="history">
-                <span class="eyebrow">Istoricul acțiunilor</span>
-                <div class="history-scroll">
-                    @if (state.History.Count == 0)
-                    {
-                        <p class="history-empty">Se umple după prima rundă rezolvată.</p>
-                    }
-                    else
-                    {
-                        @foreach (var (round, index) in state.History
-                            .OrderByDescending(r => r.RoundNumber)
-                            .Select((r, i) => (r, i)))
-                        {
-                            <details class="entry" open="@(index == 0)">
-                                <summary>
-                                    <span class="entry-round">Runda @round.RoundNumber</span>
-                                    <span class="entry-event">@EventOf(round.Event).Name</span>
-                                    <span class="entry-acts">
-                                        <span class="act-1">@OrderName(round.Player1Action)</span>
-                                        <span class="versus">·</span>
-                                        <span class="act-2">@OrderName(round.Player2Action)</span>
-                                    </span>
-                                </summary>
-                                <ul class="entry-log">
-                                    @foreach (var line in round.Log)
-                                    {
-                                        <li>@Humanize(line)</li>
-                                    }
-                                </ul>
-                            </details>
-                        }
-                    }
-                </div>
-            </section>
-
-        </section>
 
     </section>
 
@@ -274,7 +162,7 @@ else
             </div>
 
             <div class="result-actions">
-                <button type="button" class="result-ghost" @onclick="DismissResult">Revezi cronica</button>
+                <button type="button" class="result-ghost" @onclick="DismissResult">Închide</button>
                 <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
                     @(leaving ? "Se iese…" : "Înapoi la meniu")
                 </button>
@@ -291,10 +179,6 @@ else
 
     private MatchStateDto? state;
     private string? error;
-    private ActionType? chosen;
-    private bool sending;
-    private string? sendError;
-    private int? submittedRound;
     private bool resultDismissed;
     private bool leaving;
     private bool resultFocused;
@@ -311,39 +195,6 @@ else
 
     private bool CanPlay => Side is 1 or 2;
 
-    private bool OrderSent
-    {
-        get
-        {
-            if (state is null)
-            {
-                return false;
-            }
-
-            if (submittedRound == state.Round)
-            {
-                return true;
-            }
-
-            return Side switch
-            {
-                1 => !state.WaitingOnPlayer1Action,
-                2 => !state.WaitingOnPlayer2Action,
-                _ => false,
-            };
-        }
-    }
-
-    private bool? OrderPendingFor(int side)
-    {
-        if (state is null || state.Status != MatchStatus.InProgress)
-        {
-            return null;
-        }
-
-        return side == 1 ? state.WaitingOnPlayer1Action : state.WaitingOnPlayer2Action;
-    }
-
     private string Player1Name =>
         string.IsNullOrWhiteSpace(state?.Player1Name) ? "Jucătorul 1" : state!.Player1Name!;
 
@@ -352,9 +203,6 @@ else
 
     private string Heading =>
         state?.Status == MatchStatus.Completed ? "Meciul s-a încheiat" : "Masa de război";
-
-    private RoundResultDto? LastRound =>
-        state?.History.Count > 0 ? state.History[^1] : null;
 
     private string PipClass(int round)
     {
@@ -365,197 +213,19 @@ else
 
     // ---------- Evenimente ----------
 
-    private sealed record EventInfo(string Name, string Glyph, string Note);
+    private sealed record EventInfo(string Name, string Glyph);
 
     private EventInfo CurrentEvent => EventOf(state!.CurrentEvent);
 
     private static EventInfo EventOf(GameEventType gameEvent) => gameEvent switch
     {
-        GameEventType.Drought => new(
-            "Secetă", "sun",
-            $"Recoltele se usucă. Comerțul aduce doar {GameConstants.TradeDroughtGoldGain} aur în loc de {GameConstants.TradeBaseGoldGain}."),
-        GameEventType.Harvest => new(
-            "Recoltă bogată", "sheaf",
-            $"Hambarele dau pe dinafară. Comerțul aduce {GameConstants.TradeHarvestGoldGain} aur în loc de {GameConstants.TradeBaseGoldGain}."),
-        GameEventType.Rebellion => new(
-            "Rebeliune", "pitchfork",
-            $"Nemulțumirea crește. Cine are moralul sub {GameConstants.RebellionMoraleThreshold} pierde {GameConstants.RebellionTroopLoss} trupe."),
-        GameEventType.PeaceRumors => new(
-            "Zvonuri de pace", "dove",
-            $"Armatele ezită. Atacul costă {GameConstants.AttackTroopCostDuringPeaceRumors} trupe în loc de {GameConstants.AttackTroopCost}."),
-        GameEventType.DiplomaticFair => new(
-            "Târg diplomatic", "pavilion",
-            $"Solii se adună. Diplomația aduce +{GameConstants.DiplomacyFairMoraleGain} moral în loc de +{GameConstants.DiplomacyBaseMoraleGain}."),
-        _ => new(
-            "Anotimp liniștit", "moon",
-            "Nimic nu tulbură regatele. Regulile rundei rămân neschimbate."),
+        GameEventType.Drought => new("Secetă", "sun"),
+        GameEventType.Harvest => new("Recoltă bogată", "sheaf"),
+        GameEventType.Rebellion => new("Rebeliune", "pitchfork"),
+        GameEventType.PeaceRumors => new("Zvonuri de pace", "dove"),
+        GameEventType.DiplomaticFair => new("Târg diplomatic", "pavilion"),
+        _ => new("Anotimp liniștit", "moon"),
     };
-
-    // ---------- Ordine ----------
-
-    private sealed record Order(ActionType Action, string Name, string Glyph, string Effect, string? Shift);
-
-    private IEnumerable<Order> Orders
-    {
-        get
-        {
-            var current = state!.CurrentEvent;
-
-            yield return new(
-                ActionType.Attack, "Atac", "sword",
-                $"Costă {GameConstants.AttackTroopCost} trupe. Dacă nu se apără, îi iei aur și trupe.",
-                current == GameEventType.PeaceRumors
-                    ? $"Zvonurile de pace urcă costul la {GameConstants.AttackTroopCostDuringPeaceRumors} trupe."
-                    : null);
-
-            yield return new(
-                ActionType.Defend, "Fortificare", "shield",
-                $"Costă {GameConstants.DefenseBaseGoldCost} aur, aduce +{GameConstants.DefenseBaseMoraleGain} moral. Scade dacă repeți.",
-                null);
-
-            yield return new(
-                ActionType.Trade, "Comerț", "scales",
-                $"Aduce +{GameConstants.TradeBaseGoldGain} aur și +{GameConstants.TradeMoraleGain} moral.",
-                current switch
-                {
-                    GameEventType.Drought => $"Seceta taie câștigul la {GameConstants.TradeDroughtGoldGain} aur.",
-                    GameEventType.Harvest => $"Recolta ridică câștigul la {GameConstants.TradeHarvestGoldGain} aur.",
-                    _ => null,
-                });
-
-            yield return new(
-                ActionType.Diplomacy, "Diplomație", "olive",
-                $"Costă {GameConstants.DiplomacyGoldCost} aur, aduce +{GameConstants.DiplomacyBaseMoraleGain} moral.",
-                current == GameEventType.DiplomaticFair
-                    ? $"Târgul ridică câștigul la +{GameConstants.DiplomacyFairMoraleGain} moral."
-                    : null);
-
-            yield return new(
-                ActionType.Idle, "Fără ordin", "hourglass",
-                "Nu primești nimic și rămâi descoperit unui atac.",
-                null);
-        }
-    }
-
-    private static string OrderName(ActionType action) => action switch
-    {
-        ActionType.Attack => "Atac",
-        ActionType.Defend => "Fortificare",
-        ActionType.Trade => "Comerț",
-        ActionType.Diplomacy => "Diplomație",
-        ActionType.Idle => "Fără ordin",
-        _ => action.ToString(),
-    };
-
-    private static string OrderVerb(ActionType action) => action switch
-    {
-        ActionType.Attack => "a lansat un atac",
-        ActionType.Defend => "s-a fortificat",
-        ActionType.Trade => "a deschis drumurile comerciale",
-        ActionType.Diplomacy => "a trimis soli",
-        ActionType.Idle => "nu a dat niciun ordin oastei",
-        _ => action.ToString(),
-    };
-
-    private static string OrderVerbTogether(ActionType action) => action switch
-    {
-        ActionType.Attack => "s-au atacat reciproc",
-        ActionType.Defend => "s-au fortificat",
-        ActionType.Trade => "au deschis drumurile comerciale",
-        ActionType.Diplomacy => "au trimis soli unul la altul",
-        ActionType.Idle => "nu au dat niciun ordin oștilor",
-        _ => action.ToString(),
-    };
-
-    private void ChooseOrder(ActionType action) => chosen = action;
-
-    private async Task SendOrder()
-    {
-        if (chosen is null || sending || !CanPlay)
-        {
-            return;
-        }
-
-        sending = true;
-        sendError = null;
-
-        var roundAtSubmit = state!.Round;
-
-        try
-        {
-            var fresh = await Api.SubmitActionAsync(
-                new SubmitActionRequest { Action = chosen.Value },
-                Code!);
-
-            submittedRound = roundAtSubmit;
-            ApplyState(fresh);
-        }
-        catch (ApiException ex) when (ex.StatusCode == 404)
-        {
-            sendError = "Meciul nu mai există.";
-        }
-        catch (ApiException ex)
-        {
-            sendError = ServerMessage(ex) ?? $"Ordinul n-a fost primit (cod {ex.StatusCode}).";
-        }
-        catch (Exception)
-        {
-            sendError = "Nu am putut contacta serverul. Încearcă din nou.";
-        }
-        finally
-        {
-            sending = false;
-        }
-    }
-
-    private static string? ServerMessage(ApiException ex)
-    {
-        if (string.IsNullOrWhiteSpace(ex.Response))
-        {
-            return null;
-        }
-
-        try
-        {
-            var parsed = JsonSerializer.Deserialize<ErrorResponse>(
-                ex.Response,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return parsed?.Errors.Values.SelectMany(messages => messages).FirstOrDefault();
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private void ApplyState(MatchStateDto fresh)
-    {
-        if (state is not null && (fresh.Round != state.Round || fresh.Status != state.Status))
-        {
-            chosen = null;
-            sendError = null;
-        }
-
-        state = fresh;
-    }
-
-    // ---------- Cronică ----------
-
-    private string ChronicleLead(RoundResultDto round)
-    {
-        var opening = $"Runda {round.RoundNumber} s-a încheiat.";
-
-        return round.Player1Action == round.Player2Action
-            ? $"{opening} {Player1Name} și {Player2Name} {OrderVerbTogether(round.Player1Action)}."
-            : $"{opening} {Player1Name} {OrderVerb(round.Player1Action)}, "
-              + $"iar {Player2Name} {OrderVerb(round.Player2Action)}.";
-    }
-
-
-    private string Humanize(string line) => line
-        .Replace("Jucătorul 1", Player1Name)
-        .Replace("Jucătorul 2", Player2Name);
 
     // ---------- Finalul meciului ----------
 
@@ -721,7 +391,7 @@ else
     {
         try
         {
-            ApplyState(await Api.GetMatchAsync(Code!));
+            state = await Api.GetMatchAsync(Code!);
         }
         catch (ApiException ex) when (ex.StatusCode == 404)
         {
@@ -753,7 +423,7 @@ else
                         continue;
                     }
 
-                    ApplyState(fresh);
+                    state = fresh;
                     await InvokeAsync(StateHasChanged);
 
                     if (fresh.Status == MatchStatus.Completed)

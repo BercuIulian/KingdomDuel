@@ -8,9 +8,5 @@ public sealed class Kingdom : Entity
     public int Troops { get; set; } = GameConstants.StartingResource;
     public int Morale { get; set; } = GameConstants.StartingResource;
 
-    public int DefenseStreak { get; set; }
-
     public int TotalPower => Gold + Troops + Morale;
-
-    public int EquipmentLevel => Math.Clamp(Gold / GameConstants.GoldPerEquipmentLevel, 0, GameConstants.MaxEquipmentLevel);
 }

@@ -1,5 +1,3 @@
-@using KingdomDuel.Domain
-
 <button type="button" class="rules-open" aria-haspopup="dialog" title="Regulile jocului" @onclick="Open">
     <span class="rules-open-ico"><Glyph Name="book" /></span>
     <span class="rules-open-label">Reguli</span>
@@ -21,269 +19,26 @@
             <span class="rules-head-ico"><Glyph Name="book" /></span>
             <div class="rules-head-text">
                 <h2 id="rules-title">Regulile duelului</h2>
-                <p>Costuri, ciocniri, evenimente și condițiile de victorie — tot ce decide o rundă.</p>
+                <p>Se rescriu.</p>
             </div>
             <button type="button" class="rules-close" aria-label="Închide regulile" @onclick="Close">✕</button>
         </header>
 
         <div class="rules-body">
-
             <article class="rule-card wide">
-                <h3><span class="rule-ico"><Glyph Name="swords" /></span> Scopul jocului</h3>
+                <h3><span class="rule-ico"><Glyph Name="swords" /></span> În lucru</h3>
                 <p class="rule-lead">
-                    Două regate se înfruntă pe parcursul rundelor stabilite de gazdă în lobby.
-                    În fiecare rundă alegeți simultan câte un ordin; câștigi dacă regatul advers
-                    se prăbușește sau dacă, la epuizarea rundelor, ai putere totală mai mare.
-                </p>
-                <ol class="rule-steps">
-                    <li>Se trage <b>evenimentul rundei</b>, care schimbă costurile și câștigurile doar pentru runda aceea.</li>
-                    <li>Fiecare jucător alege un ordin și îl trimite. Ordinele rămân ascunse până le trimit amândoi.</li>
-                    <li>Se aplică efectul evenimentului (rebeliunea lovește prima).</li>
-                    <li>Se aplică efectele proprii ale fiecărui ordin: costuri și câștiguri.</li>
-                    <li>Se rezolvă <b>interacțiunea</b> dintre cele două ordine.</li>
-                    <li>Se verifică dacă meciul s-a încheiat; altfel începe runda următoare.</li>
-                </ol>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="coin" /></span> Resursele regatului</h3>
-                <dl class="rule-defs">
-                    <dt>Aur</dt>
-                    <dd>Plătește fortificarea și diplomația. Îți dă și nivelul de echipament.</dd>
-
-                    <dt>Trupe</dt>
-                    <dd>Se consumă la atac și se pierd în lupte. Dacă ajung la 0, regatul se prăbușește.</dd>
-
-                    <dt>Moral</dt>
-                    <dd>Decide ciocnirile directe. Sub @GameConstants.RebellionMoraleThreshold ești vulnerabil la rebeliune; la 0 regatul se prăbușește.</dd>
-
-                    <dt>Putere totală</dt>
-                    <dd>Aur + Trupe + Moral. Ea departajează meciul dacă se termină rundele.</dd>
-
-                    <dt>Nivel de echipament</dt>
-                    <dd>
-                        Aur ÷ @GameConstants.GoldPerEquipmentLevel, rotunjit în jos, maximum @GameConstants.MaxEquipmentLevel.
-                        Contează doar când un atac lovește o fortificație.
-                    </dd>
-                </dl>
-                <p class="rule-note">
-                    Aurul și moralul pot crește oricât; nicio resursă nu scade sub 0.
+                    Regulile jocului se schimbă: oastea se va împărți pe mai multe direcții în
+                    aceeași rundă, iar aurul se va cheltui deliberat. Până se așază noile reguli,
+                    pagina asta rămâne goală — o carte care descrie reguli care nu mai există ar
+                    fi mai rea decât una lipsă.
                 </p>
             </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="sword" /></span> Atac</h3>
-                <ul class="rule-list">
-                    <li>Costă <b>@GameConstants.AttackTroopCost trupe</b>, plătite indiferent de rezultat.</li>
-                    <li>Dacă adversarul nu se apără, îi iei aur și trupe — ele trec la tine, nu se pierd.</li>
-                    <li>Fiecare atac reușit aduce <b>+@GameConstants.UndefendedAttackerMoraleGain moral</b>.</li>
-                    <li>Rupe seria de fortificări (vezi Fortificare).</li>
-                </ul>
-                <p class="rule-shift">
-                    La <b>Zvonuri de pace</b> costul urcă la @GameConstants.AttackTroopCostDuringPeaceRumors trupe.
-                </p>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="shield" /></span> Fortificare</h3>
-                <ul class="rule-list">
-                    <li>Costă <b>@GameConstants.DefenseBaseGoldCost aur</b> și aduce <b>+@GameConstants.DefenseBaseMoraleGain moral</b>.</li>
-                    <li>
-                        Fortificarea repetată la rând se scumpește și dă tot mai puțin:
-                        costul crește cu @GameConstants.DefenseGoldCostStep aur pe rundă
-                        (@DefenseCostSequence…), iar moralul scade cu @GameConstants.DefenseMoraleGainStep
-                        pe rundă (@DefenseMoraleSequence…), fără să coboare sub +@GameConstants.DefenseMinMoraleGain.
-                    </li>
-                    <li>Seria se resetează în clipa în care dai orice alt ordin.</li>
-                    <li>
-                        <b>Stagnare:</b> dacă puterea ta totală este deja mai mare sau egală cu a adversarului,
-                        fortificarea îți dă cu @GameConstants.StagnationMoralePenalty moral mai puțin —
-                        deci te poate costa moral. Nu poți câștiga stând pe loc.
-                    </li>
-                </ul>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="scales" /></span> Comerț</h3>
-                <ul class="rule-list">
-                    <li>Aduce <b>+@GameConstants.TradeBaseGoldGain aur</b> și <b>+@GameConstants.TradeMoraleGain moral</b>.</li>
-                    <li>Nu te apără deloc: un atac te găsește descoperit.</li>
-                    <li>Rupe seria de fortificări.</li>
-                </ul>
-                <p class="rule-shift">
-                    <b>Secetă:</b> doar @GameConstants.TradeDroughtGoldGain aur.
-                    <b>Recoltă bogată:</b> @GameConstants.TradeHarvestGoldGain aur.
-                </p>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="olive" /></span> Diplomație</h3>
-                <ul class="rule-list">
-                    <li>Costă <b>@GameConstants.DiplomacyGoldCost aur</b> și aduce <b>+@GameConstants.DiplomacyBaseMoraleGain moral</b>.</li>
-                    <li>Dacă amândoi trimiteți soli în aceeași rundă, se încheie o alianță: fiecare primește <b>+@GameConstants.DiplomacyAllianceGoldBonus aur</b>.</li>
-                    <li>Este ordinul cel mai expus: un atac primit în timp ce faci diplomație fură cel mai mult.</li>
-                    <li>Rupe seria de fortificări.</li>
-                </ul>
-                <p class="rule-shift">
-                    La <b>Târg diplomatic</b> câștigul urcă la +@GameConstants.DiplomacyFairMoraleGain moral.
-                </p>
-            </article>
-
-            <article class="rule-card wide">
-                <h3><span class="rule-ico"><Glyph Name="helm" /></span> Când ordinele se ciocnesc</h3>
-                <p class="rule-lead">
-                    Interacțiunea se rezolvă după ce fiecare tabără și-a plătit costurile proprii.
-                    Numai atacul și alianța diplomatică produc interacțiune; în rest fiecare își vede de treabă.
-                </p>
-
-                <div class="rule-pairs">
-                    <div class="pair">
-                        <b class="pair-title">Atac ⚔ Atac — ciocnire directă</b>
-                        <p>
-                            Fiecare tabără pierde din start @GameConstants.MutualClashBaseTroopLoss trupe.
-                            Diferența de moral se împarte la @GameConstants.MutualClashMoralePerShiftPoint,
-                            se rotunjește și se plafonează la ±@GameConstants.MutualClashMaxMoraleShiftFactor:
-                            atât scade din pierderea taberei cu moral mai mare și atât se adaugă celeilalte.
-                            Ambele tabere pierd @GameConstants.MutualClashMoraleLoss moral.
-                        </p>
-                        <span class="pair-eg">
-                            Exemplu: cu @(GameConstants.MutualClashMoralePerShiftPoint * 3) moral peste adversar pierzi
-                            @(GameConstants.MutualClashBaseTroopLoss - 3) trupe, iar el @(GameConstants.MutualClashBaseTroopLoss + 3).
-                        </span>
-                    </div>
-
-                    <div class="pair">
-                        <b class="pair-title">Atac ⚔ Fortificare — asediu</b>
-                        <p>
-                            Șansa de străpungere pornește de la @BaseBreakthroughPercent% și se mișcă cu
-                            @BreakthroughStepPercent puncte procentuale pentru fiecare nivel de echipament
-                            pe care atacatorul îl are peste apărător (sau sub el), între
-                            @MinBreakthroughPercent% și @MaxBreakthroughPercent%.
-                        </p>
-                        <ul class="rule-list tight">
-                            <li>
-                                <b>Străpungere:</b> atacatorul ia @GameConstants.BreakthroughStealGold aur și
-                                @GameConstants.BreakthroughStealTroops trupe, plus @GameConstants.UndefendedAttackerMoraleGain moral.
-                            </li>
-                            <li>
-                                <b>Respins:</b> atacatorul mai pierde @GameConstants.RepelledExtraTroopLossBase trupe,
-                                minus câte o trupă pentru fiecare nivel de echipament al lui
-                                (niciodată mai puțin de @GameConstants.RepelledExtraTroopLossMin);
-                                apărătorul câștigă @GameConstants.RepelledDefenderMoraleBase moral plus nivelul propriu de fortificație.
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="pair">
-                        <b class="pair-title">Atac ⚔ Comerț</b>
-                        <p>
-                            Atacatorul fură @GameConstants.UndefendedStealGold aur și
-                            @GameConstants.UndefendedStealTroops trupe și câștigă
-                            @GameConstants.UndefendedAttackerMoraleGain moral.
-                        </p>
-                    </div>
-
-                    <div class="pair">
-                        <b class="pair-title">Atac ⚔ Diplomație</b>
-                        <p>
-                            Cea mai scumpă greșeală: atacatorul fură @GameConstants.UndefendedDiplomacyStealGold aur și
-                            @GameConstants.UndefendedDiplomacyStealTroops trupe și câștigă
-                            @GameConstants.UndefendedAttackerMoraleGain moral.
-                        </p>
-                    </div>
-
-                    <div class="pair">
-                        <b class="pair-title">Diplomație ⚔ Diplomație — alianță</b>
-                        <p>Ambele tabere primesc @GameConstants.DiplomacyAllianceGoldBonus aur.</p>
-                    </div>
-
-                    <div class="pair">
-                        <b class="pair-title">Orice altă pereche fără atac</b>
-                        <p>Nu există interacțiune: rămân doar efectele proprii ale ordinelor.</p>
-                    </div>
-                </div>
-
-                <p class="rule-note">
-                    Furtul e limitat de ce are adversarul: dacă are mai puțin decât cifra de mai sus, iei doar cât are.
-                </p>
-            </article>
-
-            <article class="rule-card wide">
-                <h3><span class="rule-ico"><Glyph Name="moon" /></span> Evenimentele rundei</h3>
-                <p class="rule-lead">
-                    La începutul fiecărei runde se trage un eveniment la întâmplare. Îl vezi în bara de sub cetăți,
-                    înainte să alegi ordinul, și afectează doar runda curentă.
-                </p>
-                <ul class="rule-events">
-                    <li>
-                        <span class="ev-ico"><Glyph Name="moon" /></span>
-                        <b>Anotimp liniștit</b>
-                        <span>Nimic nu se schimbă; regulile obișnuite rămân în vigoare.</span>
-                    </li>
-                    <li>
-                        <span class="ev-ico"><Glyph Name="sun" /></span>
-                        <b>Secetă</b>
-                        <span>Comerțul aduce doar @GameConstants.TradeDroughtGoldGain aur în loc de @GameConstants.TradeBaseGoldGain.</span>
-                    </li>
-                    <li>
-                        <span class="ev-ico"><Glyph Name="sheaf" /></span>
-                        <b>Recoltă bogată</b>
-                        <span>Comerțul aduce @GameConstants.TradeHarvestGoldGain aur în loc de @GameConstants.TradeBaseGoldGain.</span>
-                    </li>
-                    <li>
-                        <span class="ev-ico"><Glyph Name="pitchfork" /></span>
-                        <b>Rebeliune</b>
-                        <span>
-                            Oricine are moralul sub @GameConstants.RebellionMoraleThreshold pierde
-                            @GameConstants.RebellionTroopLoss trupe, înainte de aplicarea ordinelor.
-                        </span>
-                    </li>
-                    <li>
-                        <span class="ev-ico"><Glyph Name="dove" /></span>
-                        <b>Zvonuri de pace</b>
-                        <span>Atacul costă @GameConstants.AttackTroopCostDuringPeaceRumors trupe în loc de @GameConstants.AttackTroopCost.</span>
-                    </li>
-                    <li>
-                        <span class="ev-ico"><Glyph Name="pavilion" /></span>
-                        <b>Târg diplomatic</b>
-                        <span>Diplomația aduce +@GameConstants.DiplomacyFairMoraleGain moral în loc de +@GameConstants.DiplomacyBaseMoraleGain.</span>
-                    </li>
-                </ul>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="crown" /></span> Cum se termină meciul</h3>
-                <ul class="rule-list">
-                    <li><b>Prăbușire:</b> un regat rămâne fără trupe sau fără moral — adversarul câștigă imediat.</li>
-                    <li><b>Prăbușire dublă:</b> dacă amândouă regatele cad în aceeași rundă, nu câștigă nimeni.</li>
-                    <li><b>Rundele s-au epuizat:</b> câștigă cine are puterea totală mai mare (Aur + Trupe + Moral).</li>
-                    <li><b>Egalitate:</b> dacă puterile sunt identice după ultima rundă, meciul e remiză.</li>
-                    <li><b>Abandon:</b> cine părăsește meciul în timpul lui îi lasă victoria adversarului.</li>
-                </ul>
-                <p class="rule-note">
-                    Verificarea se face la sfârșitul rundei, după ce s-au aplicat toate efectele.
-                </p>
-            </article>
-
-            <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="flame" /></span> Detalii ușor de ratat</h3>
-                <ul class="rule-list">
-                    <li>Ordinele se aleg simultan: nu vezi ce a trimis adversarul până nu trimiteți amândoi.</li>
-                    <li>Costul atacului se plătește chiar dacă atacul e respins.</li>
-                    <li>Aurul nu e doar bogăție: peste @GameConstants.GoldPerEquipmentLevel aur crește nivelul de echipament și, cu el, șansa de a sparge o fortificație.</li>
-                    <li>Moralul mare e o armă în ciocnirea directă și un scut împotriva rebeliunii.</li>
-                    <li>Fortificarea la nesfârșit e o capcană: se scumpește, dă tot mai puțin moral, iar în avantaj te și penalizează.</li>
-                    <li>Trupele și aurul furate nu dispar din joc — trec la atacator.</li>
-                </ul>
-            </article>
-
         </div>
 
         <footer class="rules-foot">
             <span class="rules-foot-note">Poți deschide regulile oricând, și în lobby, și în timpul meciului.</span>
-            <button type="button" class="rules-done" @onclick="Close">Am înțeles</button>
         </footer>
-
     </div>
 }
 
@@ -316,19 +71,4 @@
             await dialog.FocusAsync();
         }
     }
-
-    private static string DefenseCostSequence => string.Join(", ", Enumerable
-        .Range(0, 3)
-        .Select(step => GameConstants.DefenseBaseGoldCost + step * GameConstants.DefenseGoldCostStep));
-
-    private static string DefenseMoraleSequence => string.Join(", ", Enumerable
-        .Range(0, 3)
-        .Select(step => Math.Max(
-            GameConstants.DefenseMinMoraleGain,
-            GameConstants.DefenseBaseMoraleGain - step * GameConstants.DefenseMoraleGainStep)));
-
-    private static int BaseBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughBaseChance * 100);
-    private static int BreakthroughStepPercent => (int)Math.Round(GameConstants.BreakthroughChancePerLevel * 100);
-    private static int MinBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughMinChance * 100);
-    private static int MaxBreakthroughPercent => (int)Math.Round(GameConstants.BreakthroughMaxChance * 100);
 }

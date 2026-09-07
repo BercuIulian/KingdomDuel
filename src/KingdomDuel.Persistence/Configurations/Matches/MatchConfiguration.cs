@@ -1,22 +1,12 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
-using KingdomDuel.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace KingdomDuel.Persistence.Configurations.Matches;
 
 internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        Converters = { new JsonStringEnumConverter() },
-    };
-
     public void Configure(EntityTypeBuilder<Match> builder)
     {
         builder.ToTable("matches");
@@ -54,19 +44,5 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             .WithOne()
             .HasForeignKey("MatchId")
             .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Property(m => m.PendingActions)
-            .HasColumnName("PendingActions")
-            .HasColumnType("jsonb")
-            .HasConversion(
-                new ValueConverter<Dictionary<string, ActionType>, string>(
-                    v => JsonSerializer.Serialize(v, JsonOptions),
-                    v => JsonSerializer.Deserialize<Dictionary<string, ActionType>>(v, JsonOptions) ?? new()),
-                CreateComparer<Dictionary<string, ActionType>>());
     }
-
-    private static ValueComparer<T> CreateComparer<T>() => new(
-        (a, b) => JsonSerializer.Serialize(a, JsonOptions) == JsonSerializer.Serialize(b, JsonOptions),
-        v => JsonSerializer.Serialize(v, JsonOptions).GetHashCode(),
-        v => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(v, JsonOptions), JsonOptions)!);
 }

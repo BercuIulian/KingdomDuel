@@ -5,6 +5,5 @@ public enum ActionType
     Attack,
     Defend,
     Trade,
-    Diplomacy,
-    Idle
+    Diplomacy
 }

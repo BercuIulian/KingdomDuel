@@ -29,11 +29,6 @@ internal static class MatchMappings
         Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
-        WaitingOnPlayer1Action =
-            match.Player1 is not null && !match.PendingActions.ContainsKey(match.Player1.ActionKey()),
-        WaitingOnPlayer2Action =
-            match.Player2 is not null && !match.PendingActions.ContainsKey(match.Player2.ActionKey()),
-        History = match.History.OrderBy(r => r.RoundNumber).Select(r => r.ToRoundResultDto()).ToList(),
     };
 
     public static int? SecondsRemaining(this Match match)
@@ -66,23 +61,11 @@ internal static class MatchMappings
             _ => null,
         };
 
-    public static string ActionKey(this PlayerSlot slot) => slot.UserId.ToString();
-
     private static KingdomDto ToKingdomDto(this Kingdom kingdom) => new()
     {
         Gold = kingdom.Gold,
         Troops = kingdom.Troops,
         Morale = kingdom.Morale,
-        EquipmentLevel = kingdom.EquipmentLevel,
         TotalPower = kingdom.TotalPower,
-    };
-
-    private static RoundResultDto ToRoundResultDto(this RoundResult result) => new()
-    {
-        RoundNumber = result.RoundNumber,
-        Event = result.Event,
-        Player1Action = result.Player1Action,
-        Player2Action = result.Player2Action,
-        Log = result.Log.ToList(),
     };
 }

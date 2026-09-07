@@ -21,8 +21,6 @@ public sealed class Match : Entity
     public PlayerSlot? Player1 { get; set; }
     public PlayerSlot? Player2 { get; set; }
 
-     public Dictionary<string, ActionType> PendingActions { get; private set; } = new();
-
     public List<RoundResult> History { get; private set; } = new();
 
     public DateTimeOffset? StartedAt { get; set; }

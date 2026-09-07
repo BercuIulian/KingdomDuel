@@ -25,7 +25,4 @@ public sealed class MatchStateDto
     public int Player2MissedRounds { get; set; }
     public KingdomDto? Player1Kingdom { get; set; }
     public KingdomDto? Player2Kingdom { get; set; }
-    public bool WaitingOnPlayer1Action { get; set; }
-    public bool WaitingOnPlayer2Action { get; set; }
-    public List<RoundResultDto> History { get; set; } = new();
 }
