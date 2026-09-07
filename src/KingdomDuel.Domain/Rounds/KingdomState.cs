@@ -9,9 +9,6 @@ public readonly record struct KingdomState(int Gold, int Troops, int Morale)
     [JsonIgnore]
     public int TotalPower => Gold + Troops + Morale;
 
-    [JsonIgnore]
-    public bool HasCollapsed => Troops <= 0 || Morale <= 0;
-
     public KingdomState With(int goldDelta = 0, int troopsDelta = 0, int moraleDelta = 0) => new(
         Math.Max(0, Gold + goldDelta),
         Math.Max(0, Troops + troopsDelta),

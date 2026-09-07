@@ -26,7 +26,6 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
             kingdom.Property(k => k.Troops).HasColumnName("Troops");
             kingdom.Property(k => k.Morale).HasColumnName("Morale");
             kingdom.Ignore(k => k.TotalPower);
-            kingdom.Ignore(k => k.HasCollapsed);
         });
 
         builder.Property(p => p.PendingOrder)

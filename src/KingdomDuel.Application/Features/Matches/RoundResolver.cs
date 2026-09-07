@@ -67,7 +67,8 @@ internal static class RoundResolver
             match.TotalRounds,
             match.CurrentEvent,
             new SideInput(match.Player1.Kingdom, order1),
-            new SideInput(match.Player2.Kingdom, order2)));
+            new SideInput(match.Player2.Kingdom, order2)),
+            Random.Shared);
 
         match.History.Add(new RoundResult
         {
