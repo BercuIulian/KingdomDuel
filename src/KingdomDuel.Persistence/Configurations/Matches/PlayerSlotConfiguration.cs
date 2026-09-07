@@ -1,4 +1,5 @@
 using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Rounds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,10 +18,19 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.UserId);
 
-        builder.HasOne(p => p.Kingdom)
-            .WithOne()
-            .HasForeignKey<Kingdom>("PlayerSlotId")
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.Navigation(p => p.Kingdom).IsRequired();
+        // Regatul stă pe rândul slotului, nu în tabela lui: e 1:1 cu slotul și nu se
+        // interoghează niciodată după resursele lui.
+        builder.ComplexProperty(p => p.Kingdom, kingdom =>
+        {
+            kingdom.Property(k => k.Gold).HasColumnName("Gold");
+            kingdom.Property(k => k.Troops).HasColumnName("Troops");
+            kingdom.Property(k => k.Morale).HasColumnName("Morale");
+            kingdom.Ignore(k => k.TotalPower);
+            kingdom.Ignore(k => k.HasCollapsed);
+        });
+
+        builder.Property(p => p.PendingOrder)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<OrderPlan>(), JsonColumns.Comparer<OrderPlan>());
     }
 }

@@ -23,35 +23,6 @@ namespace KingdomDuel.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.Kingdom", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("DefenseStreak")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Gold")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Morale")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid?>("PlayerSlotId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Troops")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerSlotId")
-                        .IsUnique();
-
-                    b.ToTable("kingdoms", (string)null);
-                });
-
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.Match", b =>
                 {
                     b.Property<Guid>("Id")
@@ -75,11 +46,6 @@ namespace KingdomDuel.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
-
-                    b.Property<string>("PendingActions")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("PendingActions");
 
                     b.Property<Guid?>("Player1Id")
                         .HasColumnType("uuid");
@@ -200,8 +166,28 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<int>("MissedRounds")
                         .HasColumnType("integer");
 
+                    b.Property<string>("PendingOrder")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
+
+                    b.ComplexProperty(typeof(Dictionary<string, object>), "Kingdom", "KingdomDuel.Domain.Entities.Matches.PlayerSlot.Kingdom#KingdomState", b1 =>
+                        {
+                            b1.IsRequired();
+
+                            b1.Property<int>("Gold")
+                                .HasColumnType("integer")
+                                .HasColumnName("Gold");
+
+                            b1.Property<int>("Morale")
+                                .HasColumnType("integer")
+                                .HasColumnName("Morale");
+
+                            b1.Property<int>("Troops")
+                                .HasColumnType("integer")
+                                .HasColumnName("Troops");
+                        });
 
                     b.HasKey("Id");
 
@@ -221,27 +207,25 @@ namespace KingdomDuel.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<string>("Events")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("GameOverReason")
                         .IsRequired()
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
-                    b.PrimitiveCollection<List<string>>("Log")
-                        .IsRequired()
-                        .HasColumnType("text[]");
-
                     b.Property<Guid?>("MatchId")
                         .HasColumnType("uuid");
 
-                    b.Property<string>("Player1Action")
+                    b.Property<string>("Player1")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("jsonb");
 
-                    b.Property<string>("Player2Action")
+                    b.Property<string>("Player2")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)");
+                        .HasColumnType("jsonb");
 
                     b.Property<int>("RoundNumber")
                         .HasColumnType("integer");
@@ -292,14 +276,6 @@ namespace KingdomDuel.Persistence.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.Kingdom", b =>
-                {
-                    b.HasOne("KingdomDuel.Domain.Entities.Matches.PlayerSlot", null)
-                        .WithOne("Kingdom")
-                        .HasForeignKey("KingdomDuel.Domain.Entities.Matches.Kingdom", "PlayerSlotId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.Match", b =>
                 {
                     b.HasOne("KingdomDuel.Domain.Entities.Matches.PlayerSlot", "Player1")
@@ -348,12 +324,6 @@ namespace KingdomDuel.Persistence.Migrations
             modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.Match", b =>
                 {
                     b.Navigation("History");
-                });
-
-            modelBuilder.Entity("KingdomDuel.Domain.Entities.Matches.PlayerSlot", b =>
-                {
-                    b.Navigation("Kingdom")
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

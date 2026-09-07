@@ -9,7 +9,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<Match> Matches => Set<Match>();
     public DbSet<PlayerSlot> PlayerSlots => Set<PlayerSlot>();
-    public DbSet<Kingdom> Kingdoms => Set<Kingdom>();
     public DbSet<RoundResult> RoundResults => Set<RoundResult>();
     public DbSet<MatchRecord> MatchRecords => Set<MatchRecord>();
     public DbSet<User> Users => Set<User>();
