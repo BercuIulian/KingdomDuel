@@ -1,15 +1,109 @@
 using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
+using KingdomDuel.Domain.Rounds;
 
 namespace KingdomDuel.Application.Features.Matches;
 
 internal static class RoundResolver
 {
+    public static bool ExpireIfDue(Match match)
+    {
+        if (match.Status != MatchStatus.InProgress
+            || match.Player1 is null
+            || match.Player2 is null
+            || match.RoundDeadline is not { } deadline)
+        {
+            return false;
+        }
+
+        if (DateTimeOffset.UtcNow <= deadline.AddSeconds(GameConstants.RoundGraceSeconds))
+        {
+            return false;
+        }
+
+        var player1Missed = match.Player1.PendingOrder is null;
+        var player2Missed = match.Player2.PendingOrder is null;
+
+        match.Player1.PendingOrder ??= OrderPlan.Empty;
+        match.Player2.PendingOrder ??= OrderPlan.Empty;
+
+        if (!ResolveIfReady(match))
+        {
+            return false;
+        }
+
+        if (player1Missed)
+        {
+            match.Player1.MissedRounds += 1;
+        }
+
+        if (player2Missed)
+        {
+            match.Player2.MissedRounds += 1;
+        }
+
+        ForfeitIfAbandoned(match);
+
+        return true;
+    }
+
+    public static bool ResolveIfReady(Match match)
+    {
+        if (match.Status != MatchStatus.InProgress
+            || match.Player1 is null
+            || match.Player2 is null)
+        {
+            return false;
+        }
+
+        if (match.Player1.PendingOrder is not { } order1 || match.Player2.PendingOrder is not { } order2)
+        {
+            return false;
+        }
+
+        var outcome = GameEngine.Resolve(new RoundInput(
+            match.Round,
+            match.TotalRounds,
+            match.CurrentEvent,
+            new SideInput(match.Player1.Kingdom, order1),
+            new SideInput(match.Player2.Kingdom, order2)));
+
+        match.History.Add(new RoundResult
+        {
+            RoundNumber = match.Round,
+            Event = match.CurrentEvent,
+            Player1 = new RoundSide(order1, outcome.Player1),
+            Player2 = new RoundSide(order2, outcome.Player2),
+            Events = outcome.Events.ToList(),
+            GameOverReason = outcome.GameOverReason,
+        });
+
+        match.Player1.Kingdom = outcome.Player1;
+        match.Player2.Kingdom = outcome.Player2;
+        match.Player1.PendingOrder = null;
+        match.Player2.PendingOrder = null;
+        match.GameOverReason = outcome.GameOverReason;
+
+        if (outcome.GameOverReason == GameOverReason.None)
+        {
+            match.Round += 1;
+            match.CurrentEvent = GameEngine.DrawEvent(Random.Shared);
+            StartRoundClock(match);
+        }
+        else
+        {
+            match.Status = MatchStatus.Completed;
+            match.RoundDeadline = null;
+        }
+
+        return true;
+    }
+
     public static void StartRoundClock(Match match)
         => match.RoundDeadline = DateTimeOffset.UtcNow.AddSeconds(match.RoundSeconds);
 
-    public static void ForfeitIfAbandoned(Match match)
+    private static void ForfeitIfAbandoned(Match match)
     {
         if (match.GameOverReason != GameOverReason.None)
         {
