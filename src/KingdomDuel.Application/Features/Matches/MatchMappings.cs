@@ -1,5 +1,6 @@
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
+using KingdomDuel.Domain.Rounds;
 using KingdomDuel.Shared.Dtos.Matches;
 
 namespace KingdomDuel.Application.Features.Matches;
@@ -61,7 +62,7 @@ internal static class MatchMappings
             _ => null,
         };
 
-    private static KingdomDto ToKingdomDto(this Kingdom kingdom) => new()
+    private static KingdomDto ToKingdomDto(this KingdomState kingdom) => new()
     {
         Gold = kingdom.Gold,
         Troops = kingdom.Troops,

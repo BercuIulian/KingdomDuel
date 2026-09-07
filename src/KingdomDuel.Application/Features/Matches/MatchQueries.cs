@@ -31,9 +31,7 @@ internal static class MatchQueries
         string code,
         CancellationToken ct)
         => matches
-            .Include(m => m.Player1).ThenInclude(p => p!.Kingdom)
             .Include(m => m.Player1).ThenInclude(p => p!.User)
-            .Include(m => m.Player2).ThenInclude(p => p!.Kingdom)
             .Include(m => m.Player2).ThenInclude(p => p!.User)
             .Include(m => m.History)
             .FirstOrDefaultAsync(m => m.Code == code.ToUpper(), ct);

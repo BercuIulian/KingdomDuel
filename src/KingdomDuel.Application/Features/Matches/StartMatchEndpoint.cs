@@ -48,10 +48,11 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        foreach (var kingdom in new[] { match.Player1.Kingdom, match.Player2.Kingdom })
-        {
-            kingdom.Apply(KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale));
-        }
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+        match.Player1.Kingdom = start;
+        match.Player2.Kingdom = start;
+        match.Player1.PendingOrder = null;
+        match.Player2.PendingOrder = null;
 
         match.Round = 1;
         match.Status = MatchStatus.InProgress;
