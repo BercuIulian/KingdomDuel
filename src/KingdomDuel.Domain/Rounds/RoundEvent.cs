@@ -5,6 +5,8 @@ namespace KingdomDuel.Domain.Rounds;
 public enum RoundEventKind
 {
     OrderGiven,
+    CaravanSent,
+    CaravanReturned,
     TradeIncome
 }
 

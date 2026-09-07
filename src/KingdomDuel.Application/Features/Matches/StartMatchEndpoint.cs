@@ -53,6 +53,8 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
         match.Player2.Kingdom = start;
         match.Player1.PendingOrder = null;
         match.Player2.PendingOrder = null;
+        match.Player1.Caravan = null;
+        match.Player2.Caravan = null;
 
         match.Round = 1;
         match.Status = MatchStatus.InProgress;

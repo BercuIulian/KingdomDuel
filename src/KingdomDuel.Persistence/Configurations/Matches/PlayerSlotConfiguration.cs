@@ -18,8 +18,6 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.UserId);
 
-        // Regatul stă pe rândul slotului, nu în tabela lui: e 1:1 cu slotul și nu se
-        // interoghează niciodată după resursele lui.
         builder.ComplexProperty(p => p.Kingdom, kingdom =>
         {
             kingdom.Property(k => k.Gold).HasColumnName("Gold");
@@ -31,5 +29,9 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
         builder.Property(p => p.PendingOrder)
             .HasColumnType("jsonb")
             .HasConversion(JsonColumns.Converter<OrderPlan>(), JsonColumns.Comparer<OrderPlan>());
+
+        builder.Property(p => p.Caravan)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<Caravan>(), JsonColumns.Comparer<Caravan>());
     }
 }

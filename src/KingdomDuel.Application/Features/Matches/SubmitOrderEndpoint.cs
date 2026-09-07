@@ -59,6 +59,13 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
+            if (plan[ActionType.Trade] > 0 && slot.Caravan is { } away)
+            {
+                AddError($"Caravana e încă pe drum cu {away.Troops} soldați. Se întoarce în runda {away.AvailableInRound}.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
             if (!RoundResolver.ExpireIfDue(match))
             {
                 slot.PendingOrder = plan;

@@ -20,8 +20,8 @@ public static class GameEngine
         Record(1, order1, events);
         Record(2, order2, events);
 
-        var after1 = Trade(1, input.Player1.Kingdom, order1, random, events);
-        var after2 = Trade(2, input.Player2.Kingdom, order2, random, events);
+        var after1 = ResolveSide(1, input.Player1, order1, input.Round, random, events);
+        var after2 = ResolveSide(2, input.Player2, order2, input.Round, random, events);
 
         var gameOver = EvaluateGameOver(after1, after2, input.Round, input.TotalRounds);
 
@@ -29,8 +29,8 @@ public static class GameEngine
     }
 
     public static GameOverReason EvaluateGameOver(
-        KingdomState player1,
-        KingdomState player2,
+        SideOutcome player1,
+        SideOutcome player2,
         int round,
         int totalRounds)
     {
@@ -45,28 +45,49 @@ public static class GameEngine
         return GameOverReason.None;
     }
 
-    private static KingdomState Trade(
+    public static int CaravanReturnRound(int round) => round + 2;
+
+    private static SideOutcome ResolveSide(
         int side,
-        KingdomState state,
+        SideInput input,
         OrderPlan order,
+        int round,
         Random random,
         List<RoundEvent> events)
     {
-        var traders = order[ActionType.Trade];
+        var state = input.Kingdom;
+        var caravan = input.Caravan;
 
-        if (traders <= 0)
+        if (caravan is { } away && away.AvailableInRound <= round + 1)
         {
-            return state;
+            var gold = TradeYield(away.Troops, random);
+
+            state = state.With(goldDelta: gold, troopsDelta: away.Troops);
+            caravan = null;
+
+            events.Add(new RoundEvent(RoundEventKind.CaravanReturned, side, away.Troops, ActionType.Trade));
+            events.Add(new RoundEvent(RoundEventKind.TradeIncome, side, gold));
         }
 
-        var yield = GameConstants.TradeYieldMin
+        var traders = order[ActionType.Trade];
+
+        if (traders > 0 && input.Caravan is null)
+        {
+            state = state.With(troopsDelta: -traders);
+            caravan = new Caravan(traders, CaravanReturnRound(round));
+
+            events.Add(new RoundEvent(RoundEventKind.CaravanSent, side, traders, ActionType.Trade));
+        }
+
+        return new SideOutcome(state, caravan);
+    }
+
+    private static int TradeYield(int traders, Random random)
+    {
+        var factor = GameConstants.TradeYieldMin
             + random.NextDouble() * (GameConstants.TradeYieldMax - GameConstants.TradeYieldMin);
 
-        var gold = Math.Max(1, (int)Math.Round(traders * GameConstants.TradeGoldPerSoldier * yield));
-
-        events.Add(new RoundEvent(RoundEventKind.TradeIncome, side, gold));
-
-        return state.With(goldDelta: gold);
+        return Math.Max(1, (int)Math.Round(traders * GameConstants.TradeGoldPerSoldier * factor));
     }
 
     private static void Record(int side, OrderPlan order, List<RoundEvent> events)

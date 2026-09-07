@@ -20,4 +20,6 @@ public sealed class PlayerSlot : Entity
         GameConstants.StartingResource);
 
     public OrderPlan? PendingOrder { get; set; }
+
+    public Caravan? Caravan { get; set; }
 }

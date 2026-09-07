@@ -160,6 +160,9 @@ namespace KingdomDuel.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Caravan")
+                        .HasColumnType("jsonb");
+
                     b.Property<bool>("IsReady")
                         .HasColumnType("boolean");
 

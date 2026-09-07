@@ -66,22 +66,24 @@ internal static class RoundResolver
             match.Round,
             match.TotalRounds,
             match.CurrentEvent,
-            new SideInput(match.Player1.Kingdom, order1),
-            new SideInput(match.Player2.Kingdom, order2)),
+            new SideInput(match.Player1.Kingdom, order1, match.Player1.Caravan),
+            new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan)),
             Random.Shared);
 
         match.History.Add(new RoundResult
         {
             RoundNumber = match.Round,
             Event = match.CurrentEvent,
-            Player1 = new RoundSide(order1, outcome.Player1),
-            Player2 = new RoundSide(order2, outcome.Player2),
+            Player1 = new RoundSide(order1, outcome.Player1.Kingdom),
+            Player2 = new RoundSide(order2, outcome.Player2.Kingdom),
             Events = outcome.Events.ToList(),
             GameOverReason = outcome.GameOverReason,
         });
 
-        match.Player1.Kingdom = outcome.Player1;
-        match.Player2.Kingdom = outcome.Player2;
+        match.Player1.Kingdom = outcome.Player1.Kingdom;
+        match.Player2.Kingdom = outcome.Player2.Kingdom;
+        match.Player1.Caravan = outcome.Player1.Caravan;
+        match.Player2.Caravan = outcome.Player2.Caravan;
         match.Player1.PendingOrder = null;
         match.Player2.PendingOrder = null;
         match.GameOverReason = outcome.GameOverReason;
