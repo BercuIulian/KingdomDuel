@@ -23,6 +23,8 @@ public static class GameEngine
         var after1 = ResolveSide(1, input.Player1, order1, input.Round, random, events);
         var after2 = ResolveSide(2, input.Player2, order2, input.Round, random, events);
 
+        (after1, after2) = MeetOnTheRoad(after1, after2, order1, order2, random, events);
+
         var gameOver = EvaluateGameOver(after1, after2, input.Round, input.TotalRounds);
 
         return new RoundOutcome(after1, after2, events, gameOver);
@@ -46,6 +48,34 @@ public static class GameEngine
     }
 
     public static int CaravanReturnRound(int round) => round + 2;
+
+    private static (SideOutcome, SideOutcome) MeetOnTheRoad(
+        SideOutcome side1,
+        SideOutcome side2,
+        OrderPlan order1,
+        OrderPlan order2,
+        Random random,
+        List<RoundEvent> events)
+    {
+        var army1 = Math.Min(order1[ActionType.Attack], side1.Kingdom.Troops);
+        var army2 = Math.Min(order2[ActionType.Attack], side2.Kingdom.Troops);
+
+        if (army1 <= 0 || army2 <= 0)
+        {
+            return (side1, side2);
+        }
+
+        var log = Battle.Fight(army1, army2, random);
+
+        events.Add(new RoundEvent(RoundEventKind.BattleJoined, 1, army1, ActionType.Attack));
+        events.Add(new RoundEvent(RoundEventKind.BattleJoined, 2, army2, ActionType.Attack));
+        events.Add(new RoundEvent(RoundEventKind.BattleLosses, 1, army1 - log.Army1Left));
+        events.Add(new RoundEvent(RoundEventKind.BattleLosses, 2, army2 - log.Army2Left));
+
+        return (
+            side1 with { Kingdom = side1.Kingdom.With(troopsDelta: -(army1 - log.Army1Left)) },
+            side2 with { Kingdom = side2.Kingdom.With(troopsDelta: -(army2 - log.Army2Left)) });
+    }
 
     private static SideOutcome ResolveSide(
         int side,

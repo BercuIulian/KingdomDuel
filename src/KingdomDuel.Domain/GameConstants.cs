@@ -14,6 +14,8 @@ public static class GameConstants
     public const int RoundGraceSeconds = 2;
     public const int MissedRoundsBeforeForfeit = 3;
 
+    public const double BattleStrengthExponent = 0.5;
+
     public const int TradeGoldPerSoldier = 1;
     public const double TradeYieldMin = 0.9;
     public const double TradeYieldMax = 1.1;
