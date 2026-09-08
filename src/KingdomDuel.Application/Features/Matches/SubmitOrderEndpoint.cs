@@ -52,6 +52,15 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
+            RoundResolver.SettleIfDue(match);
+
+            if (match.LiveBattle is not null)
+            {
+                AddError("Bătălia e în desfășurare. Ordinul următor se dă după ce se încheie.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
             if (plan.Committed > slot.Kingdom.Troops)
             {
                 AddError($"Ai trimis {plan.Committed} soldați, dar oastea are {slot.Kingdom.Troops}.");

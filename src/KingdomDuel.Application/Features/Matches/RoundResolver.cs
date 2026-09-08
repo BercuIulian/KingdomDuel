@@ -10,6 +10,7 @@ internal static class RoundResolver
     public static bool ExpireIfDue(Match match)
     {
         if (match.Status != MatchStatus.InProgress
+            || match.LiveBattle is not null
             || match.Player1 is null
             || match.Player2 is null
             || match.RoundDeadline is not { } deadline)
@@ -51,6 +52,7 @@ internal static class RoundResolver
     public static bool ResolveIfReady(Match match)
     {
         if (match.Status != MatchStatus.InProgress
+            || match.LiveBattle is not null
             || match.Player1 is null
             || match.Player2 is null)
         {
@@ -70,12 +72,43 @@ internal static class RoundResolver
             new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan)),
             Random.Shared);
 
+        if (outcome.Battle is { } battle)
+        {
+            match.LiveBattle = new LiveBattle(battle, outcome, DateTimeOffset.UtcNow);
+            match.RoundDeadline = null;
+
+            return true;
+        }
+
+        Apply(match, outcome);
+
+        return true;
+    }
+
+    public static bool SettleIfDue(Match match)
+    {
+        if (match.LiveBattle is not { } battle || !battle.IsOverAt(DateTimeOffset.UtcNow))
+        {
+            return false;
+        }
+
+        match.LiveBattle = null;
+        Apply(match, battle.Outcome);
+
+        return true;
+    }
+
+    public static void StartRoundClock(Match match)
+        => match.RoundDeadline = DateTimeOffset.UtcNow.AddSeconds(match.RoundSeconds);
+
+    private static void Apply(Match match, RoundOutcome outcome)
+    {
         match.History.Add(new RoundResult
         {
             RoundNumber = match.Round,
             Event = match.CurrentEvent,
-            Player1 = new RoundSide(order1, outcome.Player1.Kingdom),
-            Player2 = new RoundSide(order2, outcome.Player2.Kingdom),
+            Player1 = new RoundSide(match.Player1!.PendingOrder ?? OrderPlan.Empty, outcome.Player1.Kingdom),
+            Player2 = new RoundSide(match.Player2!.PendingOrder ?? OrderPlan.Empty, outcome.Player2.Kingdom),
             Events = outcome.Events.ToList(),
             GameOverReason = outcome.GameOverReason,
         });
@@ -99,12 +132,7 @@ internal static class RoundResolver
             match.Status = MatchStatus.Completed;
             match.RoundDeadline = null;
         }
-
-        return true;
     }
-
-    public static void StartRoundClock(Match match)
-        => match.RoundDeadline = DateTimeOffset.UtcNow.AddSeconds(match.RoundSeconds);
 
     private static void ForfeitIfAbandoned(Match match)
     {

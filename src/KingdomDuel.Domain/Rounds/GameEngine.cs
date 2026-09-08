@@ -23,7 +23,9 @@ public static class GameEngine
         var after1 = ResolveSide(1, input.Player1, order1, input.Round, random, events);
         var after2 = ResolveSide(2, input.Player2, order2, input.Round, random, events);
 
-        (after1, after2) = MeetOnTheRoad(after1, after2, order1, order2, random, events);
+        var road = MeetOnTheRoad(after1, after2, order1, order2, random, events);
+        after1 = road.Player1;
+        after2 = road.Player2;
 
         var storm = StormCastles(after1, after2, order1, order2, random, events);
         after1 = storm.Player1;
@@ -33,7 +35,7 @@ public static class GameEngine
             ? storm.Over
             : EvaluateGameOver(after1, after2, input.Round, input.TotalRounds);
 
-        return new RoundOutcome(after1, after2, events, gameOver);
+        return new RoundOutcome(after1, after2, events, gameOver, road.Battle ?? storm.Battle);
     }
 
     public static GameOverReason EvaluateGameOver(
@@ -55,7 +57,7 @@ public static class GameEngine
 
     public static int CaravanReturnRound(int round) => round + 2;
 
-    private static (SideOutcome Player1, SideOutcome Player2, GameOverReason Over) StormCastles(
+    private static (SideOutcome Player1, SideOutcome Player2, GameOverReason Over, BattleReplay? Battle) StormCastles(
         SideOutcome side1,
         SideOutcome side2,
         OrderPlan order1,
@@ -65,22 +67,22 @@ public static class GameEngine
     {
         if (order1[ActionType.Attack] > 0 && order2[ActionType.Attack] <= 0)
         {
-            var (attacker, defender, over) = Storm(1, side1, side2, order1, order2, random, events);
+            var (attacker, defender, over, battle) = Storm(1, side1, side2, order1, order2, random, events);
 
-            return (attacker, defender, over);
+            return (attacker, defender, over, battle);
         }
 
         if (order2[ActionType.Attack] > 0 && order1[ActionType.Attack] <= 0)
         {
-            var (attacker, defender, over) = Storm(2, side2, side1, order2, order1, random, events);
+            var (attacker, defender, over, battle) = Storm(2, side2, side1, order2, order1, random, events);
 
-            return (defender, attacker, over);
+            return (defender, attacker, over, battle);
         }
 
-        return (side1, side2, GameOverReason.None);
+        return (side1, side2, GameOverReason.None, null);
     }
 
-    private static (SideOutcome Attacker, SideOutcome Defender, GameOverReason Over) Storm(
+    private static (SideOutcome Attacker, SideOutcome Defender, GameOverReason Over, BattleReplay? Battle) Storm(
         int attackerSide,
         SideOutcome attacker,
         SideOutcome defender,
@@ -100,6 +102,8 @@ public static class GameEngine
         events.Add(new RoundEvent(RoundEventKind.BattleJoined, attackerSide, army, ActionType.Attack));
         events.Add(new RoundEvent(RoundEventKind.BattleJoined, defenderSide, log.OnTheWall, ActionType.Defend));
 
+        var keepDefenders = defender.Kingdom.Troops - log.OnTheWall + log.Reinforcements;
+
         if (log.Keep is null)
         {
             events.Add(new RoundEvent(RoundEventKind.WallsHeld, defenderSide, log.Walls.Army2Left, ActionType.Defend));
@@ -107,11 +111,7 @@ public static class GameEngine
         else
         {
             events.Add(new RoundEvent(RoundEventKind.WallsBreached, defenderSide, log.Reinforcements, ActionType.Defend));
-            events.Add(new RoundEvent(
-                RoundEventKind.BattleJoined,
-                defenderSide,
-                defender.Kingdom.Troops - log.OnTheWall + log.Reinforcements,
-                ActionType.Defend));
+            events.Add(new RoundEvent(RoundEventKind.BattleJoined, defenderSide, keepDefenders, ActionType.Defend));
         }
 
         var attackerLosses = army - log.AttackersLeft;
@@ -130,10 +130,47 @@ public static class GameEngine
             defender with { Kingdom = defender.Kingdom.With(troopsDelta: -defenderLosses) },
             log.CastleDestroyed
                 ? defenderSide == 1 ? GameOverReason.Player1CastleDestroyed : GameOverReason.Player2CastleDestroyed
-                : GameOverReason.None);
+                : GameOverReason.None,
+            AssaultReplay(attackerSide, army, keepDefenders, log));
     }
 
-    private static (SideOutcome, SideOutcome) MeetOnTheRoad(
+    private static BattleReplay AssaultReplay(int attackerSide, int army, int keepDefenders, AssaultLog log)
+    {
+        var defenderSide = attackerSide == 1 ? 2 : 1;
+        var falls = log.Walls.Ticks
+            .Select(tick => new BattleFall(tick.At, tick.Army == 1 ? attackerSide : defenderSide, BattlePhase.Walls))
+            .ToList();
+
+        if (log.Keep is null)
+        {
+            return new BattleReplay(
+                attackerSide,
+                attackerSide == 1 ? army : log.OnTheWall,
+                attackerSide == 1 ? log.OnTheWall : army,
+                keepDefenders,
+                null,
+                falls.Count == 0 ? 0 : falls[^1].At,
+                falls);
+        }
+
+        var breachAt = GameConstants.WallBreakingSeconds;
+
+        falls.AddRange(log.Keep.Ticks.Select(tick => new BattleFall(
+            breachAt + tick.At,
+            tick.Army == 1 ? attackerSide : defenderSide,
+            BattlePhase.Keep)));
+
+        return new BattleReplay(
+            attackerSide,
+            attackerSide == 1 ? army : log.OnTheWall,
+            attackerSide == 1 ? log.OnTheWall : army,
+            keepDefenders,
+            breachAt,
+            breachAt + log.Keep.Ticks.Count,
+            falls);
+    }
+
+    private static (SideOutcome Player1, SideOutcome Player2, BattleReplay? Battle) MeetOnTheRoad(
         SideOutcome side1,
         SideOutcome side2,
         OrderPlan order1,
@@ -146,7 +183,7 @@ public static class GameEngine
 
         if (army1 <= 0 || army2 <= 0)
         {
-            return (side1, side2);
+            return (side1, side2, null);
         }
 
         var log = Battle.Fight(army1, army2, random);
@@ -158,7 +195,15 @@ public static class GameEngine
 
         return (
             side1 with { Kingdom = side1.Kingdom.With(troopsDelta: -(army1 - log.Army1Left)) },
-            side2 with { Kingdom = side2.Kingdom.With(troopsDelta: -(army2 - log.Army2Left)) });
+            side2 with { Kingdom = side2.Kingdom.With(troopsDelta: -(army2 - log.Army2Left)) },
+            new BattleReplay(
+                0,
+                army1,
+                army2,
+                0,
+                null,
+                log.Ticks.Count,
+                log.Ticks.Select(tick => new BattleFall(tick.At, tick.Army, BattlePhase.Road)).ToList()));
     }
 
     private static SideOutcome ResolveSide(

@@ -25,4 +25,5 @@ public sealed class MatchStateDto
     public int Player2MissedRounds { get; set; }
     public KingdomDto? Player1Kingdom { get; set; }
     public KingdomDto? Player2Kingdom { get; set; }
+    public BattleDto? Battle { get; set; }
 }

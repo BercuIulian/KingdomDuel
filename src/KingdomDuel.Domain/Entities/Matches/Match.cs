@@ -1,5 +1,6 @@
 using KingdomDuel.Domain.Contracts;
 using KingdomDuel.Domain.Enums;
+using KingdomDuel.Domain.Rounds;
 
 namespace KingdomDuel.Domain.Entities.Matches;
 
@@ -17,6 +18,8 @@ public sealed class Match : Entity
     public int StartingMorale { get; set; } = GameConstants.StartingResource;
     public int RoundSeconds { get; set; } = GameConstants.DefaultRoundSeconds;
     public DateTimeOffset? RoundDeadline { get; set; }
+
+    public LiveBattle? LiveBattle { get; set; }
 
     public PlayerSlot? Player1 { get; set; }
     public PlayerSlot? Player2 { get; set; }

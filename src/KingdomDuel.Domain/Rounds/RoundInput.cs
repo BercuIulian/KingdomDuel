@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using KingdomDuel.Domain.Enums;
 
 namespace KingdomDuel.Domain.Rounds;
@@ -16,6 +17,7 @@ public sealed record RoundInput(
 
 public sealed record SideOutcome(KingdomState Kingdom, Caravan? Caravan = null)
 {
+    [JsonIgnore]
     public int TotalPower => Kingdom.TotalPower + (Caravan?.Troops ?? 0);
 }
 
@@ -23,4 +25,5 @@ public sealed record RoundOutcome(
     SideOutcome Player1,
     SideOutcome Player2,
     IReadOnlyList<RoundEvent> Events,
-    GameOverReason GameOverReason);
+    GameOverReason GameOverReason,
+    [property: JsonIgnore] BattleReplay? Battle = null);

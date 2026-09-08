@@ -30,7 +30,32 @@ internal static class MatchMappings
         Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
+        Battle = match.LiveBattle?.ToBattleDto(DateTimeOffset.UtcNow),
     };
+
+    private static BattleDto ToBattleDto(this LiveBattle battle, DateTimeOffset now)
+    {
+        var elapsed = battle.ElapsedAt(now);
+        var replay = battle.Replay;
+        var snapshot = replay.At(elapsed);
+
+        return new BattleDto
+        {
+            AttackerSide = replay.AttackerSide,
+            Phase = snapshot.Phase,
+            Player1Start = replay.Player1Start,
+            Player2Start = replay.Player2Start,
+            Player1Left = snapshot.Player1Left,
+            Player2Left = snapshot.Player2Left,
+            Elapsed = Math.Round(Math.Min(elapsed, replay.Duration), 2),
+            Duration = replay.Duration,
+            BreachAt = replay.BreachAt,
+            Over = snapshot.Over,
+            Falls = replay.FallsUntil(elapsed)
+                .Select(fall => new BattleFallDto { At = fall.At, Side = fall.Side, Phase = fall.Phase })
+                .ToList(),
+        };
+    }
 
     public static int? SecondsRemaining(this Match match)
     {

@@ -90,6 +90,7 @@ public static class Battle
         while (left1 > 0 && left2 > 0)
         {
             clock += GameConstants.ArcherShotSeconds / left2;
+            var at = Math.Round(clock, 2);
 
             if (clock > GameConstants.WallBreakingSeconds)
             {
@@ -99,12 +100,12 @@ public static class Battle
             if (random.NextDouble() < WallLossChance)
             {
                 left1 -= 1;
-                ticks.Add(new BattleTick(1, clock));
+                ticks.Add(new BattleTick(1, at));
             }
             else
             {
                 left2 -= 1;
-                ticks.Add(new BattleTick(2, clock));
+                ticks.Add(new BattleTick(2, at));
             }
         }
 

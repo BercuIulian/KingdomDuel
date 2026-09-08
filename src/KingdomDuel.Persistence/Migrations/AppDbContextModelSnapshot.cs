@@ -47,6 +47,9 @@ namespace KingdomDuel.Persistence.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<string>("LiveBattle")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("Player1Id")
                         .HasColumnType("uuid");
 

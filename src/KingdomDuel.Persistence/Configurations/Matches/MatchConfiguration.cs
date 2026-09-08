@@ -1,5 +1,6 @@
 using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Rounds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,10 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
         builder.Property(m => m.RoundSeconds)
             .HasDefaultValue(GameConstants.DefaultRoundSeconds);
+
+        builder.Property(m => m.LiveBattle)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<LiveBattle>(), JsonColumns.Comparer<LiveBattle>());
 
         builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(m => m.CurrentEvent).HasConversion<string>().HasMaxLength(32);
