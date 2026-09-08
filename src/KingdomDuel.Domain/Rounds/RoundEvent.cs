@@ -11,7 +11,10 @@ public enum RoundEventKind
     MoraleDecay,
     Feast,
     BattleJoined,
-    BattleLosses
+    BattleLosses,
+    WallsHeld,
+    WallsBreached,
+    CastleDestroyed
 }
 
 public sealed record RoundEvent(RoundEventKind Kind, int Side, int Amount = 0, ActionType? Direction = null);

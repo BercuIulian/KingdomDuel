@@ -231,11 +231,11 @@ else
 
     private int WinnerSide => state?.GameOverReason switch
     {
-        GameOverReason.Player2Collapsed
+        GameOverReason.Player2CastleDestroyed
             or GameOverReason.RoundsExhaustedPlayer1Wins
             or GameOverReason.Player2Left
             or GameOverReason.Player2Disconnected => 1,
-        GameOverReason.Player1Collapsed
+        GameOverReason.Player1CastleDestroyed
             or GameOverReason.RoundsExhaustedPlayer2Wins
             or GameOverReason.Player1Left
             or GameOverReason.Player1Disconnected => 2,
@@ -260,9 +260,7 @@ else
         {
             if (WinnerSide == 0)
             {
-                return state!.GameOverReason
-                    is GameOverReason.BothCollapsed
-                    or GameOverReason.BothDisconnected
+                return state!.GameOverReason is GameOverReason.BothDisconnected
                     ? "Fără învingător"
                     : "Egalitate";
             }
@@ -278,8 +276,8 @@ else
 
     private string ResultEyebrow => state!.GameOverReason switch
     {
-        GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit",
-        GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed => "Regat prăbușit",
+        GameOverReason.Player1CastleDestroyed
+            or GameOverReason.Player2CastleDestroyed => "Cetate dărâmată",
         GameOverReason.Player1Left or GameOverReason.Player2Left => "Meci încheiat prin abandon",
         GameOverReason.Player1Disconnected or GameOverReason.Player2Disconnected => "Meci încheiat prin inactivitate",
         GameOverReason.BothDisconnected => "Ambele tabere au încetat să dea ordine",
@@ -337,9 +335,8 @@ else
 
     private string VerdictText => state!.GameOverReason switch
     {
-        GameOverReason.Player1Collapsed => $"{Player2Name} câștigă: regatul lui {Player1Name} s-a prăbușit.",
-        GameOverReason.Player2Collapsed => $"{Player1Name} câștigă: regatul lui {Player2Name} s-a prăbușit.",
-        GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit. Nimeni nu câștigă.",
+        GameOverReason.Player1CastleDestroyed => $"{Player2Name} câștigă: cetatea lui {Player1Name} a fost dărâmată.",
+        GameOverReason.Player2CastleDestroyed => $"{Player1Name} câștigă: cetatea lui {Player2Name} a fost dărâmată.",
         GameOverReason.RoundsExhaustedPlayer1Wins => $"{Player1Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedPlayer2Wins => $"{Player2Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",

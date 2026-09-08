@@ -15,6 +15,11 @@ public static class GameConstants
     public const int MissedRoundsBeforeForfeit = 3;
 
     public const double BattleStrengthExponent = 0.5;
+    public const int WallBreakingSeconds = 15;
+    public const int WallCapacity = 6;
+    public const int WallDefenderWorth = 3;
+    public const int WallBreachLossPercent = 30;
+    public const double ArcherShotSeconds = 4;
 
     public const int TradeGoldPerSoldier = 1;
     public const double TradeYieldMin = 0.9;
