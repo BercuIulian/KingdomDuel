@@ -79,7 +79,42 @@ public static class GameEngine
             events.Add(new RoundEvent(RoundEventKind.CaravanSent, side, traders, ActionType.Trade));
         }
 
+        state = state.With(moraleDelta: -GameConstants.MoraleDecayPerRound);
+        events.Add(new RoundEvent(RoundEventKind.MoraleDecay, side, GameConstants.MoraleDecayPerRound));
+
+        state = Feast(side, state, order, input, events);
+
         return new SideOutcome(state, caravan);
+    }
+
+    private static KingdomState Feast(
+        int side,
+        KingdomState state,
+        OrderPlan order,
+        SideInput input,
+        List<RoundEvent> events)
+    {
+        if (order.Feast is not { } tier || state.Gold < order.GoldCost)
+        {
+            return state;
+        }
+
+        var present = input.Kingdom.Troops;
+        var whole = present + (input.Caravan?.Troops ?? 0);
+        var morale = whole <= 0
+            ? 0
+            : (int)Math.Round(GameConstants.FeastMorale(tier) * (double)present / whole);
+
+        state = state.With(goldDelta: -order.GoldCost, moraleDelta: morale);
+
+        if (state.Morale > GameConstants.MoraleCap)
+        {
+            state = state with { Morale = GameConstants.MoraleCap };
+        }
+
+        events.Add(new RoundEvent(RoundEventKind.Feast, side, morale));
+
+        return state;
     }
 
     private static int TradeYield(int traders, Random random)

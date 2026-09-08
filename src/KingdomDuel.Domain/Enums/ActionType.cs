@@ -4,6 +4,5 @@ public enum ActionType
 {
     Attack,
     Defend,
-    Trade,
-    Diplomacy
+    Trade
 }

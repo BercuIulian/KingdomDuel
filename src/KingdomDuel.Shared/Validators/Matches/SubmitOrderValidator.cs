@@ -21,5 +21,10 @@ public sealed class SubmitOrderValidator : AbstractValidator<SubmitOrderRequest>
         RuleFor(x => x.Troops)
             .Must(troops => troops.Select(a => a.Direction).Distinct().Count() == troops.Count)
             .WithMessage("Aceeași direcție apare de două ori.");
+
+        RuleFor(x => x.Feast)
+            .IsInEnum()
+            .When(x => x.Feast.HasValue)
+            .WithMessage("Ospățul acesta nu există.");
     }
 }

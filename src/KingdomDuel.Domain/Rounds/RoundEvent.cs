@@ -7,7 +7,9 @@ public enum RoundEventKind
     OrderGiven,
     CaravanSent,
     CaravanReturned,
-    TradeIncome
+    TradeIncome,
+    MoraleDecay,
+    Feast
 }
 
 public sealed record RoundEvent(RoundEventKind Kind, int Side, int Amount = 0, ActionType? Direction = null);
