@@ -30,14 +30,17 @@ internal static class MatchMappings
         Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
-        Battle = match.LiveBattle?.ToBattleDto(DateTimeOffset.UtcNow),
+        Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
     };
 
-    private static BattleDto ToBattleDto(this LiveBattle battle, DateTimeOffset now)
+    private static BattleDto ToBattleDto(this LiveBattle battle, int side, DateTimeOffset now)
     {
-        var elapsed = battle.ElapsedAt(now);
         var replay = battle.Replay;
-        var snapshot = replay.At(elapsed);
+
+        // Ceasul se oprește la încheiere, iar retragerea o mută mai devreme:
+        // dincolo de această secundă nu s-a întâmplat încă nimic.
+        var shown = Math.Min(battle.ElapsedAt(now), battle.EndsAt);
+        var snapshot = replay.At(shown);
 
         return new BattleDto
         {
@@ -47,11 +50,14 @@ internal static class MatchMappings
             Player2Start = replay.Player2Start,
             Player1Left = snapshot.Player1Left,
             Player2Left = snapshot.Player2Left,
-            Elapsed = Math.Round(Math.Min(elapsed, replay.Duration), 2),
-            Duration = replay.Duration,
+            Elapsed = Math.Round(shown, 2),
+            Duration = battle.EndsAt,
             BreachAt = replay.BreachAt,
-            Over = snapshot.Over,
-            Falls = replay.FallsUntil(elapsed)
+            Over = battle.IsOverAt(now),
+            RetreatBySide = battle.Retreat?.Side,
+            RetreatAt = battle.Retreat?.At,
+            CanRetreat = battle.CanRetreat(side) && !battle.IsOverAt(now),
+            Falls = replay.FallsUntil(shown)
                 .Select(fall => new BattleFallDto { At = fall.At, Side = fall.Side, Phase = fall.Phase })
                 .ToList(),
         };

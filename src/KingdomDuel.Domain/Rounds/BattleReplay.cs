@@ -78,6 +78,12 @@ public sealed record BattleReplay(
         return new BattleSnapshot(BattlePhase.Keep, Math.Max(0, side1), Math.Max(0, side2), seconds >= Duration);
     }
 
+    public int FallsOf(int side, double until) =>
+        Falls.Count(fall => fall.Side == side && fall.At <= until);
+
+    public int FallsOf(int side, double until, BattlePhase phase) =>
+        Falls.Count(fall => fall.Side == side && fall.Phase == phase && fall.At <= until);
+
     public IReadOnlyList<BattleFall> FallsUntil(double seconds) =>
         Falls.Where(fall => fall.At <= seconds).ToList();
 }

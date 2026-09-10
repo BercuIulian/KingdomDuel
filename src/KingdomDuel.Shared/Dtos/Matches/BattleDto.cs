@@ -14,5 +14,8 @@ public sealed class BattleDto
     public double Duration { get; set; }
     public double? BreachAt { get; set; }
     public bool Over { get; set; }
+    public int? RetreatBySide { get; set; }
+    public double? RetreatAt { get; set; }
+    public bool CanRetreat { get; set; }
     public List<BattleFallDto> Falls { get; set; } = [];
 }

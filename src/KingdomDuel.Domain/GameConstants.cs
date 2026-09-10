@@ -21,6 +21,9 @@ public static class GameConstants
     public const int WallBreachLossPercent = 30;
     public const double ArcherShotSeconds = 4;
 
+    public const int RetreatSeconds = 3;
+    public const int RetreatLossPercent = 10;
+
     public const int TradeGoldPerSoldier = 1;
     public const double TradeYieldMin = 0.9;
     public const double TradeYieldMax = 1.1;

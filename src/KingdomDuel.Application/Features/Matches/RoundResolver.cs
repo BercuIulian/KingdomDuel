@@ -93,7 +93,35 @@ internal static class RoundResolver
         }
 
         match.LiveBattle = null;
-        Apply(match, battle.Outcome);
+        Apply(match, GameEngine.SettleBattle(
+            battle.BeforeBattle,
+            battle.Replay,
+            battle.EndsAt,
+            match.Round,
+            match.TotalRounds,
+            battle.Retreat));
+
+        return true;
+    }
+
+    public static bool SignalRetreat(Match match, int side)
+    {
+        if (match.LiveBattle is not { } battle || !battle.CanRetreat(side))
+        {
+            return false;
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
+        if (battle.IsOverAt(now))
+        {
+            return false;
+        }
+
+        match.LiveBattle = battle with
+        {
+            Retreat = new Retreat(side, Math.Min(battle.ElapsedAt(now), battle.Replay.Duration)),
+        };
 
         return true;
     }
