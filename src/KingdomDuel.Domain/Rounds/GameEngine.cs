@@ -104,6 +104,36 @@ public static class GameEngine
 
     public static int CaravanReturnRound(int round) => round + 2;
 
+    public static int MarchChoiceSide(BattleReplay replay, double endsAt, Retreat? retreat)
+    {
+        if (replay.AttackerSide != 0)
+        {
+            return 0;
+        }
+
+        var standing = replay.At(endsAt);
+
+        if (retreat is { } signal)
+        {
+            var other = signal.Side == 1 ? 2 : 1;
+            var left = other == 1 ? standing.Player1Left : standing.Player2Left;
+
+            return left > 0 ? other : 0;
+        }
+
+        if (standing.Player1Left > 0 && standing.Player2Left <= 0) return 1;
+        if (standing.Player2Left > 0 && standing.Player1Left <= 0) return 2;
+
+        return 0;
+    }
+
+    public static int SurvivingExpedition(BattleReplay replay, double endsAt, int side)
+    {
+        var start = side == 1 ? replay.Player1Start : replay.Player2Start;
+
+        return Math.Max(0, start - replay.FallsOf(side, endsAt));
+    }
+
     private static (int Troops1, int Troops2) SettleRoad(
         RoundOutcome before,
         BattleReplay replay,
@@ -221,7 +251,7 @@ public static class GameEngine
         return army2 > 0 ? PlanAssault(2, army2, side1, order1, random) : null;
     }
 
-    private static BattleReplay PlanAssault(
+    public static BattleReplay PlanAssault(
         int attackerSide,
         int army,
         SideOutcome defender,

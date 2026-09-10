@@ -61,6 +61,13 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
+            if (match.MarchChoice is not null)
+            {
+                AddError("Se hotărăște dacă oastea merge mai departe. Ordinul următor vine după.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
             if (plan.Committed > slot.Kingdom.Troops)
             {
                 AddError($"Ai trimis {plan.Committed} soldați, dar oastea are {slot.Kingdom.Troops}.");

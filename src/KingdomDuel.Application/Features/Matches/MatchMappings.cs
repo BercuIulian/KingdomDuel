@@ -31,14 +31,21 @@ internal static class MatchMappings
         Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
         Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+    };
+
+    private static MarchDto ToMarchDto(this MarchChoice choice, int side, DateTimeOffset now) => new()
+    {
+        Side = choice.Side,
+        Army = choice.Army,
+        SecondsRemaining = Math.Round(choice.SecondsLeftAt(now), 1),
+        IsYours = choice.Side == side,
     };
 
     private static BattleDto ToBattleDto(this LiveBattle battle, int side, DateTimeOffset now)
     {
         var replay = battle.Replay;
 
-        // Ceasul se oprește la încheiere, iar retragerea o mută mai devreme:
-        // dincolo de această secundă nu s-a întâmplat încă nimic.
         var shown = Math.Min(battle.ElapsedAt(now), battle.EndsAt);
         var snapshot = replay.At(shown);
 

@@ -21,6 +21,8 @@ public sealed class Match : Entity
 
     public LiveBattle? LiveBattle { get; set; }
 
+    public MarchChoice? MarchChoice { get; set; }
+
     public PlayerSlot? Player1 { get; set; }
     public PlayerSlot? Player2 { get; set; }
 

@@ -50,6 +50,9 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<string>("LiveBattle")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("MarchChoice")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid?>("Player1Id")
                         .HasColumnType("uuid");
 

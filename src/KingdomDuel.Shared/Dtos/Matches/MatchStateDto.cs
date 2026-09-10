@@ -26,4 +26,5 @@ public sealed class MatchStateDto
     public KingdomDto? Player1Kingdom { get; set; }
     public KingdomDto? Player2Kingdom { get; set; }
     public BattleDto? Battle { get; set; }
+    public MarchDto? March { get; set; }
 }

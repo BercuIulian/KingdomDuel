@@ -11,6 +11,7 @@ internal static class RoundResolver
     {
         if (match.Status != MatchStatus.InProgress
             || match.LiveBattle is not null
+            || match.MarchChoice is not null
             || match.Player1 is null
             || match.Player2 is null
             || match.RoundDeadline is not { } deadline)
@@ -53,6 +54,7 @@ internal static class RoundResolver
     {
         if (match.Status != MatchStatus.InProgress
             || match.LiveBattle is not null
+            || match.MarchChoice is not null
             || match.Player1 is null
             || match.Player2 is null)
         {
@@ -87,19 +89,76 @@ internal static class RoundResolver
 
     public static bool SettleIfDue(Match match)
     {
-        if (match.LiveBattle is not { } battle || !battle.IsOverAt(DateTimeOffset.UtcNow))
+        var now = DateTimeOffset.UtcNow;
+        var changed = false;
+
+        if (match.LiveBattle is { } battle && battle.IsOverAt(now))
+        {
+            match.LiveBattle = null;
+
+            var afterBattle = GameEngine.SettleBattle(
+                battle.BeforeBattle,
+                battle.Replay,
+                battle.EndsAt,
+                match.Round,
+                match.TotalRounds,
+                battle.Retreat);
+
+            var chooser = GameEngine.MarchChoiceSide(battle.Replay, battle.EndsAt, battle.Retreat);
+
+            if (chooser == 0)
+            {
+                Apply(match, afterBattle);
+            }
+            else
+            {
+                match.MarchChoice = new MarchChoice(
+                    chooser,
+                    GameEngine.SurvivingExpedition(battle.Replay, battle.EndsAt, chooser),
+                    now.AddSeconds(GameConstants.MarchChoiceSeconds),
+                    afterBattle with { GameOverReason = GameOverReason.None });
+            }
+
+            changed = true;
+        }
+
+        if (match.MarchChoice is { } choice && choice.IsDueAt(DateTimeOffset.UtcNow))
+        {
+            TurnBack(match, choice);
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public static bool March(Match match, int side, bool advance)
+    {
+        if (match.MarchChoice is not { } choice || choice.Side != side || choice.IsDueAt(DateTimeOffset.UtcNow))
         {
             return false;
         }
 
-        match.LiveBattle = null;
-        Apply(match, GameEngine.SettleBattle(
-            battle.BeforeBattle,
-            battle.Replay,
-            battle.EndsAt,
-            match.Round,
-            match.TotalRounds,
-            battle.Retreat));
+        if (!advance)
+        {
+            TurnBack(match, choice);
+
+            return true;
+        }
+
+        var defenderSide = side == 1 ? 2 : 1;
+        var defender = defenderSide == 1 ? choice.AfterField.Player1 : choice.AfterField.Player2;
+        var defenceOrder = (defenderSide == 1 ? match.Player1 : match.Player2)!.PendingOrder ?? OrderPlan.Empty;
+
+        var events = choice.AfterField.Events.ToList();
+        events.Add(new RoundEvent(RoundEventKind.MarchedOn, side, choice.Army, ActionType.Attack));
+
+        var replay = GameEngine.PlanAssault(side, choice.Army, defender, defenceOrder, Random.Shared);
+
+        match.MarchChoice = null;
+        match.LiveBattle = new LiveBattle(
+            replay,
+            choice.AfterField with { Events = events },
+            DateTimeOffset.UtcNow);
 
         return true;
     }
@@ -124,6 +183,23 @@ internal static class RoundResolver
         };
 
         return true;
+    }
+
+    private static void TurnBack(Match match, MarchChoice choice)
+    {
+        var events = choice.AfterField.Events.ToList();
+        events.Add(new RoundEvent(RoundEventKind.TurnedBack, choice.Side, choice.Army, ActionType.Attack));
+
+        match.MarchChoice = null;
+        Apply(match, choice.AfterField with
+        {
+            Events = events,
+            GameOverReason = GameEngine.EvaluateGameOver(
+                choice.AfterField.Player1,
+                choice.AfterField.Player2,
+                match.Round,
+                match.TotalRounds),
+        });
     }
 
     public static void StartRoundClock(Match match)
