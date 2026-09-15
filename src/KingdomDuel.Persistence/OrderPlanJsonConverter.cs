@@ -9,6 +9,7 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
 {
     private const string TroopsProperty = "Troops";
     private const string FeastProperty = "Feast";
+    private const string PurchasesProperty = "Purchases";
 
     public override OrderPlan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -21,8 +22,6 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
         {
             foreach (var entry in allocation.EnumerateObject())
             {
-                // Numele necunoscute se ignoră: o direcție scoasă din enum nu trebuie
-                // să arunce la citirea unui ordin salvat înainte.
                 if (Enum.TryParse<ActionType>(entry.Name, ignoreCase: true, out var direction))
                 {
                     troops[direction] = entry.Value.GetInt32();
@@ -38,7 +37,21 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
             feast = parsed;
         }
 
-        return new OrderPlan(troops, feast);
+        var purchases = new List<PurchaseType>();
+
+        if (Find(root, PurchasesProperty) is { ValueKind: JsonValueKind.Array } bought)
+        {
+            foreach (var entry in bought.EnumerateArray())
+            {
+                if (entry.ValueKind == JsonValueKind.String
+                    && Enum.TryParse<PurchaseType>(entry.GetString(), ignoreCase: true, out var purchase))
+                {
+                    purchases.Add(purchase);
+                }
+            }
+        }
+
+        return new OrderPlan(troops, feast, purchases);
     }
 
     public override void Write(Utf8JsonWriter writer, OrderPlan value, JsonSerializerOptions options)
@@ -57,6 +70,18 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
         if (value.Feast is { } tier)
         {
             writer.WriteString(FeastProperty, tier.ToString());
+        }
+
+        if (value.Purchases.Count > 0)
+        {
+            writer.WriteStartArray(PurchasesProperty);
+
+            foreach (var purchase in value.Purchases)
+            {
+                writer.WriteStringValue(purchase.ToString());
+            }
+
+            writer.WriteEndArray();
         }
 
         writer.WriteEndObject();

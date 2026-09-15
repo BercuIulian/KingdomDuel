@@ -10,4 +10,6 @@ public sealed class SubmitOrderRequest
     public List<OrderAllocationDto> Troops { get; set; } = new();
 
     public FeastTier? Feast { get; set; }
+
+    public List<PurchaseType> Purchases { get; set; } = new();
 }

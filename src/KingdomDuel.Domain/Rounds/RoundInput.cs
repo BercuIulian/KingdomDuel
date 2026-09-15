@@ -15,7 +15,7 @@ public sealed record RoundInput(
     SideInput Player1,
     SideInput Player2);
 
-public sealed record SideOutcome(KingdomState Kingdom, Caravan? Caravan = null)
+public sealed record SideOutcome(KingdomState Kingdom, Caravan? Caravan = null, int Recruits = 0)
 {
     [JsonIgnore]
     public int TotalPower => Kingdom.TotalPower + (Caravan?.Troops ?? 0);

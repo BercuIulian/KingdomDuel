@@ -25,11 +25,18 @@ public static class GameEngine
 
         var battle = PlanBattle(after1, after2, order1, order2, random);
 
-        var gameOver = battle is null
-            ? EvaluateGameOver(after1, after2, input.Round, input.TotalRounds)
-            : GameOverReason.None;
+        if (battle is not null)
+        {
+            return new RoundOutcome(after1, after2, events, GameOverReason.None, battle);
+        }
 
-        return new RoundOutcome(after1, after2, events, gameOver, battle);
+        (after1, after2) = LandRecruits(after1, after2, events);
+
+        return new RoundOutcome(
+            after1,
+            after2,
+            events,
+            EvaluateGameOver(after1, after2, input.Round, input.TotalRounds));
     }
 
     public static RoundOutcome SettleBattle(
@@ -82,6 +89,8 @@ public static class GameEngine
             return new RoundOutcome(after1, after2, events, castle);
         }
 
+        (after1, after2) = LandRecruits(after1, after2, events);
+
         return new RoundOutcome(after1, after2, events, EvaluateGameOver(after1, after2, round, totalRounds));
     }
 
@@ -103,6 +112,28 @@ public static class GameEngine
     }
 
     public static int CaravanReturnRound(int round) => round + 2;
+
+    private static (SideOutcome, SideOutcome) LandRecruits(
+        SideOutcome side1,
+        SideOutcome side2,
+        List<RoundEvent> events)
+        => (Land(1, side1, events), Land(2, side2, events));
+
+    private static SideOutcome Land(int side, SideOutcome outcome, List<RoundEvent> events)
+    {
+        if (outcome.Recruits <= 0)
+        {
+            return outcome;
+        }
+
+        events.Add(new RoundEvent(RoundEventKind.Recruited, side, outcome.Recruits));
+
+        return outcome with
+        {
+            Kingdom = outcome.Kingdom.With(troopsDelta: outcome.Recruits),
+            Recruits = 0,
+        };
+    }
 
     public static int MarchChoiceSide(BattleReplay replay, double endsAt, Retreat? retreat)
     {
@@ -334,7 +365,15 @@ public static class GameEngine
 
         state = Feast(side, state, order, input, events);
 
-        return new SideOutcome(state, caravan);
+        var recruits = 0;
+
+        if (order.Has(PurchaseType.Recruit) && state.Gold >= GameConstants.RecruitCost)
+        {
+            state = state.With(goldDelta: -GameConstants.RecruitCost);
+            recruits = GameConstants.RecruitTroops;
+        }
+
+        return new SideOutcome(state, caravan, recruits);
     }
 
     private static KingdomState Feast(

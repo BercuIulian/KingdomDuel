@@ -16,6 +16,7 @@ public enum RoundEventKind
     WallsBreached,
     CastleDestroyed,
     Retreated,
+    Recruited,
     MarchedOn,
     TurnedBack
 }

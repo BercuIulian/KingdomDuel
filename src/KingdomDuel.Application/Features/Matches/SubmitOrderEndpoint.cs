@@ -25,7 +25,7 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
     public override async Task HandleAsync(SubmitOrderRequest req, CancellationToken ct)
     {
         var userId = User.GetUserId();
-        var plan = new OrderPlan(req.Troops.ToDictionary(a => a.Direction, a => a.Troops), req.Feast);
+        var plan = new OrderPlan(req.Troops.ToDictionary(a => a.Direction, a => a.Troops), req.Feast, req.Purchases);
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
@@ -77,7 +77,7 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
 
             if (plan.GoldCost > slot.Kingdom.Gold)
             {
-                AddError($"Ospățul costă {plan.GoldCost} aur, dar trezoreria are {slot.Kingdom.Gold}.");
+                AddError($"Ordinul costă {plan.GoldCost} aur, dar trezoreria are {slot.Kingdom.Gold}.");
                 await Send.ErrorsAsync(cancellation: ct);
                 return;
             }

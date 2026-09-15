@@ -32,6 +32,9 @@ public static class GameConstants
     public const int MoraleCap = 100;
     public const int MoraleDecayPerRound = 3;
 
+    public const int RecruitCost = 12;
+    public const int RecruitTroops = 4;
+
     public const int FeastSmallCost = 5;
     public const int FeastSmallMorale = 4;
     public const int FeastCourtCost = 12;
@@ -44,6 +47,12 @@ public static class GameConstants
         FeastTier.Small => FeastSmallCost,
         FeastTier.Court => FeastCourtCost,
         FeastTier.Grand => FeastGrandCost,
+        _ => 0,
+    };
+
+    public static int PurchaseCost(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Recruit => RecruitCost,
         _ => 0,
     };
 
