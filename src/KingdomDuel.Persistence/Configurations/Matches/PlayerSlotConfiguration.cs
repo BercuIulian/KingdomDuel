@@ -30,10 +30,10 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
 
         builder.Property(p => p.PendingOrder)
             .HasColumnType("jsonb")
-            .HasConversion(JsonColumns.Converter<OrderPlan>(), JsonColumns.Comparer<OrderPlan>());
+            .HasConversion(JsonColumns.NullableConverter<OrderPlan>(), JsonColumns.NullableComparer<OrderPlan>());
 
         builder.Property(p => p.Caravan)
             .HasColumnType("jsonb")
-            .HasConversion(JsonColumns.Converter<Caravan>(), JsonColumns.Comparer<Caravan>());
+            .HasConversion(JsonColumns.NullableConverter<Caravan>(), JsonColumns.NullableComparer<Caravan>());
     }
 }

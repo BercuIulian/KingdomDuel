@@ -155,7 +155,7 @@ internal static class RoundResolver
         var replay = GameEngine.PlanAssault(
             side,
             choice.Army,
-            attacker.Kingdom.Catapults,
+            attacker.Kingdom,
             defender,
             defenceOrder,
             Random.Shared);

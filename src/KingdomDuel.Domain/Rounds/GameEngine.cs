@@ -82,6 +82,7 @@ public static class GameEngine
             return new RoundOutcome(after1, after2, events, castle);
         }
 
+        (after1, after2) = MoveMorale(after1, after2, replay, endsAt, retreat, events);
         (after1, after2) = LandRecruits(after1, after2, events);
 
         return new RoundOutcome(after1, after2, events, EvaluateGameOver(after1, after2, round, totalRounds));
@@ -114,6 +115,76 @@ public static class GameEngine
 
     public static int WallCapacity(int fortification) =>
         GameConstants.WallCapacity + fortification * GameConstants.FortifyArchers;
+
+    private static (SideOutcome, SideOutcome) MoveMorale(
+        SideOutcome side1,
+        SideOutcome side2,
+        BattleReplay replay,
+        double endsAt,
+        Retreat? retreat,
+        List<RoundEvent> events)
+    {
+        var (winner, loser) = replay.AttackerSide == 0
+            ? RoadVerdict(replay, endsAt, retreat)
+            : AssaultVerdict(replay, endsAt);
+
+        var bothLost = winner == 0;
+
+        return (Shift(1, side1), Shift(2, side2));
+
+        SideOutcome Shift(int side, SideOutcome outcome)
+        {
+            if (side == winner)
+            {
+                events.Add(new RoundEvent(RoundEventKind.MoraleWon, side, GameConstants.BattleMoraleWin));
+
+                return WithMorale(outcome, GameConstants.BattleMoraleWin);
+            }
+
+            if (side != loser && !bothLost)
+            {
+                return outcome;
+            }
+
+            events.Add(new RoundEvent(RoundEventKind.MoraleLost, side, GameConstants.BattleMoraleLoss));
+
+            return WithMorale(outcome, -GameConstants.BattleMoraleLoss);
+        }
+    }
+
+    private static SideOutcome WithMorale(SideOutcome outcome, int delta) => outcome with
+    {
+        Kingdom = outcome.Kingdom with
+        {
+            Morale = Math.Clamp(outcome.Kingdom.Morale + delta, 0, GameConstants.MoraleCap),
+        },
+    };
+
+    private static (int Winner, int Loser) RoadVerdict(BattleReplay replay, double endsAt, Retreat? retreat)
+    {
+        var standing = replay.At(endsAt);
+
+        if (retreat is { } signal)
+        {
+            var other = signal.Side == 1 ? 2 : 1;
+            var otherLeft = other == 1 ? standing.Player1Left : standing.Player2Left;
+
+            return otherLeft > 0 ? (other, signal.Side) : (0, 0);
+        }
+
+        return standing.Player1Left <= 0 ? (2, 1) : (1, 2);
+    }
+
+    private static (int Winner, int Loser) AssaultVerdict(BattleReplay replay, double endsAt)
+    {
+        var attacker = replay.AttackerSide;
+        var defender = attacker == 1 ? 2 : 1;
+        var standing = replay.At(endsAt);
+        var attackerLeft = attacker == 1 ? standing.Player1Left : standing.Player2Left;
+        var breached = replay.BreachAt is { } breach && endsAt >= breach;
+
+        return breached && attackerLeft > 0 ? (attacker, defender) : (defender, attacker);
+    }
 
     private static bool Buys(OrderPlan order, PurchaseType purchase, KingdomState state) =>
         order.Has(purchase) && state.Gold >= GameConstants.PurchaseCost(purchase);
@@ -267,7 +338,7 @@ public static class GameEngine
 
         if (army1 > 0 && army2 > 0)
         {
-            var log = Battle.Fight(army1, army2, random);
+            var log = Battle.Fight(army1, side1.Kingdom.Morale, army2, side2.Kingdom.Morale, random);
 
             return new BattleReplay(
                 0,
@@ -281,25 +352,33 @@ public static class GameEngine
 
         if (army1 > 0)
         {
-            return PlanAssault(1, army1, side1.Kingdom.Catapults, side2, order2, random);
+            return PlanAssault(1, army1, side1.Kingdom, side2, order2, random);
         }
 
-        return army2 > 0 ? PlanAssault(2, army2, side2.Kingdom.Catapults, side1, order1, random) : null;
+        return army2 > 0 ? PlanAssault(2, army2, side2.Kingdom, side1, order1, random) : null;
     }
 
     public static BattleReplay PlanAssault(
         int attackerSide,
         int army,
-        int catapults,
+        KingdomState attacker,
         SideOutcome defender,
         OrderPlan defenceOrder,
         Random random)
     {
         var defenderSide = attackerSide == 1 ? 2 : 1;
-        var seconds = BreakingSeconds(defender.Kingdom.Fortification, catapults);
+        var seconds = BreakingSeconds(defender.Kingdom.Fortification, attacker.Catapults);
         var capacity = WallCapacity(defender.Kingdom.Fortification);
         var wall = Math.Min(defenceOrder[ActionType.Defend], defender.Kingdom.Troops);
-        var log = Battle.Assault(army, wall, defender.Kingdom.Troops - wall, seconds, capacity, random);
+        var log = Battle.Assault(
+            army,
+            wall,
+            defender.Kingdom.Troops - wall,
+            seconds,
+            capacity,
+            attacker.Morale,
+            defender.Kingdom.Morale,
+            random);
 
         var falls = log.Walls.Ticks
             .Select(tick => new BattleFall(tick.At, tick.Army == 1 ? attackerSide : defenderSide, BattlePhase.Walls))

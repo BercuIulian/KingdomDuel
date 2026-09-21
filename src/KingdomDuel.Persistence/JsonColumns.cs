@@ -20,4 +20,13 @@ internal static class JsonColumns
         (left, right) => JsonSerializer.Serialize(left, Options) == JsonSerializer.Serialize(right, Options),
         value => JsonSerializer.Serialize(value, Options).GetHashCode(),
         value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, Options), Options)!);
+
+    public static ValueConverter<T?, string> NullableConverter<T>() where T : class => new(
+        value => JsonSerializer.Serialize(value, Options),
+        json => JsonSerializer.Deserialize<T>(json, Options));
+
+    public static ValueComparer<T?> NullableComparer<T>() where T : class => new(
+        (left, right) => JsonSerializer.Serialize(left, Options) == JsonSerializer.Serialize(right, Options),
+        value => JsonSerializer.Serialize(value, Options).GetHashCode(),
+        value => JsonSerializer.Deserialize<T>(JsonSerializer.Serialize(value, Options), Options));
 }

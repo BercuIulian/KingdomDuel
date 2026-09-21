@@ -29,6 +29,11 @@ public static class GameConstants
     public const double TradeYieldMin = 0.9;
     public const double TradeYieldMax = 1.1;
 
+    public const int MoraleBaseline = 50;
+    public const double MoraleSwing = 0.5;
+    public const int BattleMoraleWin = 3;
+    public const int BattleMoraleLoss = 5;
+
     public const int MoraleCap = 100;
     public const int MoraleDecayPerRound = 3;
 

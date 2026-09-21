@@ -9,6 +9,8 @@ public enum RoundEventKind
     CaravanReturned,
     TradeIncome,
     MoraleDecay,
+    MoraleWon,
+    MoraleLost,
     Feast,
     BattleJoined,
     BattleLosses,

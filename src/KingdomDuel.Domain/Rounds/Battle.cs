@@ -20,17 +20,29 @@ public static class Battle
     public static double WallLossChance =>
         (double)GameConstants.WallDefenderWorth / (GameConstants.WallDefenderWorth + 1);
 
-    public static double StrengthOf(int army) => Math.Pow(Math.Max(0, army), GameConstants.BattleStrengthExponent);
+    public static double MoraleFactor(int morale) =>
+        1 + GameConstants.MoraleSwing * (morale - GameConstants.MoraleBaseline) / GameConstants.MoraleBaseline;
 
-    public static double LossChanceFor(int army, int opponent)
+    public static double StrengthOf(int army) => StrengthOf(army, GameConstants.MoraleBaseline);
+
+    public static double StrengthOf(int army, int morale) =>
+        Math.Pow(Math.Max(0, army), GameConstants.BattleStrengthExponent) * MoraleFactor(morale);
+
+    public static double LossChanceFor(int army, int opponent) =>
+        LossChanceFor(army, GameConstants.MoraleBaseline, opponent, GameConstants.MoraleBaseline);
+
+    public static double LossChanceFor(int army, int morale, int opponent, int opponentMorale)
     {
-        var mine = StrengthOf(army);
-        var theirs = StrengthOf(opponent);
+        var mine = StrengthOf(army, morale);
+        var theirs = StrengthOf(opponent, opponentMorale);
 
         return mine + theirs <= 0 ? 0.5 : theirs / (mine + theirs);
     }
 
-    public static BattleLog Fight(int army1, int army2, Random random)
+    public static BattleLog Fight(int army1, int army2, Random random) =>
+        Fight(army1, GameConstants.MoraleBaseline, army2, GameConstants.MoraleBaseline, random);
+
+    public static BattleLog Fight(int army1, int morale1, int army2, int morale2, Random random)
     {
         var left1 = Math.Max(0, army1);
         var left2 = Math.Max(0, army2);
@@ -40,7 +52,7 @@ public static class Battle
         {
             var at = ticks.Count + 1;
 
-            if (random.NextDouble() < LossChanceFor(left1, left2))
+            if (random.NextDouble() < LossChanceFor(left1, morale1, left2, morale2))
             {
                 left1 -= 1;
                 ticks.Add(new BattleTick(1, at));
@@ -62,6 +74,8 @@ public static class Battle
             garrison,
             GameConstants.WallBreakingSeconds,
             GameConstants.WallCapacity,
+            GameConstants.MoraleBaseline,
+            GameConstants.MoraleBaseline,
             random);
 
     public static AssaultLog Assault(
@@ -70,6 +84,8 @@ public static class Battle
         int garrison,
         int breakingSeconds,
         int capacity,
+        int attackerMorale,
+        int defenderMorale,
         Random random)
     {
         var onTheWall = Math.Clamp(wallDefenders, 0, capacity);
@@ -83,7 +99,7 @@ public static class Battle
         }
 
         var reinforcements = FallBack(walls.Army2Left);
-        var keep = Fight(walls.Army1Left, inside + reinforcements, random);
+        var keep = Fight(walls.Army1Left, attackerMorale, inside + reinforcements, defenderMorale, random);
 
         return new AssaultLog(
             onTheWall,
