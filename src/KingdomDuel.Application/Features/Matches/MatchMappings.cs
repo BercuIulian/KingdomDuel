@@ -106,5 +106,7 @@ internal static class MatchMappings
         Troops = kingdom.Troops,
         Morale = kingdom.Morale,
         TotalPower = kingdom.TotalPower,
+        Fortification = kingdom.Fortification,
+        Catapults = kingdom.Catapults,
     };
 }

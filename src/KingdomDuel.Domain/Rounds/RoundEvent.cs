@@ -16,9 +16,15 @@ public enum RoundEventKind
     WallsBreached,
     CastleDestroyed,
     Retreated,
+    Purchased,
     Recruited,
     MarchedOn,
     TurnedBack
 }
 
-public sealed record RoundEvent(RoundEventKind Kind, int Side, int Amount = 0, ActionType? Direction = null);
+public sealed record RoundEvent(
+    RoundEventKind Kind,
+    int Side,
+    int Amount = 0,
+    ActionType? Direction = null,
+    PurchaseType? Purchase = null);

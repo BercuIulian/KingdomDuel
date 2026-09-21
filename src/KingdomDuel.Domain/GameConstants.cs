@@ -35,6 +35,17 @@ public static class GameConstants
     public const int RecruitCost = 12;
     public const int RecruitTroops = 4;
 
+    public const int FortifyCost = 12;
+    public const int FortifyMaxLevel = 2;
+    public const int FortifySeconds = 5;
+    public const int FortifyArchers = 2;
+
+    public const int CatapultCost = 15;
+    public const int CatapultMaxLevel = 2;
+    public const int CatapultSeconds = 5;
+
+    public const int MinBreakingSeconds = 3;
+
     public const int FeastSmallCost = 5;
     public const int FeastSmallMorale = 4;
     public const int FeastCourtCost = 12;
@@ -53,6 +64,8 @@ public static class GameConstants
     public static int PurchaseCost(PurchaseType purchase) => purchase switch
     {
         PurchaseType.Recruit => RecruitCost,
+        PurchaseType.Fortify => FortifyCost,
+        PurchaseType.Catapult => CatapultCost,
         _ => 0,
     };
 

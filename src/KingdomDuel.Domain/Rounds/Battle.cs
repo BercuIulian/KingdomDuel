@@ -55,12 +55,27 @@ public static class Battle
         return new BattleLog(left1, left2, ticks);
     }
 
-    public static AssaultLog Assault(int attackers, int wallDefenders, int garrison, Random random)
+    public static AssaultLog Assault(int attackers, int wallDefenders, int garrison, Random random) =>
+        Assault(
+            attackers,
+            wallDefenders,
+            garrison,
+            GameConstants.WallBreakingSeconds,
+            GameConstants.WallCapacity,
+            random);
+
+    public static AssaultLog Assault(
+        int attackers,
+        int wallDefenders,
+        int garrison,
+        int breakingSeconds,
+        int capacity,
+        Random random)
     {
-        var onTheWall = Math.Clamp(wallDefenders, 0, GameConstants.WallCapacity);
+        var onTheWall = Math.Clamp(wallDefenders, 0, capacity);
         var inside = garrison + Math.Max(0, wallDefenders - onTheWall);
 
-        var walls = StormWalls(attackers, onTheWall, random);
+        var walls = StormWalls(attackers, onTheWall, breakingSeconds, random);
 
         if (walls.Army1Left <= 0)
         {
@@ -80,7 +95,7 @@ public static class Battle
             keep.Army2Left <= 0);
     }
 
-    private static BattleLog StormWalls(int attackers, int onTheWall, Random random)
+    private static BattleLog StormWalls(int attackers, int onTheWall, int breakingSeconds, Random random)
     {
         var left1 = Math.Max(0, attackers);
         var left2 = onTheWall;
@@ -92,7 +107,7 @@ public static class Battle
             clock += GameConstants.ArcherShotSeconds / left2;
             var at = Math.Round(clock, 2);
 
-            if (clock > GameConstants.WallBreakingSeconds)
+            if (clock > breakingSeconds)
             {
                 break;
             }

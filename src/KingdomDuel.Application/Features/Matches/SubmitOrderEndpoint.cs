@@ -1,4 +1,5 @@
 using KingdomDuel.Application.Features.Auth;
+using KingdomDuel.Domain;
 using KingdomDuel.Domain.Enums;
 using KingdomDuel.Domain.Rounds;
 using KingdomDuel.Shared.Dtos.Matches;
@@ -78,6 +79,20 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
             if (plan.GoldCost > slot.Kingdom.Gold)
             {
                 AddError($"Ordinul costă {plan.GoldCost} aur, dar trezoreria are {slot.Kingdom.Gold}.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            if (plan.Has(PurchaseType.Fortify) && slot.Kingdom.Fortification >= GameConstants.FortifyMaxLevel)
+            {
+                AddError($"Zidul e fortificat la maximum ({GameConstants.FortifyMaxLevel}).");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            if (plan.Has(PurchaseType.Catapult) && slot.Kingdom.Catapults >= GameConstants.CatapultMaxLevel)
+            {
+                AddError($"Ai deja {GameConstants.CatapultMaxLevel} catapulte, mai multe nu încap.");
                 await Send.ErrorsAsync(cancellation: ct);
                 return;
             }

@@ -23,6 +23,8 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
             kingdom.Property(k => k.Gold).HasColumnName("Gold");
             kingdom.Property(k => k.Troops).HasColumnName("Troops");
             kingdom.Property(k => k.Morale).HasColumnName("Morale");
+            kingdom.Property(k => k.Fortification).HasColumnName("Fortification");
+            kingdom.Property(k => k.Catapults).HasColumnName("Catapults");
             kingdom.Ignore(k => k.TotalPower);
         });
 

@@ -6,4 +6,6 @@ public sealed class KingdomDto
     public int Troops { get; set; }
     public int Morale { get; set; }
     public int TotalPower { get; set; }
+    public int Fortification { get; set; }
+    public int Catapults { get; set; }
 }

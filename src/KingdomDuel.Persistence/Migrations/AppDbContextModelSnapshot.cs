@@ -185,6 +185,14 @@ namespace KingdomDuel.Persistence.Migrations
                         {
                             b1.IsRequired();
 
+                            b1.Property<int>("Catapults")
+                                .HasColumnType("integer")
+                                .HasColumnName("Catapults");
+
+                            b1.Property<int>("Fortification")
+                                .HasColumnType("integer")
+                                .HasColumnName("Fortification");
+
                             b1.Property<int>("Gold")
                                 .HasColumnType("integer")
                                 .HasColumnName("Gold");

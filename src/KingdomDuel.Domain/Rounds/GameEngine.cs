@@ -113,6 +113,18 @@ public static class GameEngine
 
     public static int CaravanReturnRound(int round) => round + 2;
 
+    public static int BreakingSeconds(int fortification, int catapults) => Math.Max(
+        GameConstants.MinBreakingSeconds,
+        GameConstants.WallBreakingSeconds
+            + fortification * GameConstants.FortifySeconds
+            - catapults * GameConstants.CatapultSeconds);
+
+    public static int WallCapacity(int fortification) =>
+        GameConstants.WallCapacity + fortification * GameConstants.FortifyArchers;
+
+    private static bool Buys(OrderPlan order, PurchaseType purchase, KingdomState state) =>
+        order.Has(purchase) && state.Gold >= GameConstants.PurchaseCost(purchase);
+
     private static (SideOutcome, SideOutcome) LandRecruits(
         SideOutcome side1,
         SideOutcome side2,
@@ -276,22 +288,25 @@ public static class GameEngine
 
         if (army1 > 0)
         {
-            return PlanAssault(1, army1, side2, order2, random);
+            return PlanAssault(1, army1, side1.Kingdom.Catapults, side2, order2, random);
         }
 
-        return army2 > 0 ? PlanAssault(2, army2, side1, order1, random) : null;
+        return army2 > 0 ? PlanAssault(2, army2, side2.Kingdom.Catapults, side1, order1, random) : null;
     }
 
     public static BattleReplay PlanAssault(
         int attackerSide,
         int army,
+        int catapults,
         SideOutcome defender,
         OrderPlan defenceOrder,
         Random random)
     {
         var defenderSide = attackerSide == 1 ? 2 : 1;
+        var seconds = BreakingSeconds(defender.Kingdom.Fortification, catapults);
+        var capacity = WallCapacity(defender.Kingdom.Fortification);
         var wall = Math.Min(defenceOrder[ActionType.Defend], defender.Kingdom.Troops);
-        var log = Battle.Assault(army, wall, defender.Kingdom.Troops - wall, random);
+        var log = Battle.Assault(army, wall, defender.Kingdom.Troops - wall, seconds, capacity, random);
 
         var falls = log.Walls.Ticks
             .Select(tick => new BattleFall(tick.At, tick.Army == 1 ? attackerSide : defenderSide, BattlePhase.Walls))
@@ -311,7 +326,7 @@ public static class GameEngine
                 falls);
         }
 
-        var breachAt = GameConstants.WallBreakingSeconds;
+        var breachAt = seconds;
 
         falls.AddRange(log.Keep.Ticks.Select(tick => new BattleFall(
             breachAt + tick.At,
@@ -367,10 +382,40 @@ public static class GameEngine
 
         var recruits = 0;
 
-        if (order.Has(PurchaseType.Recruit) && state.Gold >= GameConstants.RecruitCost)
+        if (Buys(order, PurchaseType.Recruit, state))
         {
             state = state.With(goldDelta: -GameConstants.RecruitCost);
             recruits = GameConstants.RecruitTroops;
+
+            events.Add(new RoundEvent(RoundEventKind.Purchased, side, Purchase: PurchaseType.Recruit));
+        }
+
+        if (Buys(order, PurchaseType.Fortify, state) && state.Fortification < GameConstants.FortifyMaxLevel)
+        {
+            state = state.With(goldDelta: -GameConstants.FortifyCost) with
+            {
+                Fortification = state.Fortification + 1,
+            };
+
+            events.Add(new RoundEvent(
+                RoundEventKind.Purchased,
+                side,
+                state.Fortification,
+                Purchase: PurchaseType.Fortify));
+        }
+
+        if (Buys(order, PurchaseType.Catapult, state) && state.Catapults < GameConstants.CatapultMaxLevel)
+        {
+            state = state.With(goldDelta: -GameConstants.CatapultCost) with
+            {
+                Catapults = state.Catapults + 1,
+            };
+
+            events.Add(new RoundEvent(
+                RoundEventKind.Purchased,
+                side,
+                state.Catapults,
+                Purchase: PurchaseType.Catapult));
         }
 
         return new SideOutcome(state, caravan, recruits);

@@ -152,7 +152,14 @@ internal static class RoundResolver
         var events = choice.AfterField.Events.ToList();
         events.Add(new RoundEvent(RoundEventKind.MarchedOn, side, choice.Army, ActionType.Attack));
 
-        var replay = GameEngine.PlanAssault(side, choice.Army, defender, defenceOrder, Random.Shared);
+        var attacker = side == 1 ? choice.AfterField.Player1 : choice.AfterField.Player2;
+        var replay = GameEngine.PlanAssault(
+            side,
+            choice.Army,
+            attacker.Kingdom.Catapults,
+            defender,
+            defenceOrder,
+            Random.Shared);
 
         match.MarchChoice = null;
         match.LiveBattle = new LiveBattle(
