@@ -58,7 +58,6 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
 
         match.Round = 1;
         match.Status = MatchStatus.InProgress;
-        match.CurrentEvent = GameEngine.DrawEvent(Random.Shared);
         match.StartedAt = DateTimeOffset.UtcNow;
         RoundResolver.StartRoundClock(match);
         await dbContext.SaveChangesAsync(ct);

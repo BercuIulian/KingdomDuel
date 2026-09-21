@@ -69,7 +69,6 @@ internal static class RoundResolver
         var outcome = GameEngine.Resolve(new RoundInput(
             match.Round,
             match.TotalRounds,
-            match.CurrentEvent,
             new SideInput(match.Player1.Kingdom, order1, match.Player1.Caravan),
             new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan)),
             Random.Shared);
@@ -217,7 +216,6 @@ internal static class RoundResolver
         match.History.Add(new RoundResult
         {
             RoundNumber = match.Round,
-            Event = match.CurrentEvent,
             Player1 = new RoundSide(match.Player1!.PendingOrder ?? OrderPlan.Empty, outcome.Player1.Kingdom),
             Player2 = new RoundSide(match.Player2!.PendingOrder ?? OrderPlan.Empty, outcome.Player2.Kingdom),
             Events = outcome.Events.ToList(),
@@ -235,7 +233,6 @@ internal static class RoundResolver
         if (outcome.GameOverReason == GameOverReason.None)
         {
             match.Round += 1;
-            match.CurrentEvent = GameEngine.DrawEvent(Random.Shared);
             StartRoundClock(match);
         }
         else

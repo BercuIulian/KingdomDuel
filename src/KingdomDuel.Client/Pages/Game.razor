@@ -77,12 +77,6 @@ else
                         MissedRounds="state.Player2MissedRounds" />
         </section>
 
-        <section class="event">
-            <span class="event-ico"><Glyph Name="@CurrentEvent.Glyph" /></span>
-            <h2>@CurrentEvent.Name</h2>
-            <span class="eyebrow">Evenimentul rundei</span>
-        </section>
-
         <div class="timer-row">
             @if (state.Status == MatchStatus.InProgress)
             {
@@ -210,22 +204,6 @@ else
         if (round < state.Round) return "past";
         return round == state.Round ? "now" : string.Empty;
     }
-
-    // ---------- Evenimente ----------
-
-    private sealed record EventInfo(string Name, string Glyph);
-
-    private EventInfo CurrentEvent => EventOf(state!.CurrentEvent);
-
-    private static EventInfo EventOf(GameEventType gameEvent) => gameEvent switch
-    {
-        GameEventType.Drought => new("Secetă", "sun"),
-        GameEventType.Harvest => new("Recoltă bogată", "sheaf"),
-        GameEventType.Rebellion => new("Rebeliune", "pitchfork"),
-        GameEventType.PeaceRumors => new("Zvonuri de pace", "dove"),
-        GameEventType.DiplomaticFair => new("Târg diplomatic", "pavilion"),
-        _ => new("Anotimp liniștit", "moon"),
-    };
 
     // ---------- Finalul meciului ----------
 

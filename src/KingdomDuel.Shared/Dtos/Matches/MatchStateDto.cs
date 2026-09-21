@@ -9,7 +9,6 @@ public sealed class MatchStateDto
     public bool IsHost { get; set; }
     public MatchStatus Status { get; set; }
     public int Round { get; set; }
-    public GameEventType CurrentEvent { get; set; }
     public GameOverReason GameOverReason { get; set; }
     public int TotalRounds { get; set; }
     public int StartingGold { get; set; }

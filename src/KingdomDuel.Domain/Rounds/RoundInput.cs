@@ -11,7 +11,6 @@ public sealed record SideInput(
 public sealed record RoundInput(
     int Round,
     int TotalRounds,
-    GameEventType Event,
     SideInput Player1,
     SideInput Player2);
 

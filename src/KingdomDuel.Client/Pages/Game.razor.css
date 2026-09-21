@@ -142,61 +142,6 @@
     align-items: center;
 }
 
-/* ---------- Bara evenimentului ---------- */
-.event {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.6rem 1.1rem;
-    border: 1px solid var(--hairline-strong);
-    border-radius: 4px;
-    background: rgba(12, 15, 21, 0.55);
-    box-shadow: inset 0 0 0 4px rgba(12, 15, 21, 0.85), inset 0 0 0 5px var(--hairline);
-}
-
-.event::before,
-.event::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    width: 0.38rem;
-    height: 0.38rem;
-    background: var(--gold);
-    transform: translateX(-50%) rotate(45deg);
-}
-
-.event::before { top: -0.19rem; }
-.event::after  { bottom: -0.19rem; }
-
-.event-ico {
-    display: block;
-    font-size: 1.4rem;
-    color: var(--gold);
-    flex: 0 0 auto;
-}
-
-.event h2 {
-    margin: 0;
-    font-family: var(--font-display);
-    font-size: 1.05rem;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    color: var(--gold-lit);
-    white-space: nowrap;
-}
-
-.event p {
-    margin: 0;
-    font-size: 0.85rem;
-    color: #c2c6cf;
-}
-
-.event .eyebrow {
-    margin-left: auto;
-    white-space: nowrap;
-}
-
 /* ---------- Ordinele ---------- */
 .orders {
     display: grid;

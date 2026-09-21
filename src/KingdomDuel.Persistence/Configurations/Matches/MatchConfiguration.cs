@@ -34,7 +34,6 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             .HasConversion(JsonColumns.Converter<MarchChoice>(), JsonColumns.Comparer<MarchChoice>());
 
         builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(32);
-        builder.Property(m => m.CurrentEvent).HasConversion<string>().HasMaxLength(32);
         builder.Property(m => m.GameOverReason).HasConversion<string>().HasMaxLength(32);
         builder.HasIndex(m => m.Status);
 

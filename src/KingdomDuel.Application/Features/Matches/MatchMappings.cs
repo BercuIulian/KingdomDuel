@@ -14,7 +14,6 @@ internal static class MatchMappings
         IsHost = match.Player1?.UserId == userId,
         Status = match.Status,
         Round = match.Round,
-        CurrentEvent = match.CurrentEvent,
         GameOverReason = match.GameOverReason,
         TotalRounds = match.TotalRounds,
         StartingGold = match.StartingGold,

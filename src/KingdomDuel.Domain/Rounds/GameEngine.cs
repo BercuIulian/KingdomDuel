@@ -4,13 +4,6 @@ namespace KingdomDuel.Domain.Rounds;
 
 public static class GameEngine
 {
-    public static GameEventType DrawEvent(Random random)
-    {
-        var values = Enum.GetValues<GameEventType>();
-
-        return values[random.Next(values.Length)];
-    }
-
     public static RoundOutcome Resolve(RoundInput input, Random random)
     {
         var order1 = input.Player1.Order.ClampTo(input.Player1.Kingdom);

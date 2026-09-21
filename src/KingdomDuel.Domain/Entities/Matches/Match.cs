@@ -9,7 +9,6 @@ public sealed class Match : Entity
     public required string Code { get; init; }
     public MatchStatus Status { get; set; } = MatchStatus.WaitingForPlayer;
     public int Round { get; set; } = 1;
-    public GameEventType CurrentEvent { get; set; } = GameEventType.None;
     public GameOverReason GameOverReason { get; set; } = GameOverReason.None;
 
     public int TotalRounds { get; set; } = GameConstants.DefaultTotalRounds;
