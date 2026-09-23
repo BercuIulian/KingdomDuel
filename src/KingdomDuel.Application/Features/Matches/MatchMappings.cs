@@ -34,8 +34,42 @@ internal static class MatchMappings
             : null,
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        LastRound = match.LastRoundSeenBy(userId),
     };
 
+    private static RoundRecapDto? LastRoundSeenBy(this Match match, Guid userId)
+    {
+        var side = match.SideOf(userId);
+
+        if (side == 0 || match.History.Count == 0)
+        {
+            return null;
+        }
+
+        var last = match.History[^1];
+        var after = side == 1 ? last.Player1.After : last.Player2.After;
+        var before = match.History.Count > 1
+            ? (side == 1 ? match.History[^2].Player1.After : match.History[^2].Player2.After)
+            : KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+
+        return new RoundRecapDto
+        {
+            Round = last.RoundNumber,
+            GoldDelta = after.Gold - before.Gold,
+            TroopsDelta = after.Troops - before.Troops,
+            MoraleDelta = after.Morale - before.Morale,
+            Lines = last.Events
+                .Where(happening => happening.Side == side)
+                .Select(happening => new RoundLineDto
+                {
+                    Kind = happening.Kind,
+                    Amount = happening.Amount,
+                    Direction = happening.Direction,
+                    Purchase = happening.Purchase,
+                })
+                .ToList(),
+        };
+    }
     private static MarchDto ToMarchDto(this MarchChoice choice, int side, DateTimeOffset now) => new()
     {
         Side = choice.Side,

@@ -236,3 +236,15 @@
     text-transform: uppercase;
     color: var(--text-dim);
 }
+
+.stat dd .drift {
+    margin-left: 0.45rem;
+    font-family: var(--font-data);
+    font-size: 0.72rem;
+    font-weight: 700;
+    vertical-align: 0.15em;
+}
+
+.stat dd .drift.up { color: var(--verdant, #7fb069); }
+
+.stat dd .drift.down { color: #e39b9b; }

@@ -64,15 +64,33 @@
         <dl class="stats">
             <div class="stat">
                 <dt><Glyph Name="coin" /> Aur</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Gold)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">
+                    @Value(Kingdom?.Gold)
+                    @if (Moved(Drift?.GoldDelta) is { } goldShift)
+                    {
+                        <span class="drift @(goldShift > 0 ? "up" : "down")">@Signed(goldShift)</span>
+                    }
+                </dd>
             </div>
             <div class="stat">
                 <dt><Glyph Name="helm" /> Trupe</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Troops)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">
+                    @Value(Kingdom?.Troops)
+                    @if (Moved(Drift?.TroopsDelta) is { } troopShift)
+                    {
+                        <span class="drift @(troopShift > 0 ? "up" : "down")">@Signed(troopShift)</span>
+                    }
+                </dd>
             </div>
             <div class="stat">
                 <dt><Glyph Name="flame" /> Moral</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Morale)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">
+                    @Value(Kingdom?.Morale)
+                    @if (Moved(Drift?.MoraleDelta) is { } moraleShift)
+                    {
+                        <span class="drift @(moraleShift > 0 ? "up" : "down")">@Signed(moraleShift)</span>
+                    }
+                </dd>
             </div>
         </dl>
     </div>
@@ -100,6 +118,13 @@
 
     [Parameter]
     public int MissedRounds { get; set; }
+
+    [Parameter]
+    public RoundRecapDto? Drift { get; set; }
+
+    private static int? Moved(int? amount) => amount is { } shift && shift != 0 ? shift : null;
+
+    private static string Signed(int amount) => amount > 0 ? $"+{amount}" : amount.ToString();
 
     private static string Value(int? amount) => amount?.ToString() ?? "necunoscut";
 }

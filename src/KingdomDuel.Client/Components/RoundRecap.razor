@@ -1,0 +1,96 @@
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Domain.Rounds
+@using KingdomDuel.Shared.Dtos.Matches
+
+<div class="recap-scrim" @onclick="Close"></div>
+
+<section class="recap" role="dialog" aria-modal="true" aria-labelledby="recap-title">
+
+    <span class="recap-ico"><Glyph Name="seal" /></span>
+    <h2 id="recap-title">Runda @Recap.Round s-a încheiat</h2>
+
+    <dl class="deltas">
+        <div class="delta">
+            <dt><Glyph Name="coin" /> Aur</dt>
+            <dd class="@Tone(Recap.GoldDelta)">@Signed(Recap.GoldDelta)</dd>
+        </div>
+        <div class="delta">
+            <dt><Glyph Name="helm" /> Trupe</dt>
+            <dd class="@Tone(Recap.TroopsDelta)">@Signed(Recap.TroopsDelta)</dd>
+        </div>
+        <div class="delta">
+            <dt><Glyph Name="flame" /> Moral</dt>
+            <dd class="@Tone(Recap.MoraleDelta)">@Signed(Recap.MoraleDelta)</dd>
+        </div>
+    </dl>
+
+    <ul class="lines">
+        @foreach (var line in Told)
+        {
+            <li>@Tell(line)</li>
+        }
+    </ul>
+
+    <div class="recap-actions">
+        <button type="button" class="send" @onclick="Close">Mai departe</button>
+    </div>
+
+</section>
+
+@code {
+    [Parameter, EditorRequired] public RoundRecapDto Recap { get; set; } = default!;
+    [Parameter] public EventCallback OnClosed { get; set; }
+
+    public static bool WorthTelling(RoundRecapDto recap) =>
+        recap.Lines.Any(line => Counts(line) && line.Kind != RoundEventKind.MoraleDecay);
+
+    private static bool Counts(RoundLineDto line) =>
+        line.Kind is RoundEventKind.Purchased or RoundEventKind.CastleDestroyed || line.Amount > 0;
+
+    private IEnumerable<RoundLineDto> Told => Recap.Lines.Where(Counts).Where(Tells);
+
+    private bool Tells(RoundLineDto line) =>
+        line.Kind != RoundEventKind.OrderGiven
+        || (line.Direction == ActionType.Defend && !Recap.Lines.Any(other =>
+            other.Kind == RoundEventKind.BattleJoined && other.Direction == ActionType.Defend));
+
+    private static string Signed(int amount) => amount > 0 ? $"+{amount}" : amount.ToString();
+
+    private static string Tone(int amount) => amount switch
+    {
+        > 0 => "up",
+        < 0 => "down",
+        _ => "flat",
+    };
+
+    private Task Close() => OnClosed.InvokeAsync();
+
+    private static string Tell(RoundLineDto line) => line.Kind switch
+    {
+        RoundEventKind.OrderGiven => $"Ai ținut {line.Amount} soldați la apărare, dar nimeni n-a venit.",
+        RoundEventKind.CaravanSent => $"Caravana a plecat la drum cu {line.Amount} negustori.",
+        RoundEventKind.CaravanReturned => $"Caravana s-a întors cu {line.Amount} negustori.",
+        RoundEventKind.TradeIncome => $"Negoțul a adus {line.Amount} aur.",
+        RoundEventKind.Feast => $"Ospățul a ridicat moralul cu {line.Amount}.",
+        RoundEventKind.MoraleDecay => $"Moralul a mai scăzut cu {line.Amount}, de la sine.",
+        RoundEventKind.MoraleWon => $"Lupta câștigată a ridicat moralul cu {line.Amount}.",
+        RoundEventKind.MoraleLost => $"Lupta pierdută a coborât moralul cu {line.Amount}.",
+        RoundEventKind.BattleJoined => line.Direction == ActionType.Defend
+            ? $"La apărare au stat {line.Amount}."
+            : $"În luptă au intrat {line.Amount} de-ai tăi.",
+        RoundEventKind.BattleLosses => $"Ai pierdut {line.Amount} soldați în luptă.",
+        RoundEventKind.WallsHeld => $"Zidurile au ținut, cu {line.Amount} apărători în picioare.",
+        RoundEventKind.WallsBreached => $"Zidul a fost spart; {line.Amount} apărători s-au retras înăuntru.",
+        RoundEventKind.Retreated => $"Retragerea a costat {line.Amount} soldați.",
+        RoundEventKind.Recruited => $"Au sosit {line.Amount} recruți.",
+        RoundEventKind.MarchedOn => $"Oastea a mers mai departe la cetate, {line.Amount} soldați.",
+        RoundEventKind.TurnedBack => $"Oastea s-a întors acasă, {line.Amount} soldați.",
+        RoundEventKind.CastleDestroyed => "Cetatea ta a căzut.",
+        _ => line.Purchase switch
+        {
+            PurchaseType.Recruit => "Ai plătit recrutarea.",
+            PurchaseType.Fortify => "Ai întărit zidul.",
+            _ => "Ai ridicat o catapultă.",
+        },
+    };
+}

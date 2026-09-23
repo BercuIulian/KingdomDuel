@@ -56,6 +56,7 @@ else
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
+                        Drift="@(Side == 1 ? state.LastRound : null)"
                         MissedRounds="state.Player1MissedRounds" />
 
             @if (state.Status != MatchStatus.InProgress)
@@ -71,6 +72,7 @@ else
                         Kingdom="state.Player2Kingdom"
                         Mirrored="true"
                         IsYou="Side == 2"
+                        Drift="@(Side == 2 ? state.LastRound : null)"
                         MissedRounds="state.Player2MissedRounds" />
         </section>
 
@@ -114,6 +116,11 @@ else
         }
 
     </section>
+
+    @if (recapOpen && state.LastRound is { } recap)
+    {
+        <RoundRecap Recap="recap" OnClosed="() => recapOpen = false" />
+    }
 
     @if (confirmingLeave)
     {
@@ -192,6 +199,8 @@ else
     private MatchStateDto? state;
     private string? error;
     private bool resultDismissed;
+    private bool recapOpen;
+    private int recapShown;
     private bool leaving;
     private bool resultFocused;
 
@@ -299,7 +308,22 @@ else
 
     private void DismissResult() => resultDismissed = true;
 
-    private void OnOrderSubmitted(MatchStateDto fresh) => state = fresh;
+    private void OnOrderSubmitted(MatchStateDto fresh)
+    {
+        state = fresh;
+        OfferRecap(fresh);
+    }
+
+    private void OfferRecap(MatchStateDto fresh)
+    {
+        if (fresh.LastRound is not { } recap || recap.Round == recapShown)
+        {
+            return;
+        }
+
+        recapShown = recap.Round;
+        recapOpen = RoundRecap.WorthTelling(recap);
+    }
 
     private async Task LeaveAndGoHome()
     {
@@ -352,6 +376,8 @@ else
         }
 
         await LoadStateAsync();
+
+        recapShown = state?.LastRound?.Round ?? 0;
 
         if (error is null)
         {
@@ -414,6 +440,7 @@ else
                     }
 
                     state = fresh;
+                    OfferRecap(fresh);
                     timer.Period = fresh.Battle is not null || fresh.March is not null
                         ? LivePollInterval
                         : PollInterval;

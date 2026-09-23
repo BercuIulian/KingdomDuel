@@ -500,14 +500,14 @@ public static class GameEngine
         SideInput input,
         List<RoundEvent> events)
     {
-        if (order.Feast is not { } tier || state.Gold < order.GoldCost)
+        if (order.Feast is not { } tier || state.Gold < GameConstants.FeastCost(tier))
         {
             return state;
         }
 
         var morale = FeastMorale(tier, input.Kingdom.Troops, input.Caravan?.Troops ?? 0, state.Morale);
 
-        state = state.With(goldDelta: -order.GoldCost, moraleDelta: morale);
+        state = state.With(goldDelta: -GameConstants.FeastCost(tier), moraleDelta: morale);
 
         events.Add(new RoundEvent(RoundEventKind.Feast, side, morale));
 
