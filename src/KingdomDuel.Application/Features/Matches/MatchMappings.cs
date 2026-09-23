@@ -62,6 +62,7 @@ internal static class MatchMappings
             Elapsed = Math.Round(shown, 2),
             Duration = battle.EndsAt,
             BreachAt = replay.BreachAt,
+            KeepDefenders = replay.BreachAt is { } breach && shown >= breach ? replay.DefenderInKeep : null,
             Over = battle.IsOverAt(now),
             RetreatBySide = battle.Retreat?.Side,
             RetreatAt = battle.Retreat?.At,

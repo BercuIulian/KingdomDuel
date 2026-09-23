@@ -83,13 +83,18 @@ else
 
         @if (CanPlay && state.Status == MatchStatus.InProgress)
         {
-            @if (state.Battle is not null)
+            @if (state.Battle is { } battle)
             {
-                <p class="order-note waiting">Bătălia e în toi. Ordinele se dau după ce se încheie.</p>
+                <BattleView Battle="battle"
+                            Code="@state.Code"
+                            YourSide="Side"
+                            Player1Name="@Player1Name"
+                            Player2Name="@Player2Name"
+                            OnChanged="OnOrderSubmitted" />
             }
-            else if (state.March is not null)
+            else if (state.March is { } march)
             {
-                <p class="order-note waiting">Se hotărăște dacă oastea merge mai departe.</p>
+                <MarchView March="march" Code="@state.Code" OnChanged="OnOrderSubmitted" />
             }
             else
             {
@@ -196,6 +201,8 @@ else
     private ElementReference confirmPanel;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+
+    private static readonly TimeSpan LivePollInterval = TimeSpan.FromSeconds(1);
     private readonly CancellationTokenSource pollCts = new();
 
     private string? DisplayCode => state?.Code ?? Code;
@@ -407,6 +414,10 @@ else
                     }
 
                     state = fresh;
+                    timer.Period = fresh.Battle is not null || fresh.March is not null
+                        ? LivePollInterval
+                        : PollInterval;
+
                     await InvokeAsync(StateHasChanged);
 
                     if (fresh.Status == MatchStatus.Completed)

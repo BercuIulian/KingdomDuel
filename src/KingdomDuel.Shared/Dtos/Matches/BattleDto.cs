@@ -13,6 +13,7 @@ public sealed class BattleDto
     public double Elapsed { get; set; }
     public double Duration { get; set; }
     public double? BreachAt { get; set; }
+    public int? KeepDefenders { get; set; }
     public bool Over { get; set; }
     public int? RetreatBySide { get; set; }
     public double? RetreatAt { get; set; }
