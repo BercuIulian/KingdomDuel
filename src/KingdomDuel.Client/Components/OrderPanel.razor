@@ -1,0 +1,451 @@
+@using KingdomDuel.Domain
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Domain.Rounds
+@using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Shared.Requests.Matches
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@inject ApiClient Api
+
+<section class="orders-wrap">
+
+    <div class="budget">
+        <span class="budget-item">
+            <Glyph Name="helm" />
+            <b>@Free</b><span class="eyebrow">soldați liberi din @Troops</span>
+        </span>
+        <span class="budget-item">
+            <Glyph Name="coin" />
+            <b>@GoldLeft</b><span class="eyebrow">aur rămas din @Gold</span>
+        </span>
+        @if (Caravan is not null)
+        {
+            <span class="budget-item away">
+                <Glyph Name="coin" />
+                <span class="eyebrow">caravana e pe drum cu @Caravan.Troops, se întoarce în runda @Caravan.ReturnsInRound</span>
+            </span>
+        }
+
+        <button type="button" class="treasury" disabled="@orderSent" @onclick="() => shopOpen = true">
+            <Glyph Name="coin" />
+            Cumpără
+            @if (bought.Count > 0)
+            {
+                <span class="treasury-count">@bought.Count</span>
+            }
+        </button>
+    </div>
+
+    <div class="orders">
+        @foreach (var direction in Directions)
+        {
+            <button type="button"
+                    class="order"
+                    aria-pressed="@(Allocated(direction) > 0)"
+                    disabled="@(orderSent || Blocked(direction))"
+                    @onclick="() => OpenPicker(direction)">
+                <span class="order-ico"><Glyph Name="@Icon(direction)" /></span>
+                <b>@Label(direction)</b>
+                <small>@Hint(direction)</small>
+                @if (Allocated(direction) > 0)
+                {
+                    <span class="shift">@Allocated(direction) soldați</span>
+                }
+            </button>
+        }
+
+        <button type="button"
+                class="order"
+                aria-pressed="@(feast is not null)"
+                disabled="@orderSent"
+                @onclick="OpenFeast">
+            <span class="order-ico"><Glyph Name="flame" /></span>
+            <b>Ospăț</b>
+            <small>Ridică moralul celor de acasă</small>
+            @if (feast is { } chosenTier)
+            {
+                <span class="shift">@FeastName(chosenTier)</span>
+            }
+        </button>
+
+        <div class="order-action">
+            @if (orderSent)
+            {
+                <p class="order-sent"><Glyph Name="seal" /> Ordin trimis</p>
+            }
+            else
+            {
+                <button type="button" class="send" disabled="@(sending || !Fits)" @onclick="Send">
+                    @(sending ? "Se trimite…" : "Trimite ordinul")
+                </button>
+            }
+            @if (error is not null)
+            {
+                <p class="send-error">@error</p>
+            }
+        </div>
+    </div>
+
+</section>
+
+@if (picking is { } chosen)
+{
+    <div class="result-scrim" @onclick="ClosePicker"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+        <span class="result-ico"><Glyph Name="@Icon(chosen)" /></span>
+        <h2 id="picker-title">@Label(chosen)</h2>
+        <p class="result-text">@Hint(chosen)</p>
+
+        <div class="picker-value">
+            <b>@draft</b>
+            <span class="eyebrow">din @Ceiling(chosen) soldați</span>
+        </div>
+
+        <input type="range"
+               class="picker-range"
+               min="0"
+               max="@Ceiling(chosen)"
+               step="1"
+               value="@draft"
+               @oninput="OnDraft" />
+
+        @if (chosen == ActionType.Trade)
+        {
+            <p class="picker-yield">@TradeNote</p>
+        }
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="() => Withdraw(chosen)">@CancelLabel(chosen)</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="() => Commit(chosen)">Trimite soldați</button>
+        </div>
+    </section>
+}
+
+@if (feastPopup)
+{
+    <div class="result-scrim" @onclick="CloseFeast"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="feast-title">
+        <span class="result-ico"><Glyph Name="flame" /></span>
+        <h2 id="feast-title">Ospăț</h2>
+        <p class="result-text">Moralul urcă după câți soldați sunt acasă: cei plecați nu petrec.</p>
+
+        <div class="choices">
+            @foreach (var tier in Tiers)
+            {
+                <button type="button"
+                        class="choice @(feastDraft == tier ? "chosen" : "")"
+                        disabled="@(!Affordable(tier))"
+                        @onclick="() => feastDraft = tier">
+                    <span class="choice-text">
+                        <b>@FeastName(tier)</b>
+                        <small>+@MoraleFrom(tier) moral</small>
+                    </span>
+                    <span class="choice-price">@GameConstants.FeastCost(tier) aur</span>
+                </button>
+            }
+        </div>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="CallOffFeast">Anulează ospățul</button>
+            <button type="button" class="send" disabled="@(feastDraft is null)" @onclick="CommitFeast">Începe ospățul</button>
+        </div>
+    </section>
+}
+
+@if (shopOpen)
+{
+    <div class="result-scrim" @onclick="() => shopOpen = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+        <span class="result-ico"><Glyph Name="coin" /></span>
+        <h2 id="shop-title">Cumpără</h2>
+
+        <div class="choices">
+            @foreach (var purchase in Buyables)
+            {
+                <button type="button"
+                        class="choice @(bought.Contains(purchase) ? "chosen" : "")"
+                        disabled="@(!Buyable(purchase))"
+                        @onclick="() => Toggle(purchase)">
+                    <span class="choice-text">
+                        <span class="choice-name">
+                            <b>@Label(purchase)</b>
+                            @if (MaxLevel(purchase) > 0)
+                            {
+                                <span class="levels">
+                                    @for (var step = 1; step <= MaxLevel(purchase); step++)
+                                    {
+                                        <span class="level @LevelState(purchase, step)"></span>
+                                    }
+                                </span>
+                            }
+                        </span>
+                        <small>@Hint(purchase)</small>
+                    </span>
+                    <span class="choice-price">@PurchaseNote(purchase)</span>
+                </button>
+            }
+        </div>
+
+        <div class="result-actions">
+            <button type="button" class="send" @onclick="() => shopOpen = false">Gata</button>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public MatchStateDto State { get; set; } = default!;
+    [Parameter] public EventCallback<MatchStateDto> OnSubmitted { get; set; }
+
+    private static readonly ActionType[] Directions = [ActionType.Attack, ActionType.Defend, ActionType.Trade];
+    private static readonly PurchaseType[] Buyables = [PurchaseType.Recruit, PurchaseType.Fortify, PurchaseType.Catapult];
+    private static readonly FeastTier[] Tiers = [FeastTier.Small, FeastTier.Court, FeastTier.Grand];
+
+    private readonly Dictionary<ActionType, int> allocation = new();
+    private readonly HashSet<PurchaseType> bought = [];
+    private FeastTier? feast;
+    private FeastTier? feastDraft;
+
+    private ActionType? picking;
+    private bool feastPopup;
+    private bool shopOpen;
+    private int draft;
+
+    private int round;
+    private bool sending;
+    private bool orderSent;
+    private string? error;
+
+    private KingdomDto? Mine => State.YourSide == 1 ? State.Player1Kingdom : State.Player2Kingdom;
+
+    private CaravanDto? Caravan => State.YourCaravan;
+
+    private int Troops => Mine?.Troops ?? 0;
+
+    private int Gold => Mine?.Gold ?? 0;
+
+    private int Free => Math.Max(0, Troops - allocation.Values.Sum());
+
+    private int GoldSpent =>
+        (feast is { } tier ? GameConstants.FeastCost(tier) : 0) + bought.Sum(GameConstants.PurchaseCost);
+
+    private int GoldLeft => Gold - GoldSpent;
+
+    private bool Fits => allocation.Values.Sum() <= Troops && GoldSpent <= Gold;
+
+    private string TradeNote
+    {
+        get
+        {
+            if (draft == 0)
+            {
+                return "Fără negustori nu vine aur.";
+            }
+
+            var (low, high) = GameEngine.TradeRange(draft);
+
+            return low == high ? $"Se întorc cu {low} aur" : $"Se întorc cu {low}–{high} aur";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (round == State.Round)
+        {
+            return;
+        }
+
+        round = State.Round;
+        allocation.Clear();
+        bought.Clear();
+        feast = null;
+        feastDraft = null;
+        picking = null;
+        feastPopup = false;
+        shopOpen = false;
+        orderSent = false;
+        error = null;
+    }
+
+    private int Allocated(ActionType direction) => allocation.GetValueOrDefault(direction);
+
+    private bool Blocked(ActionType direction) => direction == ActionType.Trade && Caravan is not null;
+
+    private static int MaxLevel(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Fortify => GameConstants.FortifyMaxLevel,
+        PurchaseType.Catapult => GameConstants.CatapultMaxLevel,
+        _ => 0,
+    };
+
+    private int Level(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Fortify => Mine?.Fortification ?? 0,
+        PurchaseType.Catapult => Mine?.Catapults ?? 0,
+        _ => 0,
+    };
+
+    private string LevelState(PurchaseType purchase, int step)
+    {
+        var have = Level(purchase);
+
+        if (step <= have)
+        {
+            return "full";
+        }
+
+        return step == have + 1 && bought.Contains(purchase) ? "pending" : string.Empty;
+    }
+
+    private bool AtMax(PurchaseType purchase) => MaxLevel(purchase) > 0 && Level(purchase) >= MaxLevel(purchase);
+
+    private int Ceiling(ActionType direction) => Free + Allocated(direction);
+
+    private int MoraleFrom(FeastTier tier) =>
+        GameEngine.FeastMorale(tier, Troops, Caravan?.Troops ?? 0, Mine?.Morale ?? 0);
+
+    private bool Affordable(FeastTier tier) =>
+        GameConstants.FeastCost(tier) + bought.Sum(GameConstants.PurchaseCost) <= Gold;
+
+    private bool Buyable(PurchaseType purchase) =>
+        !AtMax(purchase) && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
+
+    private void OpenPicker(ActionType direction)
+    {
+        draft = Allocated(direction);
+        picking = direction;
+    }
+
+    private void ClosePicker() => picking = null;
+
+    private void OnDraft(ChangeEventArgs args) =>
+        draft = int.TryParse(args.Value?.ToString(), out var value) ? value : 0;
+
+    private void Commit(ActionType direction)
+    {
+        allocation[direction] = draft;
+        picking = null;
+    }
+
+    private void Withdraw(ActionType direction)
+    {
+        allocation.Remove(direction);
+        picking = null;
+    }
+
+    private void OpenFeast()
+    {
+        feastDraft = feast;
+        feastPopup = true;
+    }
+
+    private void CloseFeast() => feastPopup = false;
+
+    private void CommitFeast()
+    {
+        feast = feastDraft;
+        feastPopup = false;
+    }
+
+    private void CallOffFeast()
+    {
+        feast = null;
+        feastDraft = null;
+        feastPopup = false;
+    }
+
+    private void Toggle(PurchaseType purchase)
+    {
+        if (!bought.Remove(purchase))
+        {
+            bought.Add(purchase);
+        }
+    }
+
+    private string PurchaseNote(PurchaseType purchase) =>
+        AtMax(purchase) ? "la maximum" : $"{GameConstants.PurchaseCost(purchase)} aur";
+
+    private async Task Send()
+    {
+        sending = true;
+        error = null;
+
+        try
+        {
+            var state = await Api.SubmitOrderAsync(
+                new SubmitOrderRequest
+                {
+                    Code = State.Code,
+                    Troops = allocation
+                        .Where(pair => pair.Value > 0)
+                        .Select(pair => new OrderAllocationDto { Direction = pair.Key, Troops = pair.Value })
+                        .ToList(),
+                    Feast = feast,
+                    Purchases = bought.ToList(),
+                },
+                State.Code);
+
+            orderSent = true;
+            await OnSubmitted.InvokeAsync(state);
+        }
+        catch (ApiException exception)
+        {
+            error = ApiErrorReader.Describe(exception, "Ordinul n-a fost primit.");
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    private static string Label(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Atac",
+        ActionType.Defend => "Apărare",
+        _ => "Comerț",
+    };
+
+    private string Hint(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Atacă cetatea adversarului",
+        ActionType.Defend => $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
+        _ => Caravan is null ? "Se întorc peste o rundă, cu aur" : "Caravana e deja pe drum",
+    };
+
+    private static string CancelLabel(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Anulează atacul",
+        ActionType.Defend => "Anulează apărarea",
+        _ => "Anulează comerțul",
+    };
+
+    private static string Icon(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "sword",
+        ActionType.Defend => "shield",
+        _ => "coin",
+    };
+
+    private static string Label(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Recruit => "Recrutare",
+        PurchaseType.Fortify => "Fortificație",
+        _ => "Catapultă",
+    };
+
+    private static string Hint(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Recruit => $"Recrutează {GameConstants.RecruitTroops} soldați pentru runda următoare",
+        PurchaseType.Fortify => $"Zid mai trainic: +{GameConstants.FortifySeconds}s, +{GameConstants.FortifyArchers} arcași",
+        _ => $"Spargi zidul cu {GameConstants.CatapultSeconds}s mai repede",
+    };
+
+    private static string FeastName(FeastTier tier) => tier switch
+    {
+        FeastTier.Small => "Masă mică",
+        FeastTier.Court => "Ospăț de curte",
+        _ => "Ospăț mare",
+    };
+}

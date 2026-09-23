@@ -64,15 +64,15 @@
         <dl class="stats">
             <div class="stat">
                 <dt><Glyph Name="coin" /> Aur</dt>
-                <dd>@Value(Kingdom?.Gold)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Gold)</dd>
             </div>
             <div class="stat">
                 <dt><Glyph Name="helm" /> Trupe</dt>
-                <dd>@Value(Kingdom?.Troops)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Troops)</dd>
             </div>
             <div class="stat">
                 <dt><Glyph Name="flame" /> Moral</dt>
-                <dd>@Value(Kingdom?.Morale)</dd>
+                <dd class="@(Kingdom is null ? "unknown" : "")">@Value(Kingdom?.Morale)</dd>
             </div>
         </dl>
     </div>
@@ -101,5 +101,5 @@
     [Parameter]
     public int MissedRounds { get; set; }
 
-    private static string Value(int? amount) => amount?.ToString() ?? "—";
+    private static string Value(int? amount) => amount?.ToString() ?? "necunoscut";
 }

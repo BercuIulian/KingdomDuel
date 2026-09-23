@@ -36,12 +36,6 @@ else
             <div class="head-round">
                 <span class="eyebrow">Runda</span>
                 <span class="round-value">@state.Round<span>/@state.TotalRounds</span></span>
-                <ol class="pips" aria-label="Runda @state.Round din @state.TotalRounds">
-                    @for (var round = 1; round <= state.TotalRounds; round++)
-                    {
-                        <li class="@PipClass(round)"></li>
-                    }
-                </ol>
             </div>
 
             <RulesBook />
@@ -57,17 +51,20 @@ else
             }
         </header>
 
-        <section class="arena">
+        <section class="arena @(state.Status == MatchStatus.InProgress ? "duel" : "")">
             <CastleView House="amber"
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
                         MissedRounds="state.Player1MissedRounds" />
 
-            <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
-                        Power2="state.Player2Kingdom?.TotalPower ?? 0"
-                        Name1="@Player1Name"
-                        Name2="@Player2Name" />
+            @if (state.Status != MatchStatus.InProgress)
+            {
+                <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
+                            Power2="state.Player2Kingdom?.TotalPower ?? 0"
+                            Name1="@Player1Name"
+                            Name2="@Player2Name" />
+            }
 
             <CastleView House="steel"
                         Name="@Player2Name"
@@ -83,6 +80,22 @@ else
                 <RoundTimer SecondsRemaining="state.SecondsRemaining" RoundSeconds="state.RoundSeconds" />
             }
         </div>
+
+        @if (CanPlay && state.Status == MatchStatus.InProgress)
+        {
+            @if (state.Battle is not null)
+            {
+                <p class="order-note waiting">Bătălia e în toi. Ordinele se dau după ce se încheie.</p>
+            }
+            else if (state.March is not null)
+            {
+                <p class="order-note waiting">Se hotărăște dacă oastea merge mai departe.</p>
+            }
+            else
+            {
+                <OrderPanel State="state" OnSubmitted="OnOrderSubmitted" />
+            }
+        }
 
         @if (state.Status == MatchStatus.Completed)
         {
@@ -198,13 +211,6 @@ else
     private string Heading =>
         state?.Status == MatchStatus.Completed ? "Meciul s-a încheiat" : "Masa de război";
 
-    private string PipClass(int round)
-    {
-        if (state is null) return string.Empty;
-        if (round < state.Round) return "past";
-        return round == state.Round ? "now" : string.Empty;
-    }
-
     // ---------- Finalul meciului ----------
 
     private int WinnerSide => state?.GameOverReason switch
@@ -285,6 +291,8 @@ else
         : $"{kingdom.Gold} aur · {kingdom.Troops} trupe · {kingdom.Morale} moral";
 
     private void DismissResult() => resultDismissed = true;
+
+    private void OnOrderSubmitted(MatchStateDto fresh) => state = fresh;
 
     private async Task LeaveAndGoHome()
     {

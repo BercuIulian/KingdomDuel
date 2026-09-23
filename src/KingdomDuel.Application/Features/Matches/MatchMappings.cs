@@ -27,8 +27,11 @@ internal static class MatchMappings
         Player2Ready = match.Player2?.IsReady ?? false,
         Player1MissedRounds = match.Player1?.MissedRounds ?? 0,
         Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
-        Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
-        Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
+        Player1Kingdom = match.KingdomSeenBy(userId, 1),
+        Player2Kingdom = match.KingdomSeenBy(userId, 2),
+        YourCaravan = match.SlotOf(userId)?.Caravan is { } caravan
+            ? new CaravanDto { Troops = caravan.Troops, ReturnsInRound = caravan.AvailableInRound }
+            : null,
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
     };
@@ -98,6 +101,20 @@ internal static class MatchMappings
             2 => match.Player2,
             _ => null,
         };
+
+    private static KingdomDto? KingdomSeenBy(this Match match, Guid userId, int side)
+    {
+        var slot = side == 1 ? match.Player1 : match.Player2;
+
+        if (slot is null)
+        {
+            return null;
+        }
+
+        return match.Status == MatchStatus.InProgress && match.SideOf(userId) != side
+            ? null
+            : slot.Kingdom.ToKingdomDto();
+    }
 
     private static KingdomDto ToKingdomDto(this KingdomState kingdom) => new()
     {

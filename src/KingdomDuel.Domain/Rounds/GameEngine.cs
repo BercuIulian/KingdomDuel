@@ -505,22 +505,24 @@ public static class GameEngine
             return state;
         }
 
-        var present = input.Kingdom.Troops;
-        var whole = present + (input.Caravan?.Troops ?? 0);
-        var morale = whole <= 0
-            ? 0
-            : (int)Math.Round(GameConstants.FeastMorale(tier) * (double)present / whole);
+        var morale = FeastMorale(tier, input.Kingdom.Troops, input.Caravan?.Troops ?? 0, state.Morale);
 
         state = state.With(goldDelta: -order.GoldCost, moraleDelta: morale);
-
-        if (state.Morale > GameConstants.MoraleCap)
-        {
-            state = state with { Morale = GameConstants.MoraleCap };
-        }
 
         events.Add(new RoundEvent(RoundEventKind.Feast, side, morale));
 
         return state;
+    }
+
+    public static (int Low, int High) TradeRange(int traders) =>
+        (TradeYieldAt(traders, GameConstants.TradeYieldMin), TradeYieldAt(traders, GameConstants.TradeYieldMax));
+
+    public static int FeastMorale(FeastTier tier, int present, int away, int morale)
+    {
+        var whole = present + away;
+        var gain = whole <= 0 ? 0 : (int)Math.Round(GameConstants.FeastMorale(tier) * (double)present / whole);
+
+        return Math.Min(gain, Math.Max(0, GameConstants.MoraleCap - morale));
     }
 
     private static int TradeYield(int traders, Random random)
@@ -528,8 +530,11 @@ public static class GameEngine
         var factor = GameConstants.TradeYieldMin
             + random.NextDouble() * (GameConstants.TradeYieldMax - GameConstants.TradeYieldMin);
 
-        return Math.Max(1, (int)Math.Round(traders * GameConstants.TradeGoldPerSoldier * factor));
+        return TradeYieldAt(traders, factor);
     }
+
+    private static int TradeYieldAt(int traders, double factor) =>
+        Math.Max(1, (int)Math.Round(traders * GameConstants.TradeGoldPerSoldier * factor));
 
     private static void Record(int side, OrderPlan order, List<RoundEvent> events)
     {
