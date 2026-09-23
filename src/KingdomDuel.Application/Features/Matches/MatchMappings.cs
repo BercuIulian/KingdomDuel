@@ -35,6 +35,7 @@ internal static class MatchMappings
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         LastRound = match.LastRoundSeenBy(userId),
+        Story = match.StoryOf(),
     };
 
     private static RoundRecapDto? LastRoundSeenBy(this Match match, Guid userId)
@@ -69,6 +70,48 @@ internal static class MatchMappings
                 })
                 .ToList(),
         };
+    }
+
+    private static readonly RoundEventKind[] Turns =
+    [
+        RoundEventKind.BattleJoined,
+        RoundEventKind.WallsBreached,
+        RoundEventKind.WallsHeld,
+        RoundEventKind.Retreated,
+        RoundEventKind.MarchedOn,
+        RoundEventKind.CastleDestroyed,
+    ];
+
+    private static MatchStoryDto? StoryOf(this Match match)
+    {
+        if (match.Status != MatchStatus.Completed)
+        {
+            return null;
+        }
+
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+        var rounds = new List<StoryRoundDto>
+        {
+            new() { Round = 0, Player1Power = start.TotalPower, Player2Power = start.TotalPower },
+        };
+
+        rounds.AddRange(match.History.Select(round => new StoryRoundDto
+        {
+            Round = round.RoundNumber,
+            Player1Power = round.Player1.After.TotalPower,
+            Player2Power = round.Player2.After.TotalPower,
+            Moments = round.Events
+                .Where(happening => Turns.Contains(happening.Kind))
+                .Select(happening => new StoryMomentDto
+                {
+                    Kind = happening.Kind,
+                    Side = happening.Side,
+                    Amount = happening.Amount,
+                })
+                .ToList(),
+        }));
+
+        return new MatchStoryDto { Rounds = rounds };
     }
     private static MarchDto ToMarchDto(this MarchChoice choice, int side, DateTimeOffset now) => new()
     {

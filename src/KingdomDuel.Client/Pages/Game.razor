@@ -180,6 +180,11 @@ else
                 </div>
             </div>
 
+            @if (state.Story is { Rounds.Count: > 1 } story)
+            {
+                <MatchStory Story="story" Player1Name="@Player1Name" Player2Name="@Player2Name" />
+            }
+
             <div class="result-actions">
                 <button type="button" class="result-ghost" @onclick="DismissResult">Închide</button>
                 <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
@@ -356,7 +361,7 @@ else
         GameOverReason.Player2CastleDestroyed => $"{Player1Name} câștigă: cetatea lui {Player2Name} a fost dărâmată.",
         GameOverReason.RoundsExhaustedPlayer1Wins => $"{Player1Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedPlayer2Wins => $"{Player2Name} câștigă la putere, după {state.TotalRounds} runde.",
-        GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",
+        GameOverReason.RoundsExhaustedDraw => $"Egalitate după {state.TotalRounds} runde.",
         GameOverReason.Player1Left => $"{Player1Name} a părăsit meciul. {Player2Name} câștigă prin abandon.",
         GameOverReason.Player2Left => $"{Player2Name} a părăsit meciul. {Player1Name} câștigă prin abandon.",
         GameOverReason.Player1Disconnected => $"{Player1Name} este inactiv, {Player2Name} câștigă.",
