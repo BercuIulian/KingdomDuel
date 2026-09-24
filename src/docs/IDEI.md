@@ -5,6 +5,9 @@ umfle etapele. Fiecare se face la rândul ei, ca etapă de sine stătătoare, cu
 deciziile luate atunci, nu acum.
 
 Refactorul de logică (S1–S12) s-a încheiat; de aici încolo se îmbunătățește.
+Ordinea hotărâtă: zidurile sparte, sătenii și soldații, recrutarea instantă,
+spionii, apoi mobilizarea și îngreunarea asaltului. Recrutarea instantă vine
+după săteni fiindcă s-ar putea să însemne tocmai înarmarea lor.
 Mobilizarea, spionii și îngreunarea asaltului au ieșit din S7 ca planul să nu se
 contrazică; mobilizarea și spionii adaugă suprafață de interfață — un buton pe
 ordinul de atac și o direcție nouă de alocare — deci panoul de ordine primește o
@@ -60,6 +63,30 @@ consumabile la fiecare rundă.
 - **Riscul de bulgăre:** cine n-are 15 aur rămâne fără ziduri, iar fiecare atac
   următor e monedă. Nu e spirală — starea nu se agravează — dar rămânerea în
   urmă economic devine dur pedepsită. De urmărit la calibrare.
+
+### Săteni și soldați, două neamuri
+
+Astăzi o singură oaste face tot: negustorește, apără și atacă. Ideea e s-o
+despicăm în două — **săteni** și **soldați** — fiecare cu treaba lui. Sătenii
+pleacă la negoț și la orice muncă vom mai adăuga; soldații urcă pe ziduri și
+pornesc la atac. Amândoi se cumpără cu aur, iar alegerea „pe ce dau aurul, pe
+economie sau pe armată” ia locul alegerii sărace de azi, „trimit oastea la negoț
+sau o țin acasă”.
+
+Pornirea propusă: 20 de săteni și 10 soldați.
+
+**Ce trebuie ținut minte când o facem:** azi negoțul e echilibrat tocmai fiindcă
+te lasă descoperit — jumătate din echilibrul măsurat stă pe perechea
+negustor-cu-zid contra asediator. Dacă negustoresc sătenii, riscul ăla dispare.
+Tensiunea care îl înlocuiește e că aurul dat pe săteni nu s-a dat pe soldați,
+iar **cetatea cade când rămâi fără soldați** — cine cumpără numai săteni moare
+la prima năvală, cine cumpără numai soldați rămâne sărac. Ține, dar numai cât
+timp regula asta rămâne adevărată.
+
+**De hotărât la etapa ei:** dacă sătenii intră în putere la departajare (eu aș
+zice da, 1 punct, ca aurul și ca soldatul); dacă pot fi pierduți altfel decât
+odată cu cetatea (eu aș zice nu, fără pradă, ca până acum); și dacă ospățul
+ridică moralul tuturor celor de acasă sau doar al soldaților.
 
 ### Recrutarea instantă în timpul unui asalt
 
@@ -229,28 +256,18 @@ contra 30, apoi se decide. Recomandarea mea de pornire: **7 (limită de timp)**,
 fiindcă schimbă forma și taie durata, plus **2 (țăranii)** dacă mai e nevoie de
 un prag de intrare — e cea mai ușor de explicat unui jucător.
 
+### Catapultele nu se pierd niciodată
 
-### Săteni și soldați, două neamuri
+Odată cu zidurile care rămân sparte, apare o asimetrie: nivelul zidului poate
+fi dărâmat și răscumpărat, dar cele două catapulte, odată cumpărate, rămân ale
+tale până la capătul meciului. Una e o investiție care se poate pierde, cealaltă
+nu. De discutat ce le-ar putea consuma — un asalt eșuat, o retragere, uzura pe
+rundă — sau dacă asimetria e de fapt în regulă, fiindcă zidul apără iar
+catapulta doar atacă.
 
-Astăzi o singură oaste face tot: negustorește, apără și atacă. Ideea e s-o
-despicăm în două — **săteni** și **soldați** — fiecare cu treaba lui. Sătenii
-pleacă la negoț și la orice muncă vom mai adăuga; soldații urcă pe ziduri și
-pornesc la atac. Amândoi se cumpără cu aur, iar alegerea „pe ce dau aurul, pe
-economie sau pe armată” ia locul alegerii sărace de azi, „trimit oastea la negoț
-sau o țin acasă”.
+### Probele într-un proiect de test adevărat
 
-Pornirea propusă: 20 de săteni și 10 soldați.
-
-**Ce trebuie ținut minte când o facem:** azi negoțul e echilibrat tocmai fiindcă
-te lasă descoperit — jumătate din echilibrul măsurat stă pe perechea
-negustor-cu-zid contra asediator. Dacă negustoresc sătenii, riscul ăla dispare.
-Tensiunea care îl înlocuiește e că aurul dat pe săteni nu s-a dat pe soldați,
-iar **cetatea cade când rămâi fără soldați** — cine cumpără numai săteni moare
-la prima năvală, cine cumpără numai soldați rămâne sărac. Ține, dar numai cât
-timp regula asta rămâne adevărată.
-
-**De hotărât la etapa ei:** dacă sătenii intră în putere la departajare (eu aș
-zice da, 1 punct, ca aurul și ca soldatul); dacă pot fi pierduți altfel decât
-odată cu cetatea (eu aș zice nu, fără pradă, ca până acum); și dacă ospățul
-ridică moralul tuturor celor de acasă sau doar al soldaților.
-
+Probele de motor au trăit tot refactorul într-un banc din scratchpad, pe care o
+comandă greșită l-a și șters odată. Locul lor e în repo: `tests/KingdomDuel.Tests`,
+xUnit, rulate la fiecare build. De rescris pe măsură ce se atinge fiecare zonă,
+nu toate deodată.

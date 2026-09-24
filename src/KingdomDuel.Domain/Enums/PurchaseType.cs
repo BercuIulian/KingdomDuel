@@ -4,5 +4,8 @@ public enum PurchaseType
 {
     Recruit,
     Fortify,
-    Catapult
+    Catapult,
+    Repair,
+    RepairToOne,
+    RepairToTwo
 }

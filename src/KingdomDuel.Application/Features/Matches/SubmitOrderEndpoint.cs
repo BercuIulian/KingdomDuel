@@ -90,6 +90,29 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
+            if (plan.Has(PurchaseType.Fortify) && slot.Kingdom.WallIsDown)
+            {
+                AddError("Zidul e dărâmat: întâi se ridică la loc, abia apoi se întărește.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            if (plan.Has(PurchaseType.Repair) && !slot.Kingdom.WallIsDown)
+            {
+                AddError("Zidul e în picioare, n-ai ce repara.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            var back = plan.Has(PurchaseType.RepairToTwo) ? 2 : plan.Has(PurchaseType.RepairToOne) ? 1 : 0;
+
+            if (back > 0 && (!plan.Has(PurchaseType.Repair) || slot.Kingdom.RuinedFrom < back))
+            {
+                AddError("Zidul se ridică la loc doar până la nivelul de dinainte, și numai odată cu repararea.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
             if (plan.Has(PurchaseType.Catapult) && slot.Kingdom.Catapults >= GameConstants.CatapultMaxLevel)
             {
                 AddError($"Ai deja {GameConstants.CatapultMaxLevel} catapulte, mai multe nu încap.");

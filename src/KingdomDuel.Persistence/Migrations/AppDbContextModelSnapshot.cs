@@ -196,6 +196,9 @@ namespace KingdomDuel.Persistence.Migrations
                                 .HasColumnType("integer")
                                 .HasColumnName("Morale");
 
+                            b1.Property<int>("RuinedFrom")
+                                .HasColumnType("integer");
+
                             b1.Property<int>("Troops")
                                 .HasColumnType("integer")
                                 .HasColumnName("Troops");

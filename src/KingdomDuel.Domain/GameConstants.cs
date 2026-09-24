@@ -48,6 +48,11 @@ public static class GameConstants
     public const int FortifySeconds = 5;
     public const int FortifyArchers = 2;
 
+    public const int WallDownLevel = -1;
+    public const int RepairCost = 12;
+    public const int RepairToOneCost = 4;
+    public const int RepairToTwoCost = 7;
+
     public const int CatapultCost = 15;
     public const int CatapultMaxLevel = 2;
     public const int CatapultSeconds = 5;
@@ -74,6 +79,9 @@ public static class GameConstants
         PurchaseType.Recruit => RecruitCost,
         PurchaseType.Fortify => FortifyCost,
         PurchaseType.Catapult => CatapultCost,
+        PurchaseType.Repair => RepairCost,
+        PurchaseType.RepairToOne => RepairToOneCost,
+        PurchaseType.RepairToTwo => RepairToTwoCost,
         _ => 0,
     };
 

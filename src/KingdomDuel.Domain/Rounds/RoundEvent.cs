@@ -16,6 +16,8 @@ public enum RoundEventKind
     BattleLosses,
     WallsHeld,
     WallsBreached,
+    WallsRuined,
+    WallsRepaired,
     CastleDestroyed,
     Retreated,
     Purchased,

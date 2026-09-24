@@ -199,8 +199,27 @@
     [Parameter, EditorRequired] public MatchStateDto State { get; set; } = default!;
     [Parameter] public EventCallback<MatchStateDto> OnSubmitted { get; set; }
 
+    [Parameter] public int RepairTo { get; set; } = -1;
+
     private static readonly ActionType[] Directions = [ActionType.Attack, ActionType.Defend, ActionType.Trade];
-    private static readonly PurchaseType[] Buyables = [PurchaseType.Recruit, PurchaseType.Fortify, PurchaseType.Catapult];
+    private static readonly PurchaseType[] Standing = [PurchaseType.Recruit, PurchaseType.Fortify, PurchaseType.Catapult];
+
+    private PurchaseType[] Buyables
+    {
+        get
+        {
+            if (!WallDown)
+            {
+                return Standing;
+            }
+
+            return [PurchaseType.Recruit, PurchaseType.Catapult];
+        }
+    }
+
+    private bool WallDown => (Mine?.Fortification ?? 0) <= GameConstants.WallDownLevel;
+
+    private int Ruined => Mine?.RuinedFrom ?? 0;
     private static readonly FeastTier[] Tiers = [FeastTier.Small, FeastTier.Court, FeastTier.Grand];
 
     private readonly Dictionary<ActionType, int> allocation = new();
@@ -229,7 +248,25 @@
     private int Free => Math.Max(0, Troops - allocation.Values.Sum());
 
     private int GoldSpent =>
-        (feast is { } tier ? GameConstants.FeastCost(tier) : 0) + bought.Sum(GameConstants.PurchaseCost);
+        (feast is { } tier ? GameConstants.FeastCost(tier) : 0)
+        + bought.Sum(GameConstants.PurchaseCost)
+        + Repairs.Sum(GameConstants.PurchaseCost);
+
+    private IEnumerable<PurchaseType> Repairs
+    {
+        get
+        {
+            if (RepairTo < 0)
+            {
+                yield break;
+            }
+
+            yield return PurchaseType.Repair;
+
+            if (RepairTo == 1) yield return PurchaseType.RepairToOne;
+            if (RepairTo == 2) yield return PurchaseType.RepairToTwo;
+        }
+    }
 
     private int GoldLeft => Gold - GoldSpent;
 
@@ -271,7 +308,9 @@
 
     private int Allocated(ActionType direction) => allocation.GetValueOrDefault(direction);
 
-    private bool Blocked(ActionType direction) => direction == ActionType.Trade && Caravan is not null;
+    private bool Blocked(ActionType direction) =>
+        (direction == ActionType.Trade && Caravan is not null)
+        || (direction == ActionType.Defend && WallDown);
 
     private static int MaxLevel(PurchaseType purchase) => purchase switch
     {
@@ -309,8 +348,18 @@
     private bool Affordable(FeastTier tier) =>
         GameConstants.FeastCost(tier) + bought.Sum(GameConstants.PurchaseCost) <= Gold;
 
-    private bool Buyable(PurchaseType purchase) =>
-        !AtMax(purchase) && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
+    private bool Buyable(PurchaseType purchase)
+    {
+        // Treptele se rascumpara doar odata cu zidul, nu singure.
+        if (purchase is PurchaseType.RepairToOne or PurchaseType.RepairToTwo
+            && !bought.Contains(PurchaseType.Repair))
+        {
+            return false;
+        }
+
+        return !AtMax(purchase)
+            && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
+    }
 
     private void OpenPicker(ActionType direction)
     {
@@ -361,6 +410,14 @@
         if (!bought.Remove(purchase))
         {
             bought.Add(purchase);
+
+            if (purchase == PurchaseType.RepairToOne) bought.Remove(PurchaseType.RepairToTwo);
+            if (purchase == PurchaseType.RepairToTwo) bought.Remove(PurchaseType.RepairToOne);
+        }
+        else if (purchase == PurchaseType.Repair)
+        {
+            bought.Remove(PurchaseType.RepairToOne);
+            bought.Remove(PurchaseType.RepairToTwo);
         }
     }
 
@@ -383,7 +440,7 @@
                         .Select(pair => new OrderAllocationDto { Direction = pair.Key, Troops = pair.Value })
                         .ToList(),
                     Feast = feast,
-                    Purchases = bought.ToList(),
+                    Purchases = [.. bought, .. Repairs],
                 },
                 State.Code);
 
@@ -410,7 +467,9 @@
     private string Hint(ActionType direction) => direction switch
     {
         ActionType.Attack => "Atacă cetatea adversarului",
-        ActionType.Defend => $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
+        ActionType.Defend => WallDown
+            ? "Zidul e dărâmat, n-are cine să-l țină"
+            : $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
         _ => Caravan is null ? "Se întorc peste o rundă, cu aur" : "Caravana e deja pe drum",
     };
 
@@ -432,6 +491,9 @@
     {
         PurchaseType.Recruit => "Recrutare",
         PurchaseType.Fortify => "Fortificație",
+        PurchaseType.Repair => "Ridică zidul",
+        PurchaseType.RepairToOne => "Și înapoi la nivelul 1",
+        PurchaseType.RepairToTwo => "Și înapoi la nivelul 2",
         _ => "Catapultă",
     };
 
@@ -439,6 +501,9 @@
     {
         PurchaseType.Recruit => $"Recrutează {GameConstants.RecruitTroops} soldați pentru runda următoare",
         PurchaseType.Fortify => $"Zid mai trainic: +{GameConstants.FortifySeconds}s, +{GameConstants.FortifyArchers} arcași",
+        PurchaseType.Repair => "Cetatea are iar ziduri, la nivelul de bază",
+        PurchaseType.RepairToOne => "Cât ține oferta, treapta pierdută se ia ieftin",
+        PurchaseType.RepairToTwo => "Cât ține oferta, amândouă treptele se iau ieftin",
         _ => $"Spargi zidul cu {GameConstants.CatapultSeconds}s mai repede",
     };
 

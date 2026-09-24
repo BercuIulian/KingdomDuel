@@ -56,6 +56,9 @@ else
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
+                        CanRepairWall="@(Side == 1 && CanPlay && state.Status == MatchStatus.InProgress && state.Player1Kingdom is { Fortification: < 0 })"
+                        RepairChosen="@(Side == 1 ? repairTo : -1)"
+                        OnRepairWall="() => repairOpen = true"
                         Drift="@(Side == 1 ? state.LastRound : null)"
                         MissedRounds="state.Player1MissedRounds" />
 
@@ -72,6 +75,9 @@ else
                         Kingdom="state.Player2Kingdom"
                         Mirrored="true"
                         IsYou="Side == 2"
+                        CanRepairWall="@(Side == 2 && CanPlay && state.Status == MatchStatus.InProgress && state.Player2Kingdom is { Fortification: < 0 })"
+                        RepairChosen="@(Side == 2 ? repairTo : -1)"
+                        OnRepairWall="() => repairOpen = true"
                         Drift="@(Side == 2 ? state.LastRound : null)"
                         MissedRounds="state.Player2MissedRounds" />
         </section>
@@ -100,7 +106,7 @@ else
             }
             else
             {
-                <OrderPanel State="state" OnSubmitted="OnOrderSubmitted" />
+                <OrderPanel State="state" RepairTo="repairTo" OnSubmitted="OnOrderSubmitted" />
             }
         }
 
@@ -116,6 +122,11 @@ else
         }
 
     </section>
+
+    @if (repairOpen && MyCastle is { Fortification: < 0 } broken)
+    {
+        <WallRepair Kingdom="broken" Chosen="repairTo" ChosenChanged="PickRepair" OnClosed="() => repairOpen = false" />
+    }
 
     @if (recapOpen && state.LastRound is { } recap)
     {
@@ -206,6 +217,9 @@ else
     private bool resultDismissed;
     private bool recapOpen;
     private int recapShown;
+    private int repairTo = -1;
+    private bool repairOpen;
+    private int repairRound;
     private bool leaving;
     private bool resultFocused;
 
@@ -313,6 +327,10 @@ else
 
     private void DismissResult() => resultDismissed = true;
 
+    private KingdomDto? MyCastle => Side == 1 ? state?.Player1Kingdom : state?.Player2Kingdom;
+
+    private void PickRepair(int level) => repairTo = level;
+
     private void OnOrderSubmitted(MatchStateDto fresh)
     {
         state = fresh;
@@ -327,6 +345,8 @@ else
         }
 
         recapShown = recap.Round;
+        repairTo = -1;
+        repairOpen = false;
         recapOpen = RoundRecap.WorthTelling(recap);
     }
 

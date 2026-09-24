@@ -8,4 +8,5 @@ public sealed class KingdomDto
     public int TotalPower { get; set; }
     public int Fortification { get; set; }
     public int Catapults { get; set; }
+    public int RuinedFrom { get; set; }
 }

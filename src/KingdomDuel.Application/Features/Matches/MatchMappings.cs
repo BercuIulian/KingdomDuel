@@ -202,5 +202,6 @@ internal static class MatchMappings
         TotalPower = kingdom.TotalPower,
         Fortification = kingdom.Fortification,
         Catapults = kingdom.Catapults,
+        RuinedFrom = kingdom.RuinedFrom,
     };
 }

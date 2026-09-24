@@ -7,9 +7,13 @@ public readonly record struct KingdomState(
     int Troops,
     int Morale,
     int Fortification = 0,
-    int Catapults = 0)
+    int Catapults = 0,
+    int RuinedFrom = 0)
 {
     public static KingdomState Start(int gold, int troops, int morale) => new(gold, troops, morale);
+
+    [JsonIgnore]
+    public bool WallIsDown => Fortification <= GameConstants.WallDownLevel;
 
     [JsonIgnore]
     public int TotalPower => Gold + Troops + Morale;

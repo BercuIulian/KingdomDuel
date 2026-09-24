@@ -71,6 +71,8 @@ public static class GameEngine
             Kingdom = beforeBattle.Player2.Kingdom with { Troops = Math.Max(0, troops2) },
         };
 
+        (after1, after2) = BringWallDown(after1, after2, replay, endsAt, events);
+
         var castle = CastleFallen(replay, endsAt, troops1, troops2);
 
         if (castle is not GameOverReason.None)
@@ -86,6 +88,40 @@ public static class GameEngine
         (after1, after2) = LandRecruits(after1, after2, events);
 
         return new RoundOutcome(after1, after2, events, EvaluateGameOver(after1, after2, round, totalRounds));
+    }
+
+    private static (SideOutcome, SideOutcome) BringWallDown(
+        SideOutcome side1,
+        SideOutcome side2,
+        BattleReplay replay,
+        double endsAt,
+        List<RoundEvent> events)
+    {
+        if (replay.AttackerSide == 0 || replay.BreachAt is not { } breach || endsAt < breach)
+        {
+            return (side1, side2);
+        }
+
+        var defenderSide = replay.AttackerSide == 1 ? 2 : 1;
+        var defender = defenderSide == 1 ? side1 : side2;
+
+        if (defender.Kingdom.WallIsDown)
+        {
+            return (side1, side2);
+        }
+
+        events.Add(new RoundEvent(RoundEventKind.WallsRuined, defenderSide, defender.Kingdom.Fortification));
+
+        var ruined = defender with
+        {
+            Kingdom = defender.Kingdom with
+            {
+                Fortification = GameConstants.WallDownLevel,
+                RuinedFrom = defender.Kingdom.Fortification,
+            },
+        };
+
+        return defenderSide == 1 ? (ruined, side2) : (side1, ruined);
     }
 
     public static GameOverReason EvaluateGameOver(
@@ -107,14 +143,19 @@ public static class GameEngine
 
     public static int CaravanReturnRound(int round) => round + 2;
 
-    public static int BreakingSeconds(int fortification, int catapults) => Math.Max(
-        GameConstants.MinBreakingSeconds,
-        GameConstants.WallBreakingSeconds
-            + fortification * GameConstants.FortifySeconds
-            - catapults * GameConstants.CatapultSeconds);
+    public static int BreakingSeconds(int fortification, int catapults) =>
+        fortification <= GameConstants.WallDownLevel
+            ? 0
+            : Math.Max(
+                GameConstants.MinBreakingSeconds,
+                GameConstants.WallBreakingSeconds
+                    + fortification * GameConstants.FortifySeconds
+                    - catapults * GameConstants.CatapultSeconds);
 
     public static int WallCapacity(int fortification) =>
-        GameConstants.WallCapacity + fortification * GameConstants.FortifyArchers;
+        fortification <= GameConstants.WallDownLevel
+            ? 0
+            : GameConstants.WallCapacity + fortification * GameConstants.FortifyArchers;
 
     private static (SideOutcome, SideOutcome) MoveMorale(
         SideOutcome side1,
@@ -282,7 +323,10 @@ public static class GameEngine
         {
             var reinforcements = replay.DefenderInKeep - defenderBefore + onTheWall;
 
-            events.Add(new RoundEvent(RoundEventKind.WallsBreached, defenderSide, reinforcements, ActionType.Defend));
+            if (breach > 0)
+            {
+                events.Add(new RoundEvent(RoundEventKind.WallsBreached, defenderSide, reinforcements, ActionType.Defend));
+            }
             events.Add(new RoundEvent(RoundEventKind.BattleJoined, defenderSide, replay.DefenderInKeep, ActionType.Defend));
 
             defenderLeft = replay.DefenderInKeep - replay.FallsOf(defenderSide, endsAt, BattlePhase.Keep);
@@ -369,7 +413,10 @@ public static class GameEngine
         var defenderSide = attackerSide == 1 ? 2 : 1;
         var seconds = BreakingSeconds(defender.Kingdom.Fortification, attacker.Catapults);
         var capacity = WallCapacity(defender.Kingdom.Fortification);
-        var wall = Math.Min(defenceOrder[ActionType.Defend], defender.Kingdom.Troops);
+
+        var wall = defender.Kingdom.WallIsDown
+            ? 0
+            : Math.Min(defenceOrder[ActionType.Defend], defender.Kingdom.Troops);
         var log = Battle.Assault(
             army,
             wall,
@@ -462,7 +509,30 @@ public static class GameEngine
             events.Add(new RoundEvent(RoundEventKind.Purchased, side, Purchase: PurchaseType.Recruit));
         }
 
-        if (Buys(order, PurchaseType.Fortify, state) && state.Fortification < GameConstants.FortifyMaxLevel)
+        if (state.WallIsDown && Buys(order, PurchaseType.Repair, state))
+        {
+            state = state.With(goldDelta: -GameConstants.RepairCost) with { Fortification = 0 };
+
+            var back = 0;
+
+            if (order.Has(PurchaseType.RepairToTwo) && state.RuinedFrom >= 2
+                && state.Gold >= GameConstants.RepairToTwoCost)
+            {
+                state = state.With(goldDelta: -GameConstants.RepairToTwoCost) with { Fortification = 2 };
+                back = 2;
+            }
+            else if (order.Has(PurchaseType.RepairToOne) && state.RuinedFrom >= 1
+                && state.Gold >= GameConstants.RepairToOneCost)
+            {
+                state = state.With(goldDelta: -GameConstants.RepairToOneCost) with { Fortification = 1 };
+                back = 1;
+            }
+
+            events.Add(new RoundEvent(RoundEventKind.WallsRepaired, side, back));
+        }
+
+        if (Buys(order, PurchaseType.Fortify, state) && !state.WallIsDown
+            && state.Fortification < GameConstants.FortifyMaxLevel)
         {
             state = state.With(goldDelta: -GameConstants.FortifyCost) with
             {
@@ -490,7 +560,7 @@ public static class GameEngine
                 Purchase: PurchaseType.Catapult));
         }
 
-        return new SideOutcome(state, caravan, recruits);
+        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits);
     }
 
     private static KingdomState Feast(
