@@ -486,3 +486,27 @@ h3 {
         flex: 1 1 100%;
     }
 }
+
+.board-note {
+    margin: 0;
+    padding: 0 0.5rem;
+    text-align: center;
+    font-size: 0.84rem;
+    line-height: 1.5;
+    color: var(--text-dim);
+}
+
+.ending-title {
+    margin: 2.25rem 0 0;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+    font-family: var(--font-display);
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--gold-lit);
+}
+
+.ending-title + .ending {
+    margin-top: 1.25rem;
+}

@@ -32,10 +32,9 @@
             </h1>
 
             <p class="lead">
-                Kingdom Duel e un joc de strategie pentru doi jucători. Fiecare
-                conduce un regat gestionând resursele disponibile. În fiecare rundă dați
-                câte un ordin, fără să vedeți ce alege celălalt — și ciocnirea celor
-                două ordine decide ce se întâmplă.
+                Kingdom Duel e un joc de strategie pentru doi jucători. Fiecare conduce un
+                regat gestionând resursele disponibile. Ordinele se dau în același
+                timp, iar ciocnirea lor decide runda.
             </p>
 
             <div class="cta-row">
@@ -58,10 +57,6 @@
                     <figcaption>sigilat</figcaption>
                 </figure>
             </div>
-
-            <p class="duel-note">
-                Ordinele se dezvăluie abia după ce le-ați trimis amândoi.
-            </p>
         </section>
 
         <section class="band">
@@ -76,7 +71,8 @@
                     </span>
                     <h3>Trimiteți ordinele</h3>
                     <p>
-                        Alegeți fiecare una din ordinele valabile în timpul oferit.
+                        Îți aloci soldații pe direcții și îți cheltui aurul în timpul
+                        oferit.
                     </p>
                 </li>
                 <li>
@@ -86,9 +82,8 @@
                     </span>
                     <h3>Se rezolvă runda</h3>
                     <p>
-                        Se aplică costurile și câștigurile fiecărui ordin, apoi
-                        interacțiunea dintre ele. Vezi ce s-a întâmplat și cum au rămas
-                        cele două regate.
+                        Se plătesc costurile, pleacă și se întorc caravanele, iar dacă oștile
+                        se întâlnesc, bătălia se joacă sub ochii voștri, secundă cu secundă.
                     </p>
                 </li>
             </ol>
@@ -96,26 +91,30 @@
 
         <section class="band">
             <p class="eyebrow">Tabla de joc</p>
-            <h2>Vezi mereu starea regatelor</h2>
+            <h2>Îți vezi cetatea, nu și pe a lui</h2>
             <p class="band-lead">
-                Cele două regate stau față în față, cu resursele la vedere. Balanța din
-                mijloc cântărește puterea totală — aur plus trupe plus moral — și ea
-                departajează meciul dacă se termină rundele fără o prăbușire.
+                Cele două regate stau față în față, dar cât ține meciul îți vezi doar
+                cetatea ta — la adversar scrie „necunoscut”. Puterea totală — aur plus
+                trupe plus moral — departajează meciul dacă se termină rundele fără o
+                cetate dărâmată, și abia atunci se dezvăluie amândouă.
             </p>
 
             <div class="board-art">
                 <CastleView House="amber" Name="Regatul tău" Kingdom="preview1" />
 
-                <PowerScale Power1="preview1.TotalPower" Power2="preview2.TotalPower"
-                            Name1="Regatul tău" Name2="Adversarul" />
+                <p class="board-note">
+                    Cifrele lui le afli abia la departajare, când se dezvăluie amândouă.
+                </p>
 
-                <CastleView House="steel" Name="Adversarul" Kingdom="preview2" Mirrored="true" />
+                <CastleView House="steel" Name="Adversarul" Mirrored="true" />
             </div>
+
+            <h3 class="ending-title">Cum se câștigă</h3>
 
             <dl class="ending">
                 <div>
                     <dt>un regat se prăbușește</dt>
-                    <dd>Trupele sau moralul ajung la 0. Meciul se oprește instant.</dd>
+                    <dd>Zidul cade și apărătorul rămâne fără niciun soldat. Meciul se oprește pe loc.</dd>
                 </div>
                 <div>
                     <dt>se termină rundele</dt>
@@ -124,7 +123,8 @@
                 <div>
                     <dt>cineva pleacă sau tace</dt>
                     <dd>
-                        Cine părăsește meciul sau nu mai trimite ordine îl pierde.
+                        Cine părăsește masa pierde pe loc, iar cine tace trei runde la rând
+                        pierde prin abandon.
                     </dd>
                 </div>
             </dl>
@@ -156,13 +156,6 @@
         TotalPower = 173,
     };
 
-    private readonly KingdomDto preview2 = new()
-    {
-        Gold = 32,
-        Troops = 55,
-        Morale = 46,
-        TotalPower = 133,
-    };
 
     protected override async Task OnInitializedAsync()
     {

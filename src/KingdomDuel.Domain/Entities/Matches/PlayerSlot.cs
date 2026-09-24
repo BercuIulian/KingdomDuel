@@ -15,7 +15,7 @@ public sealed class PlayerSlot : Entity
     public int MissedRounds { get; set; }
 
     public KingdomState Kingdom { get; set; } = KingdomState.Start(
-        GameConstants.StartingResource,
+        GameConstants.StartingGold,
         GameConstants.StartingResource,
         GameConstants.StartingResource);
 

@@ -4,9 +4,12 @@ namespace KingdomDuel.Domain;
 
 public static class GameConstants
 {
+    public const int StartingGold = 70;
     public const int StartingResource = 50;
 
-    public const int DefaultTotalRounds = 8;
+    public const int DefaultTotalRounds = 10;
+    public const int MinTotalRounds = 8;
+    public const int MaxTotalRounds = 30;
 
     public const int DefaultRoundSeconds = 45;
     public const int MinRoundSeconds = 15;
@@ -26,8 +29,8 @@ public static class GameConstants
     public const int MarchChoiceSeconds = 10;
 
     public const int TradeGoldPerSoldier = 1;
-    public const double TradeYieldMin = 0.9;
-    public const double TradeYieldMax = 1.1;
+    public const double TradeYieldMin = 1.4;
+    public const double TradeYieldMax = 1.6;
 
     public const int MoraleBaseline = 50;
     public const double MoraleSwing = 0.5;
@@ -38,7 +41,7 @@ public static class GameConstants
     public const int MoraleDecayPerRound = 3;
 
     public const int RecruitCost = 12;
-    public const int RecruitTroops = 4;
+    public const int RecruitTroops = 6;
 
     public const int FortifyCost = 12;
     public const int FortifyMaxLevel = 2;

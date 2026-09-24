@@ -62,7 +62,7 @@ else
 
             <div class="field">
                 <label for="rounds">Număr de runde</label>
-                <input id="rounds" type="number" min="1" max="20"
+                <input id="rounds" type="number" min="@GameConstants.MinTotalRounds" max="@GameConstants.MaxTotalRounds"
                        disabled="@(!isHost)" @bind="rounds" @bind:after="PersistLobbyAsync" />
             </div>
 
@@ -162,7 +162,7 @@ else
 
     // --- Setări meci ---
     private int rounds = GameConstants.DefaultTotalRounds;
-    private int startingGold = 50;
+    private int startingGold = GameConstants.StartingGold;
     private int startingTroops = 50;
     private int startingMorale = 50;
     private int roundSeconds = GameConstants.DefaultRoundSeconds;

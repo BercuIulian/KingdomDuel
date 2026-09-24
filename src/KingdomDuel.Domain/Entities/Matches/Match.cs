@@ -12,7 +12,7 @@ public sealed class Match : Entity
     public GameOverReason GameOverReason { get; set; } = GameOverReason.None;
 
     public int TotalRounds { get; set; } = GameConstants.DefaultTotalRounds;
-    public int StartingGold { get; set; } = GameConstants.StartingResource;
+    public int StartingGold { get; set; } = GameConstants.StartingGold;
     public int StartingTroops { get; set; } = GameConstants.StartingResource;
     public int StartingMorale { get; set; } = GameConstants.StartingResource;
     public int RoundSeconds { get; set; } = GameConstants.DefaultRoundSeconds;
