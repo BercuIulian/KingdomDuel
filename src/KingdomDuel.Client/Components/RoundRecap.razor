@@ -46,7 +46,7 @@
 
     private static bool Counts(RoundLineDto line) =>
         line.Kind is RoundEventKind.Purchased or RoundEventKind.CastleDestroyed
-            or RoundEventKind.WallsRuined or RoundEventKind.WallsRepaired
+            or RoundEventKind.WallsRuined or RoundEventKind.WallsRepaired or RoundEventKind.CatapultsLost
         || line.Amount > 0;
 
     private IEnumerable<RoundLineDto> Told => Recap.Lines.Where(Counts).Where(Tells);
@@ -83,6 +83,9 @@
         RoundEventKind.BattleLosses => $"Ai pierdut {line.Amount} soldați în luptă.",
         RoundEventKind.WallsHeld => $"Zidurile au ținut, cu {line.Amount} apărători în picioare.",
         RoundEventKind.WallsBreached => $"Zidul a fost spart; {line.Amount} apărători s-au retras înăuntru.",
+        RoundEventKind.CatapultsLost => line.Amount > 1
+            ? $"Catapultele au rămas sub ziduri; erau prea grele ca să se retragă."
+            : "Catapulta a rămas sub ziduri; era prea grea ca să se retragă.",
         RoundEventKind.WallsRuined => "Zidul a rămas dărâmat. Până nu-l ridici, asaltul intră direct în cetate.",
         RoundEventKind.WallsRepaired => line.Amount > 0
             ? $"Ai ridicat zidul la loc, până la nivelul {line.Amount}."

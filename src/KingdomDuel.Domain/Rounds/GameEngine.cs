@@ -72,6 +72,7 @@ public static class GameEngine
         };
 
         (after1, after2) = BringWallDown(after1, after2, replay, endsAt, events);
+        (after1, after2) = LoseCatapults(after1, after2, replay, endsAt, retreat, events);
 
         var castle = CastleFallen(replay, endsAt, troops1, troops2);
 
@@ -122,6 +123,48 @@ public static class GameEngine
         };
 
         return defenderSide == 1 ? (ruined, side2) : (side1, ruined);
+    }
+
+    private static (SideOutcome, SideOutcome) LoseCatapults(
+        SideOutcome side1,
+        SideOutcome side2,
+        BattleReplay replay,
+        double endsAt,
+        Retreat? retreat,
+        List<RoundEvent> events)
+    {
+        foreach (var side in replay.AttackerSide == 0 ? new[] { 1, 2 } : [replay.AttackerSide])
+        {
+            var walker = side == 1 ? side1 : side2;
+
+            if (walker.Kingdom.Catapults <= 0)
+            {
+                continue;
+            }
+
+            var ran = retreat?.Side == side;
+            var fell = SurvivingExpedition(replay, endsAt, side) <= 0;
+
+            if (!ran && !fell)
+            {
+                continue;
+            }
+
+            events.Add(new RoundEvent(RoundEventKind.CatapultsLost, side, walker.Kingdom.Catapults));
+
+            var stripped = walker with { Kingdom = walker.Kingdom with { Catapults = 0 } };
+
+            if (side == 1)
+            {
+                side1 = stripped;
+            }
+            else
+            {
+                side2 = stripped;
+            }
+        }
+
+        return (side1, side2);
     }
 
     public static GameOverReason EvaluateGameOver(

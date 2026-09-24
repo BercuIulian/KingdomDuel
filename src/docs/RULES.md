@@ -44,7 +44,12 @@ cetate.
 - **Fortificație** — 12 aur. Zidul ține cu 5 secunde mai mult și încap încă 2
   arcași pe el. Cel mult două.
 - **Catapultă** — 15 aur. Spargi zidul adversarului cu 5 secunde mai repede.
-  Cel mult două.
+  Cel mult două. Merg cu oastea la atac, și nu se pot retrage în grabă: dacă suni
+  retragerea sau dacă expediția e nimicită, le pierzi pe toate. Rămân ale tale
+  dacă oastea se întoarce acasă întreagă — inclusiv după un câmp câștigat.
+- **Ridicarea zidului** — 12 aur, când zidul e dărâmat. În runda de după
+  dărâmare, treptele pierdute se răscumpără ieftin: 16 aur cu totul pentru
+  nivelul 1, 19 pentru al doilea. Oferta ține o singură rundă.
 
 Se pot lua mai multe deodată, atâta timp cât ajunge aurul. Fiecare se plătește
 o singură dată, la prețul scris.
@@ -84,6 +89,17 @@ Când zidul cade, cei rămași pe el se retrag înăuntru — dar numai 70% din 
 ajung — și se alătură garnizoanei. Abia atunci atacatorul vede cu cine are de-a
 face. Dacă apărătorul rămâne fără niciun soldat, **cetatea cade și meciul se
 încheie pe loc**.
+
+### Zidul rămâne spart
+
+Un zid străpuns nu se reface singur. Cade oricare i-ar fi fost nivelul, și cade
+deopotrivă dacă i s-a scurs timpul sau dacă atacatorul i-a omorât toți arcașii
+înainte de vreme — amândouă înseamnă că a intrat. Nu cade doar dacă atacatorul a
+murit ori s-a retras înainte de străpungere.
+
+Cât zidul e jos, nimeni nu mai urcă la apărare, nu ai ce fortifica, iar asaltul
+următor începe direct în cetate. Se ridică la loc cu 12 aur, oricând; treptele
+pierdute se răscumpără ieftin, dar numai în runda de după dărâmare.
 
 ## Moralul
 
