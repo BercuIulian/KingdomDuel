@@ -46,7 +46,7 @@ public static class Spying
                     order.Feast,
                     order[ActionType.Defend],
                     order.Has(PurchaseType.Recruit),
-                    watched.Spies is not null)
+                    order.Spies is not null || order.RecallSpies)
                 : null);
     }
 }

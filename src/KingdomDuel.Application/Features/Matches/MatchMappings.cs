@@ -248,7 +248,7 @@ internal static class MatchMappings
                 Feast = orders.Feast,
                 Defenders = orders.Defenders,
                 Recruited = orders.Recruited,
-                Spied = orders.Spied,
+                TouchedSpies = orders.TouchedSpies,
             }
             : null,
     };

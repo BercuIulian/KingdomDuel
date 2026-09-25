@@ -74,8 +74,13 @@ moral, și câți negustori are pe drum. La 65% acuratețe o caravană de 7 poat
 raportată ca 5 sau ca 9. Aurul nu se iscodește deloc.
 
 La treapta de cinci afli pe deasupra **ordinele din runda trecută**, exact: ce
-ospăț a ținut, câți soldați a pus la apărare, dacă a plătit recrutare, și dacă
-are și el spioni pe teren.
+ospăț a ținut, câți soldați a pus la apărare, dacă a plătit recrutare, și dacă a
+dat vreun ordin de spionaj.
+
+Ordinele sunt ce a **făcut** în runda aceea, nu ce are pe teren. Dacă adversarul
+și-a trimis spionii în runda 1 și tu îl privești abia din runda 5, n-ai de unde
+afla că ești privit: el n-a mai umblat la ei. Îl prinzi doar în runda în care
+schimbă treapta sau își cheamă spionii acasă.
 
 Dacă rămâi fără aur de întreținere, **toți spionii se întorc acasă** de la
 sine. Sătenii se întorc în sat și când îi chemi, și când rămâi fără aur — nu se

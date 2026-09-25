@@ -7,7 +7,7 @@ public sealed class SpyOrdersDto
     public FeastTier? Feast { get; set; }
     public int Defenders { get; set; }
     public bool Recruited { get; set; }
-    public bool Spied { get; set; }
+    public bool TouchedSpies { get; set; }
 }
 
 public sealed class SpyReportDto
