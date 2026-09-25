@@ -11,5 +11,9 @@ public sealed class SubmitOrderRequest
 
     public FeastTier? Feast { get; set; }
 
+    public int Hired { get; set; }
+
+    public int Armed { get; set; }
+
     public List<PurchaseType> Purchases { get; set; } = new();
 }

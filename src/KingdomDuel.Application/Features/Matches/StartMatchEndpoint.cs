@@ -48,7 +48,7 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
         match.Player1.Kingdom = start;
         match.Player2.Kingdom = start;
         match.Player1.PendingOrder = null;

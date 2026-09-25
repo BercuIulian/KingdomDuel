@@ -26,7 +26,12 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
     public override async Task HandleAsync(SubmitOrderRequest req, CancellationToken ct)
     {
         var userId = User.GetUserId();
-        var plan = new OrderPlan(req.Troops.ToDictionary(a => a.Direction, a => a.Troops), req.Feast, req.Purchases);
+        var plan = new OrderPlan(
+            req.Troops.ToDictionary(a => a.Direction, a => a.Troops),
+            req.Feast,
+            req.Purchases,
+            req.Hired,
+            req.Armed);
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
@@ -72,6 +77,20 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
             if (plan.Committed > slot.Kingdom.Troops)
             {
                 AddError($"Ai trimis {plan.Committed} soldați, dar oastea are {slot.Kingdom.Troops}.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            if (plan.Sent > slot.Kingdom.Villagers)
+            {
+                AddError($"Ai trimis {plan.Sent} săteni la negoț, dar satul are {slot.Kingdom.Villagers}.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
+
+            if (plan.Armed > slot.Kingdom.Villagers)
+            {
+                AddError($"Vrei să înarmezi {plan.Armed} săteni, dar satul are {slot.Kingdom.Villagers}.");
                 await Send.ErrorsAsync(cancellation: ct);
                 return;
             }

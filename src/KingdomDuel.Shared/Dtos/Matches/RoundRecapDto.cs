@@ -8,6 +8,7 @@ public sealed class RoundRecapDto
     public int Round { get; set; }
     public int GoldDelta { get; set; }
     public int TroopsDelta { get; set; }
+    public int VillagersDelta { get; set; }
     public int MoraleDelta { get; set; }
     public List<RoundLineDto> Lines { get; set; } = [];
 }

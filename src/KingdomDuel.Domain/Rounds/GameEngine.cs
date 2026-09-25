@@ -520,7 +520,7 @@ public static class GameEngine
         {
             var gold = TradeYield(away.Troops, random);
 
-            state = state.With(goldDelta: gold, troopsDelta: away.Troops);
+            state = state.With(goldDelta: gold, villagersDelta: away.Troops);
             caravan = null;
 
             events.Add(new RoundEvent(RoundEventKind.CaravanReturned, side, away.Troops, ActionType.Trade));
@@ -531,7 +531,7 @@ public static class GameEngine
 
         if (traders > 0 && input.Caravan is null)
         {
-            state = state.With(troopsDelta: -traders);
+            state = state.With(villagersDelta: -traders);
             caravan = new Caravan(traders, CaravanReturnRound(round));
 
             events.Add(new RoundEvent(RoundEventKind.CaravanSent, side, traders, ActionType.Trade));
@@ -544,10 +544,35 @@ public static class GameEngine
 
         var recruits = 0;
 
+        if (order.Hired > 0)
+        {
+            var bundles = Math.Min(order.Hired, state.Gold / GameConstants.VillagerBundleCost);
+            var hands = bundles * GameConstants.VillagersPerBundle;
+
+            if (bundles > 0)
+            {
+                state = state.With(goldDelta: -bundles * GameConstants.VillagerBundleCost, villagersDelta: hands);
+                events.Add(new RoundEvent(RoundEventKind.VillagersHired, side, hands));
+            }
+        }
+
+        if (order.Armed > 0)
+        {
+            var armed = Math.Min(order.Armed, Math.Min(state.Villagers, state.Gold / Math.Max(1, GameConstants.ArmCost)));
+
+            if (armed > 0)
+            {
+                state = state.With(goldDelta: -armed * GameConstants.ArmCost, villagersDelta: -armed);
+                recruits += armed;
+
+                events.Add(new RoundEvent(RoundEventKind.VillagersArmed, side, armed));
+            }
+        }
+
         if (Buys(order, PurchaseType.Recruit, state))
         {
             state = state.With(goldDelta: -GameConstants.RecruitCost);
-            recruits = GameConstants.RecruitTroops;
+            recruits += GameConstants.RecruitTroops;
 
             events.Add(new RoundEvent(RoundEventKind.Purchased, side, Purchase: PurchaseType.Recruit));
         }
@@ -618,7 +643,16 @@ public static class GameEngine
             return state;
         }
 
-        var morale = FeastMorale(tier, input.Kingdom.Troops, input.Caravan?.Troops ?? 0, state.Morale);
+        var gone = order.Committed;
+        var homeSoldiers = Math.Max(0, input.Kingdom.Troops - gone);
+        var homeVillagers = state.Villagers;
+        var awayVillagers = (input.Caravan?.Troops ?? 0) + order.Sent;
+
+        var morale = FeastMorale(
+            tier,
+            FeastWeight(homeSoldiers, homeVillagers),
+            FeastWeight(gone, awayVillagers),
+            state.Morale);
 
         state = state.With(goldDelta: -GameConstants.FeastCost(tier), moraleDelta: morale);
 
@@ -630,10 +664,13 @@ public static class GameEngine
     public static (int Low, int High) TradeRange(int traders) =>
         (TradeYieldAt(traders, GameConstants.TradeYieldMin), TradeYieldAt(traders, GameConstants.TradeYieldMax));
 
-    public static int FeastMorale(FeastTier tier, int present, int away, int morale)
+    public static double FeastWeight(int soldiers, int villagers) =>
+        soldiers + villagers * GameConstants.VillagerFeastWeight;
+
+    public static int FeastMorale(FeastTier tier, double home, double away, int morale)
     {
-        var whole = present + away;
-        var gain = whole <= 0 ? 0 : (int)Math.Round(GameConstants.FeastMorale(tier) * (double)present / whole);
+        var whole = home + away;
+        var gain = whole <= 0 ? 0 : (int)Math.Round(GameConstants.FeastMorale(tier) * home / whole);
 
         return Math.Min(gain, Math.Max(0, GameConstants.MoraleCap - morale));
     }

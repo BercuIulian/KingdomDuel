@@ -23,6 +23,8 @@ public enum RoundEventKind
     Retreated,
     Purchased,
     Recruited,
+    VillagersHired,
+    VillagersArmed,
     MarchedOn,
     TurnedBack
 }

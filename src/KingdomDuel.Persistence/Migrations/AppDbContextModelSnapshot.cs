@@ -77,6 +77,9 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<int>("StartingTroops")
                         .HasColumnType("integer");
 
+                    b.Property<int>("StartingVillagers")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -202,6 +205,9 @@ namespace KingdomDuel.Persistence.Migrations
                             b1.Property<int>("Troops")
                                 .HasColumnType("integer")
                                 .HasColumnName("Troops");
+
+                            b1.Property<int>("Villagers")
+                                .HasColumnType("integer");
                         });
 
                     b.HasKey("Id");

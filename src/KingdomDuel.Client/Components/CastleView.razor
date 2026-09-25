@@ -96,12 +96,22 @@
                 </dd>
             </div>
             <div class="stat">
-                <dt><Glyph Name="helm" /> Trupe</dt>
+                <dt><Glyph Name="helm" /> Soldați</dt>
                 <dd class="@(Kingdom is null ? "unknown" : "")">
                     @Value(Kingdom?.Troops)
                     @if (Moved(Drift?.TroopsDelta) is { } troopShift)
                     {
                         <span class="drift @(troopShift > 0 ? "up" : "down")">@Signed(troopShift)</span>
+                    }
+                </dd>
+            </div>
+            <div class="stat">
+                <dt><Glyph Name="folk" /> Săteni</dt>
+                <dd class="@(Kingdom is null ? "unknown" : "")">
+                    @Value(Kingdom?.Villagers)
+                    @if (Moved(Drift?.VillagersDelta) is { } villageShift)
+                    {
+                        <span class="drift @(villageShift > 0 ? "up" : "down")">@Signed(villageShift)</span>
                     }
                 </dd>
             </div>

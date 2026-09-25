@@ -15,8 +15,12 @@
             <dd class="@Tone(Recap.GoldDelta)">@Signed(Recap.GoldDelta)</dd>
         </div>
         <div class="delta">
-            <dt><Glyph Name="helm" /> Trupe</dt>
+            <dt><Glyph Name="helm" /> Soldați</dt>
             <dd class="@Tone(Recap.TroopsDelta)">@Signed(Recap.TroopsDelta)</dd>
+        </div>
+        <div class="delta">
+            <dt><Glyph Name="folk" /> Săteni</dt>
+            <dd class="@Tone(Recap.VillagersDelta)">@Signed(Recap.VillagersDelta)</dd>
         </div>
         <div class="delta">
             <dt><Glyph Name="flame" /> Moral</dt>
@@ -70,8 +74,10 @@
     private static string Tell(RoundLineDto line) => line.Kind switch
     {
         RoundEventKind.OrderGiven => $"Ai ținut {line.Amount} soldați la apărare, dar nimeni n-a venit.",
-        RoundEventKind.CaravanSent => $"Caravana a plecat la drum cu {line.Amount} negustori.",
-        RoundEventKind.CaravanReturned => $"Caravana s-a întors cu {line.Amount} negustori.",
+        RoundEventKind.VillagersHired => $"Au venit {line.Amount} săteni în sat.",
+        RoundEventKind.VillagersArmed => $"Ai înarmat {line.Amount} săteni; intră în oaste din runda următoare.",
+        RoundEventKind.CaravanSent => $"Caravana a plecat la drum cu {line.Amount} săteni.",
+        RoundEventKind.CaravanReturned => $"Caravana s-a întors cu {line.Amount} săteni.",
         RoundEventKind.TradeIncome => $"Negoțul a adus {line.Amount} aur.",
         RoundEventKind.Feast => $"Ospățul a ridicat moralul cu {line.Amount}.",
         RoundEventKind.MoraleDecay => $"Moralul a mai scăzut cu {line.Amount}, de la sine.",

@@ -4,8 +4,10 @@ namespace KingdomDuel.Domain;
 
 public static class GameConstants
 {
-    public const int StartingGold = 70;
+    public const int StartingGold = 50;
     public const int StartingResource = 50;
+    public const int StartingVillagers = 15;
+    public const int StartingSoldiers = 10;
 
     public const int DefaultTotalRounds = 10;
     public const int MinTotalRounds = 8;
@@ -39,6 +41,11 @@ public static class GameConstants
 
     public const int MoraleCap = 100;
     public const int MoraleDecayPerRound = 3;
+
+    public const int VillagerBundleCost = 8;
+    public const int VillagersPerBundle = 5;
+    public const int ArmCost = 1;
+    public const double VillagerFeastWeight = 0.5;
 
     public const int RecruitCost = 12;
     public const int RecruitTroops = 6;

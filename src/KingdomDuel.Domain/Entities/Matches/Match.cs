@@ -13,7 +13,9 @@ public sealed class Match : Entity
 
     public int TotalRounds { get; set; } = GameConstants.DefaultTotalRounds;
     public int StartingGold { get; set; } = GameConstants.StartingGold;
-    public int StartingTroops { get; set; } = GameConstants.StartingResource;
+    public int StartingTroops { get; set; } = GameConstants.StartingSoldiers;
+
+    public int StartingVillagers { get; set; } = GameConstants.StartingVillagers;
     public int StartingMorale { get; set; } = GameConstants.StartingResource;
     public int RoundSeconds { get; set; } = GameConstants.DefaultRoundSeconds;
     public DateTimeOffset? RoundDeadline { get; set; }

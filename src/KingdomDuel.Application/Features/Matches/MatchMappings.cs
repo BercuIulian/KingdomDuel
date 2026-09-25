@@ -51,13 +51,14 @@ internal static class MatchMappings
         var after = side == 1 ? last.Player1.After : last.Player2.After;
         var before = match.History.Count > 1
             ? (side == 1 ? match.History[^2].Player1.After : match.History[^2].Player2.After)
-            : KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+            : KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
 
         return new RoundRecapDto
         {
             Round = last.RoundNumber,
             GoldDelta = after.Gold - before.Gold,
             TroopsDelta = after.Troops - before.Troops,
+            VillagersDelta = after.Villagers - before.Villagers,
             MoraleDelta = after.Morale - before.Morale,
             Lines = last.Events
                 .Where(happening => happening.Side == side)
@@ -89,7 +90,7 @@ internal static class MatchMappings
             return null;
         }
 
-        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale);
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
         var rounds = new List<StoryRoundDto>
         {
             new() { Round = 0, Player1Power = start.TotalPower, Player2Power = start.TotalPower },
@@ -198,6 +199,7 @@ internal static class MatchMappings
     {
         Gold = kingdom.Gold,
         Troops = kingdom.Troops,
+        Villagers = kingdom.Villagers,
         Morale = kingdom.Morale,
         TotalPower = kingdom.TotalPower,
         Fortification = kingdom.Fortification,

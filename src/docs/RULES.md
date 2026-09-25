@@ -8,39 +8,61 @@ amândoi, runda se rezolvă.
 
 | | pornire | ce înseamnă |
 |---|---|---|
-| aur | 70 | se cheltuiește pe ospețe și pe cumpărături |
-| soldați | 50 | negustoresc, apără zidul, pleacă la atac |
+| aur | 50 | se cheltuiește pe ospețe și pe cumpărături |
+| soldați | 10 | apără zidul, pleacă la atac; nu fac altceva |
+| săteni | 15 | pleacă la negoț; acasă petrec pe jumătate |
 | moral | 50 | înmulțește puterea de luptă; scade singur cu 3 pe rundă |
 
-Toate trei se pot alege altfel în lobby, împreună cu numărul de runde
-(8 până la 30, implicit 10) și cu timpul pe rundă (15–180 de secunde).
+Aurul, soldații și moralul se pot alege altfel în lobby, împreună cu numărul de
+runde (8 până la 30, implicit 10) și cu timpul pe rundă (15–180 de secunde).
+Sătenii pornesc mereu de la 15.
 
-**Puterea** unui regat e aur + soldați + moral. Un punct e un punct, indiferent
-de unde vine.
+**Puterea** unui regat e aur + soldați + săteni + moral. Un punct e un punct,
+indiferent de unde vine — un sătean cântărește cât un soldat la socoteala
+finală, chiar dacă nu ține sabia.
+
+## Două neamuri
+
+Cetatea are două feluri de oameni, și fiecare face altceva:
+
+- **Soldații** luptă. Numai ei urcă pe ziduri și numai ei pleacă la atac.
+- **Sătenii** muncesc. Numai ei pleacă cu caravana la negoț.
+
+Trecerea se face într-o singură direcție: un sătean poate lua arma, un soldat
+nu se mai întoarce la plug.
 
 ## Ordinul unei runde
 
-Un ordin are două axe care nu se amestecă: **pe unde îți împarți soldații** și
+Un ordin are două axe care nu se amestecă: **pe unde îți trimiți oamenii** și
 **pe ce dai aurul**.
 
-### Soldații
+### Oamenii
 
-Îi împarți cum vrei între trei direcții; cine nu primește nimic rămâne acasă, în
-cetate.
+Îi împarți cum vrei; cine nu primește nimic rămâne acasă, în cetate. Soldații și
+sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
 
-- **Atac** — pleacă spre cetatea adversarului.
-- **Apărare** — urcă pe ziduri. Pe zid încap cel mult 6 (8 cu o fortificație,
-  10 cu două); restul așteaptă înăuntru și luptă doar dacă zidul cade.
-- **Comerț** — pleacă la negoț. Trimiși în runda 1, se întorc în runda 3, cu
-  **1,4–1,6 aur de fiecare negustor**. Cât sunt pe drum nu apără nimic, și nu
-  poți trimite o a doua caravană până nu se întoarce prima.
+- **Atac** *(soldați)* — pleacă spre cetatea adversarului.
+- **Apărare** *(soldați)* — urcă pe ziduri. Pe zid încap cel mult 6 (8 cu o
+  fortificație, 10 cu două); restul așteaptă înăuntru și luptă doar dacă zidul
+  cade.
+- **Comerț** *(săteni)* — pleacă la negoț. Trimiși în runda 1, se întorc în runda
+  3, cu **1,4–1,6 aur de fiecare negustor**. Cât sunt pe drum nu apără nimic, și
+  nu poți trimite o a doua caravană până nu se întoarce prima.
 
 ### Aurul
 
 - **Ospăț** — ridică moralul celor rămași acasă: masă mică 5 aur pentru +4,
-  ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine e plecat cu
-  caravana nu petrece, deci sporul scade pe măsură. Moralul nu trece de 100.
-- **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare.
+  ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine e plecat — la
+  atac sau cu caravana — nu petrece, deci sporul scade pe măsură. La masă un
+  sătean cântărește **jumătate** de soldat. Moralul nu trece de 100.
+- **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare. O singură
+  dată pe rundă.
+- **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți pe loc. Se ia de
+  câte ori îți ajunge aurul.
+- **Înarmare** — 1 aur de cap. Sătenii tăi iau arma și intră în oaste din runda
+  următoare; satul rămâne cu atâția mai puțini. Așa crește oastea repede, dar
+  omul cu omul e mai scump decât la recrutare. Se înarmează doar sătenii de
+  acasă — cei cumpărați în runda asta abia mâine pot lua sabia.
 - **Fortificație** — 12 aur. Zidul ține cu 5 secunde mai mult și încap încă 2
   arcași pe el. Cel mult două.
 - **Catapultă** — 15 aur. Spargi zidul adversarului cu 5 secunde mai repede.
@@ -121,7 +143,7 @@ amândurora rundă de rundă, cu cotiturile însemnate pe ea.
 
 ## Ce vezi și ce nu
 
-Cât ține meciul, **cetatea adversarului e ascunsă** — aurul, soldații și moralul
-lui scriu „necunoscut”. Vezi doar ce se petrece între voi: bătăliile, zidurile,
+Cât ține meciul, **cetatea adversarului e ascunsă** — aurul, soldații, sătenii
+și moralul lui scriu „necunoscut”. Vezi doar ce se petrece între voi: bătăliile, zidurile,
 retragerile. La sfârșitul fiecărei runde ți se spune socoteala ta: ce s-a
-schimbat la aur, soldați și moral, și din ce anume.
+schimbat la aur, soldați, săteni și moral, și din ce anume.

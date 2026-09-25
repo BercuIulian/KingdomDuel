@@ -16,8 +16,9 @@ public sealed class PlayerSlot : Entity
 
     public KingdomState Kingdom { get; set; } = KingdomState.Start(
         GameConstants.StartingGold,
+        GameConstants.StartingSoldiers,
         GameConstants.StartingResource,
-        GameConstants.StartingResource);
+        GameConstants.StartingVillagers);
 
     public OrderPlan? PendingOrder { get; set; }
 

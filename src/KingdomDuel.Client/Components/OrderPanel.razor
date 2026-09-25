@@ -15,6 +15,10 @@
             <b>@Free</b><span class="eyebrow">soldați liberi din @Troops</span>
         </span>
         <span class="budget-item">
+            <Glyph Name="folk" />
+            <b>@FreeVillagers</b><span class="eyebrow">săteni liberi din @Villagers</span>
+        </span>
+        <span class="budget-item">
             <Glyph Name="coin" />
             <b>@GoldLeft</b><span class="eyebrow">aur rămas din @Gold</span>
         </span>
@@ -189,12 +193,79 @@
             }
         </div>
 
+        <div class="choices">
+            <button type="button" class="choice @(hired > 0 ? "chosen" : "")" @onclick="OpenHire">
+                <span class="choice-text">
+                    <b>Cumpără săteni</b>
+                    <small>Câte @GameConstants.VillagersPerBundle săteni@(hired > 0 ? $", {hired} selectați" : "")</small>
+                </span>
+                <span class="choice-price">@GameConstants.VillagerBundleCost aur</span>
+            </button>
+
+            <button type="button" class="choice @(armed > 0 ? "chosen" : "")"
+                    disabled="@(Villagers == 0)" @onclick="OpenArm">
+                <span class="choice-text">
+                    <b>Înarmează săteni</b>
+                    <small>@(armed > 0 ? $"{armed} trec în oaste din runda următoare" : " Recrutează soldați din proprii săteni")</small>
+                </span>
+                <span class="choice-price">@GameConstants.ArmCost aur de cap</span>
+            </button>
+        </div>
         <div class="result-actions">
             <button type="button" class="send" @onclick="() => shopOpen = false">Gata</button>
         </div>
     </section>
 }
 
+@if (hirePopup)
+{
+    <div class="result-scrim" @onclick="() => hirePopup = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="hire-title">
+        <span class="result-ico"><Glyph Name="folk" /></span>
+        <h2 id="hire-title">Cumpără săteni</h2>
+        <p class="result-text">Se cumpără la pachet, de câte ori vrei.</p>
+
+        <div class="picker-value">
+            <b>@(draft * GameConstants.VillagersPerBundle)</b>
+            <span class="eyebrow">săteni, în @draft pachete</span>
+        </div>
+
+        <input type="range" class="picker-range" min="0" max="@MaxBundles" step="1" value="@draft" @oninput="OnDraft" />
+
+        <p class="picker-yield">@(draft * GameConstants.VillagerBundleCost) aur</p>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="DropHire">Renunț</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="CommitHire">Cumpăr</button>
+        </div>
+    </section>
+}
+
+@if (armPopup)
+{
+    <div class="result-scrim" @onclick="() => armPopup = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="arm-title">
+        <span class="result-ico"><Glyph Name="helm" /></span>
+        <h2 id="arm-title">Înarmează săteni</h2>
+        <p class="result-text">Cine se înarmează intră în oaste din runda următoare.</p>
+
+        <div class="picker-value">
+            <b>@draft</b>
+            <span class="eyebrow">din @MaxArmed cu putință</span>
+        </div>
+
+        <input type="range" class="picker-range" min="0" max="@MaxArmed" step="1" value="@draft" @oninput="OnDraft" />
+
+        <p class="picker-yield">@(draft * GameConstants.ArmCost) aur</p>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="DropArm">Renunț</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="CommitArm">Îi înarmez</button>
+        </div>
+    </section>
+}
 @code {
     [Parameter, EditorRequired] public MatchStateDto State { get; set; } = default!;
     [Parameter] public EventCallback<MatchStateDto> OnSubmitted { get; set; }
@@ -231,6 +302,10 @@
     private bool feastPopup;
     private bool shopOpen;
     private int draft;
+    private int hired;
+    private int armed;
+    private bool hirePopup;
+    private bool armPopup;
 
     private int round;
     private bool sending;
@@ -245,12 +320,20 @@
 
     private int Gold => Mine?.Gold ?? 0;
 
-    private int Free => Math.Max(0, Troops - allocation.Values.Sum());
+    private int Villagers => Mine?.Villagers ?? 0;
+
+    private int Free => Math.Max(0, Troops - Fighting);
+
+    private int FreeVillagers => Math.Max(0, Villagers - Allocated(ActionType.Trade) - armed);
+
+    private int Fighting => Allocated(ActionType.Attack) + Allocated(ActionType.Defend);
 
     private int GoldSpent =>
         (feast is { } tier ? GameConstants.FeastCost(tier) : 0)
         + bought.Sum(GameConstants.PurchaseCost)
-        + Repairs.Sum(GameConstants.PurchaseCost);
+        + Repairs.Sum(GameConstants.PurchaseCost)
+        + hired * GameConstants.VillagerBundleCost
+        + armed * GameConstants.ArmCost;
 
     private IEnumerable<PurchaseType> Repairs
     {
@@ -270,7 +353,7 @@
 
     private int GoldLeft => Gold - GoldSpent;
 
-    private bool Fits => allocation.Values.Sum() <= Troops && GoldSpent <= Gold;
+    private bool Fits => Fighting <= Troops && Allocated(ActionType.Trade) <= Villagers && GoldSpent <= Gold;
 
     private string TradeNote
     {
@@ -302,6 +385,10 @@
         picking = null;
         feastPopup = false;
         shopOpen = false;
+        hired = 0;
+        armed = 0;
+        hirePopup = false;
+        armPopup = false;
         orderSent = false;
         error = null;
     }
@@ -340,17 +427,28 @@
 
     private bool AtMax(PurchaseType purchase) => MaxLevel(purchase) > 0 && Level(purchase) >= MaxLevel(purchase);
 
-    private int Ceiling(ActionType direction) => Free + Allocated(direction);
+    private int Ceiling(ActionType direction) => direction == ActionType.Trade
+        ? FreeVillagers + Allocated(direction)
+        : Free + Allocated(direction);
 
-    private int MoraleFrom(FeastTier tier) =>
-        GameEngine.FeastMorale(tier, Troops, Caravan?.Troops ?? 0, Mine?.Morale ?? 0);
+    // Aceleași cântare ca în motor: cine pleacă nu petrece, iar un sătean face cât jumătate de soldat.
+    private int MoraleFrom(FeastTier tier)
+    {
+        var sent = Allocated(ActionType.Trade);
+        var back = Caravan is { } away && away.ReturnsInRound <= State.Round + 1 ? away.Troops : 0;
+
+        return GameEngine.FeastMorale(
+            tier,
+            GameEngine.FeastWeight(Troops - Fighting, Villagers - sent + back),
+            GameEngine.FeastWeight(Fighting, (Caravan?.Troops ?? 0) + sent),
+            Math.Max(0, (Mine?.Morale ?? 0) - GameConstants.MoraleDecayPerRound));
+    }
 
     private bool Affordable(FeastTier tier) =>
         GameConstants.FeastCost(tier) + bought.Sum(GameConstants.PurchaseCost) <= Gold;
 
     private bool Buyable(PurchaseType purchase)
     {
-        // Treptele se rascumpara doar odata cu zidul, nu singure.
         if (purchase is PurchaseType.RepairToOne or PurchaseType.RepairToTwo
             && !bought.Contains(PurchaseType.Repair))
         {
@@ -359,6 +457,48 @@
 
         return !AtMax(purchase)
             && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
+    }
+
+    private int Purse => Gold - GoldSpent + hired * GameConstants.VillagerBundleCost + armed * GameConstants.ArmCost;
+
+    private int MaxBundles => Math.Max(hired, Purse / GameConstants.VillagerBundleCost);
+
+    private int MaxArmed => Math.Max(armed, Math.Min(Villagers - Allocated(ActionType.Trade), Purse / Math.Max(1, GameConstants.ArmCost)));
+
+    private void OpenHire()
+    {
+        draft = hired;
+        hirePopup = true;
+    }
+
+    private void CommitHire()
+    {
+        hired = draft;
+        hirePopup = false;
+    }
+
+    private void DropHire()
+    {
+        hired = 0;
+        hirePopup = false;
+    }
+
+    private void OpenArm()
+    {
+        draft = armed;
+        armPopup = true;
+    }
+
+    private void CommitArm()
+    {
+        armed = draft;
+        armPopup = false;
+    }
+
+    private void DropArm()
+    {
+        armed = 0;
+        armPopup = false;
     }
 
     private void OpenPicker(ActionType direction)
@@ -441,6 +581,8 @@
                         .ToList(),
                     Feast = feast,
                     Purchases = [.. bought, .. Repairs],
+                    Hired = hired,
+                    Armed = armed,
                 },
                 State.Code);
 
@@ -470,7 +612,7 @@
         ActionType.Defend => WallDown
             ? "Zidul e dărâmat, n-are cine să-l țină"
             : $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
-        _ => Caravan is null ? "Se întorc peste o rundă, cu aur" : "Caravana e deja pe drum",
+        _ => Caravan is null ? "Sătenii pleacă la negoț, se întorc peste o rundă" : "Caravana e deja pe drum",
     };
 
     private static string CancelLabel(ActionType direction) => direction switch
