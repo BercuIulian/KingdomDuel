@@ -29,6 +29,9 @@ namespace KingdomDuel.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BreachCall")
+                        .HasColumnType("jsonb");
+
                     b.Property<string>("Code")
                         .IsRequired()
                         .HasMaxLength(16)

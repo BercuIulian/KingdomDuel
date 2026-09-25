@@ -91,7 +91,7 @@ public static class Battle
         var onTheWall = Math.Clamp(wallDefenders, 0, capacity);
         var inside = garrison + Math.Max(0, wallDefenders - onTheWall);
 
-        var walls = StormWalls(attackers, onTheWall, breakingSeconds, random);
+        var walls = Walls(attackers, onTheWall, breakingSeconds, random);
 
         if (walls.Army1Left <= 0)
         {
@@ -111,7 +111,7 @@ public static class Battle
             keep.Army2Left <= 0);
     }
 
-    private static BattleLog StormWalls(int attackers, int onTheWall, int breakingSeconds, Random random)
+    public static BattleLog Walls(int attackers, int onTheWall, int breakingSeconds, Random random)
     {
         var left1 = Math.Max(0, attackers);
         var left2 = onTheWall;
@@ -143,6 +143,6 @@ public static class Battle
         return new BattleLog(left1, left2, ticks);
     }
 
-    private static int FallBack(int wallSurvivors) =>
+    public static int FallBack(int wallSurvivors) =>
         wallSurvivors - wallSurvivors * GameConstants.WallBreachLossPercent / 100;
 }

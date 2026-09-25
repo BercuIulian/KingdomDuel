@@ -24,6 +24,8 @@ public sealed class Match : Entity
 
     public MarchChoice? MarchChoice { get; set; }
 
+    public BreachCall? BreachCall { get; set; }
+
     public PlayerSlot? Player1 { get; set; }
     public PlayerSlot? Player2 { get; set; }
 

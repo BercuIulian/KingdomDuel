@@ -34,6 +34,7 @@ internal static class MatchMappings
             : null,
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        Breach = match.BreachCall?.ToBreachDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         LastRound = match.LastRoundSeenBy(userId),
         Story = match.StoryOf(),
     };
@@ -80,6 +81,7 @@ internal static class MatchMappings
         RoundEventKind.WallsHeld,
         RoundEventKind.Retreated,
         RoundEventKind.MarchedOn,
+        RoundEventKind.VillagersRallied,
         RoundEventKind.CastleDestroyed,
     ];
 
@@ -120,6 +122,14 @@ internal static class MatchMappings
         Army = choice.Army,
         SecondsRemaining = Math.Round(choice.SecondsLeftAt(now), 1),
         IsYours = choice.Side == side,
+    };
+
+    private static BreachDto ToBreachDto(this BreachCall call, int side, DateTimeOffset now) => new()
+    {
+        Side = call.Side,
+        Most = call.Most,
+        SecondsRemaining = Math.Round(call.SecondsLeftAt(now), 1),
+        IsYours = call.Side == side,
     };
 
     private static BattleDto ToBattleDto(this LiveBattle battle, int side, DateTimeOffset now)

@@ -26,6 +26,7 @@ public sealed class MatchStateDto
     public KingdomDto? Player2Kingdom { get; set; }
     public BattleDto? Battle { get; set; }
     public MarchDto? March { get; set; }
+    public BreachDto? Breach { get; set; }
     public RoundRecapDto? LastRound { get; set; }
     public MatchStoryDto? Story { get; set; }
     public CaravanDto? YourCaravan { get; set; }

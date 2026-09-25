@@ -6,107 +6,78 @@ deciziile luate atunci, nu acum.
 
 Refactorul de logică (S1–S12) s-a încheiat; de aici încolo se îmbunătățește.
 Ordinea hotărâtă: zidurile sparte, sătenii și soldații, recrutarea instantă,
-spionii, apoi mobilizarea și îngreunarea asaltului. Recrutarea instantă vine
-după săteni fiindcă s-ar putea să însemne tocmai înarmarea lor.
+spionii, apoi mobilizarea și îngreunarea asaltului.
+
+**Făcute:** zidurile rămân sparte; sătenii și soldații, două neamuri;
+catapultele se pierd la retragere sau odată cu expediția nimicită. Ce a rămas e
+mai jos.
+
 Mobilizarea, spionii și îngreunarea asaltului au ieșit din S7 ca planul să nu se
 contrazică; mobilizarea și spionii adaugă suprafață de interfață — un buton pe
 ordinul de atac și o direcție nouă de alocare — deci panoul de ordine primește o
 a doua trecere când le facem.
 
-### Zidurile rămân sparte
-
-Azi, dacă atacatorul străpunge zidurile și apoi se retrage, apărătorul pierde
-niște oameni și cu asta se încheie: runda următoare zidurile sunt iar întregi.
-Deci un asalt dus pe jumătate e curat pierdere pentru atacator.
-
-Ideea: **odată sparte, zidurile rămân sparte.** Refacerea costă aur — în jur de
-**15**. Cât nu sunt refăcute, un asalt următor **sare peste faza zidurilor** și
-începe direct cu lupta din cetate.
-
-**Ce câștigă jocul din asta**, și e mai mult decât pare:
-
-- **Un asalt parțial devine progres.** Slăbești acum, iei cetatea mai târziu.
-  Retragerea de după străpungere capătă rost, nu mai e doar limitarea pierderilor.
-- **Aurul capătă un consum defensiv obligatoriu.** Adversarul îți poate goli
-  trezoreria spărgându-ți zidurile la răstimpuri. E un vector de atac economic,
-  și concurează direct cu ospățul — deci alegi între ziduri și moral.
-- **Cifra e deja măsurată.** O cetate fără ziduri, la armate egale, cade în ~48%
-  din cazuri în loc de 13% (rândul „0 pe ziduri” din tabelul de la 7.2). Puternic,
-  dar nu absurd: rămâne o monedă, nu o certitudine.
-
-**Decizia care contează cel mai mult:** *când* se pierd zidurile. În mesaj apar
-două citiri, iar diferența e uriașă:
-
-- **La străpungere, orice se întâmple mai departe.** Străpungerea se produce la
-  secunda 15 dacă atacatorul e încă în viață, iar taxa de la ziduri e doar ~11
-  oameni — deci aproape orice atac serios ajunge acolo. Ar însemna că **și un
-  asalt eșuat lasă cetatea fără ziduri**, adică zidurile cad aproape la fiecare
-  atac. Poate fi prea fragil.
-- **Doar dacă atacatorul se retrage după străpungere** (formularea inițială).
-  Mult mai îngust: cine intră și e nimicit în cetate nu-ți dărâmă zidurile.
-
-Recomand a doua ca punct de plecare, cu măsurare, fiindcă prima face zidurile
-consumabile la fiecare rundă.
-
-**Restul de decis:**
-
-- Refacerea e un ordin nou sau un buton lângă ospăț? Costă aur și niciun soldat,
-  deci seamănă cu ospățul, nu cu o alocare de trupe.
-- Are efect în runda în care o ceri, sau din următoarea? Recomand în aceeași
-  rundă: nu poți oricum reacționa la un atac pe care nu-l vezi.
-- Ce se întâmplă cu alocarea de apărare când nu sunt ziduri? Recomand ca cei
-  puși la apărare să intre pur și simplu în garnizoană.
-- Ce face fortificația de la S8 peste asta: nivelul supraviețuiește spargerii și
-  doar zidul se reface, sau se pierde și el?
-- **Repararea zidului face parte din ideea asta**, nu din S8: fără starea „zid
-  dărâmat” nu există ce repara. Preț propus: 15 aur.
-- **Riscul de bulgăre:** cine n-are 15 aur rămâne fără ziduri, iar fiecare atac
-  următor e monedă. Nu e spirală — starea nu se agravează — dar rămânerea în
-  urmă economic devine dur pedepsită. De urmărit la calibrare.
-
-### Săteni și soldați, două neamuri
-
-Astăzi o singură oaste face tot: negustorește, apără și atacă. Ideea e s-o
-despicăm în două — **săteni** și **soldați** — fiecare cu treaba lui. Sătenii
-pleacă la negoț și la orice muncă vom mai adăuga; soldații urcă pe ziduri și
-pornesc la atac. Amândoi se cumpără cu aur, iar alegerea „pe ce dau aurul, pe
-economie sau pe armată” ia locul alegerii sărace de azi, „trimit oastea la negoț
-sau o țin acasă”.
-
-Pornirea propusă: 20 de săteni și 10 soldați.
-
-**Ce trebuie ținut minte când o facem:** azi negoțul e echilibrat tocmai fiindcă
-te lasă descoperit — jumătate din echilibrul măsurat stă pe perechea
-negustor-cu-zid contra asediator. Dacă negustoresc sătenii, riscul ăla dispare.
-Tensiunea care îl înlocuiește e că aurul dat pe săteni nu s-a dat pe soldați,
-iar **cetatea cade când rămâi fără soldați** — cine cumpără numai săteni moare
-la prima năvală, cine cumpără numai soldați rămâne sărac. Ține, dar numai cât
-timp regula asta rămâne adevărată.
-
-**De hotărât la etapa ei:** dacă sătenii intră în putere la departajare (eu aș
-zice da, 1 punct, ca aurul și ca soldatul); dacă pot fi pierduți altfel decât
-odată cu cetatea (eu aș zice nu, fără pradă, ca până acum); și dacă ospățul
-ridică moralul tuturor celor de acasă sau doar al soldaților.
-
 ### Recrutarea instantă în timpul unui asalt
 
-Regula normală (S8): recruții sosesc din runda următoare. Excepția propusă: dacă
-**ești atacat**, apărătorul poate recruta **pe loc**, iar oamenii intră imediat în
-apărare. Scopul declarat e să facă atacul la cetate mai greu.
+Azi, în timpul unui asalt, atacatorul poate suna retragerea, iar apărătorul e
+doar spectator. Ideea îi dă și lui ceva de făcut: **când zidul cade, satul
+poate lua arma pe loc.**
 
-E o simetrie bună: azi, în timpul unui asalt, atacatorul poate să se retragă, iar
-apărătorul e doar spectator. Asta i-ar da și lui ceva de făcut.
+**Ce s-a hotărât**
 
-**De ce e un pas separat, nu parte din S8:** nu e o funcție de economie, e una de
-bătălie, și e arhitectural mai grea decât retragerea. Retragerea doar **taie**
-cronologia — viitorul se aruncă, deci e ieftină. Întăririle **adaugă oameni în
-mijlocul luptei**, deci cronologia calculată la început nu mai e validă din acel
-moment: trebuie recalculat restul bătăliei cu numerele noi și lipit la ce s-a
-întâmplat deja. Merită aceeași grijă ca 7.4a, la etapa ei.
+- **Oamenii sunt sătenii tăi, nu recruți cumpărați.** Mecanismul e înarmarea de
+  la etapa sătenilor, doar că se întâmplă în mijlocul asaltului.
+- **Costă 2 aur de cap**, dublu față de înarmarea plănuită (1 aur). Motivul e
+  analitic, nu de gust: la preț egal, înarmarea sub asediu o **domină strict**
+  pe cea plănuită — același cost, dar cu informație perfectă, fiindcă nu
+  convertești decât când chiar ești atacat. Prima e opțiune, a doua e
+  angajament, iar opțiunea trebuie să coste. Doi aur e și prețul pe cap al
+  recrutării (12 pentru 6), care însă sosește abia runda următoare.
+- **Conversia e permanentă.** Cine ia arma la breșă rămâne soldat și după
+  asediu; nu se întoarce la plug. Deci prețul adevărat nu e doar aurul, ci și
+  capacitatea de negoț pierdută pentru tot restul meciului.
+- **Intră în garnizoană**, nu pe zid. La breșă zidul oricum nu mai există.
+- **Se poate o singură dată pe asalt**, fiindcă fereastra e una singură.
+- **Fereastra se deschide și la o cetate fără ziduri**, unde asaltul intră
+  direct. Altfel o cetate spartă o dată ar pierde pârghia asta pentru tot restul
+  meciului, și s-ar aduna urât peste regula zidurilor care rămân sparte.
+- **Atacatorul nu se poate retrage cât ține fereastra.** E o graniță, nu o fază
+  de luptă; altfel apărătorul ar plăti pentru o bătălie care nu mai are loc.
+- **Dacă asaltul e respins, nimic nu se întoarce.** Aurul e cheltuit, iar
+  sătenii rămân soldați — din supraviețuitori oricum n-am avea de unde ști care
+  a fost sătean.
 
-**De decis atunci:** în ce faze se poate (numai la ziduri, sau și în cetate); dacă
-recruții sosiți astfel apar pe zid sau în garnizoană; dacă se poate de mai multe
-ori într-un asalt; și ce se întâmplă cu o recrutare normală dată în aceeași rundă.
+**Cum se face, fără să rescriem cronologia**
+
+Ăsta era motivul pentru care etapa părea grea: cronologia bătăliei se
+calculează o dată, la început, iar oameni intrați la mijloc ar invalida-o din
+acel moment. Pauza la breșă rezolvă asta — întăririle sosesc **pe granița
+dintre faze**, nu în mijlocul unei faze:
+
+1. se calculează faza zidurilor și se oprește acolo;
+2. **cel mult 10 secunde** — apărătorul alege câți săteni înarmează, iar dacă
+   se hotărăște mai devreme fereastra se închide pe loc și asaltul pornește;
+   atacatorul vede doar numărătoarea;
+3. se calculează faza din cetate, cu garnizoana deja mărită.
+
+Fereastra e numai a apărătorului: la breșă atacatorul n-are ce decide, e deja
+angajat. E oglinda ferestrei de după câmp, unde apărătorul e cel care privește
+ceasul. Ca stare seamănă cu `MarchChoice`: un termen, o alegere, un rezultat
+ținut deoparte până expiră.
+
+**Atenție la calibrare:** prețul nu descurajează, ci taxează. Cetatea căzută
+înseamnă meci pierdut pe loc, deci la limită orice preț finit merită plătit. Ce
+face cu adevărat e să golească trezoreria — 10 apărători costă 20 de aur, adică
+vreo două runde de caravană — și să concureze cu repararea zidului și cu
+ospățul. Riscul de urmărit e același bulgăre ca la ziduri: apărătorul sărac
+rămâne complet fără pârghia asta.
+
+**Ce nu face parte din etapă:** sătenii **nu** se apără singuri. Ideea unui
+ultim baraj automat (3 săteni = 1 soldat, când garnizoana e nimicită) a fost
+cântărită și lăsată deoparte — o face automat și gratis pe cea pe care tocmai
+am hotărât s-o plătești, și slăbește tăcut regula pe care stă tot echilibrul
+despicării: **cetatea cade când rămâi fără soldați.** Rămâne variantă de
+rezervă, de recântărit după ce se măsoară cum se joacă varianta plătită.
 
 ### Mobilizarea
 
@@ -210,11 +181,12 @@ moralul singur e slab contra unei diferențe numerice: la 30 contra 20, cel mic 
 moral 100 contra 50 câștigă tot doar 26%. Ca să conteze, saltul ar trebui să fie
 mare. **Depinde de S10**, unde moralul capătă efect în luptă.
 
-**2. Țăranii sar la ajutor: +10 apărători, doar pe durata asaltului.** Simplu,
-fără dependențe, ușor de explicat. Fiind un număr absolut, contează mult la oști
-mici și devine neglijabil la oști mari — bun ca prag de intrare, slab ca soluție
-de fond. **De decis obligatoriu:** țăranii care supraviețuiesc **dispar** la
-sfârșitul bătăliei, altfel un atac slab devine o metodă de a-ți crește oastea.
+**2. Țăranii sar la ajutor: +10 apărători, doar pe durata asaltului.** ~~Simplu,
+fără dependențe, ușor de explicat.~~ **Acoperită de recrutarea instantă**, în
+formă mai bună: acolo sătenii chiar sar la ajutor, dar plătit și ales, nu
+automat și gratis. Ce rămâne din ea e avertismentul — dacă vreodată se face un
+baraj automat, oamenii aceia trebuie să **dispară** la sfârșitul bătăliei,
+altfel un atac slab devine o metodă de a-ți crește oastea.
 
 **3. Timp de penetrare mai lung, ca apărătorul să se pregătească.** E pârghia pe
 care o avem deja (`WallBreakingSeconds`). Atenție: **timpul singur saturează.**
@@ -255,15 +227,6 @@ făcut ce. Se ia una sau două, se măsoară cu 30 contra 30, 40 contra 30 și 6
 contra 30, apoi se decide. Recomandarea mea de pornire: **7 (limită de timp)**,
 fiindcă schimbă forma și taie durata, plus **2 (țăranii)** dacă mai e nevoie de
 un prag de intrare — e cea mai ușor de explicat unui jucător.
-
-### Catapultele nu se pierd niciodată
-
-Odată cu zidurile care rămân sparte, apare o asimetrie: nivelul zidului poate
-fi dărâmat și răscumpărat, dar cele două catapulte, odată cumpărate, rămân ale
-tale până la capătul meciului. Una e o investiție care se poate pierde, cealaltă
-nu. De discutat ce le-ar putea consuma — un asalt eșuat, o retragere, uzura pe
-rundă — sau dacă asimetria e de fapt în regulă, fiindcă zidul apără iar
-catapulta doar atacă.
 
 ### Probele într-un proiect de test adevărat
 

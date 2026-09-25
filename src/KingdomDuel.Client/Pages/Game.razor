@@ -91,7 +91,11 @@ else
 
         @if (CanPlay && state.Status == MatchStatus.InProgress)
         {
-            @if (state.Battle is { } battle)
+            @if (state.Breach is { } breach)
+            {
+                <BreachView Breach="breach" Code="@state.Code" OnChanged="OnOrderSubmitted" />
+            }
+            else if (state.Battle is { } battle)
             {
                 <BattleView Battle="battle"
                             Code="@state.Code"
@@ -465,7 +469,7 @@ else
 
                     state = fresh;
                     OfferRecap(fresh);
-                    timer.Period = fresh.Battle is not null || fresh.March is not null
+                    timer.Period = fresh.Battle is not null || fresh.March is not null || fresh.Breach is not null
                         ? LivePollInterval
                         : PollInterval;
 

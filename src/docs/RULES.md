@@ -62,7 +62,8 @@ sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
 - **Înarmare** — 1 aur de cap. Sătenii tăi iau arma și intră în oaste din runda
   următoare; satul rămâne cu atâția mai puțini. Așa crește oastea repede, dar
   omul cu omul e mai scump decât la recrutare. Se înarmează doar sătenii de
-  acasă — cei cumpărați în runda asta abia mâine pot lua sabia.
+  acasă — cei cumpărați în runda asta abia mâine pot lua sabia. Sub asediu se
+  poate și pe loc, dar de două ori mai scump; vezi „Clopotul de la spărtură".
 - **Fortificație** — 12 aur. Zidul ține cu 5 secunde mai mult și încap încă 2
   arcași pe el. Cel mult două.
 - **Catapultă** — 15 aur. Spargi zidul adversarului cu 5 secunde mai repede.
@@ -90,7 +91,8 @@ mai mulți, peste 90%.
 Dacă amândoi trimit soldați la atac, oștile se ciocnesc pe drum și niciuna nu
 mai ajunge la cetate în runda aceea. Amândoi văd oștile întregi.
 
-**Retragerea** se poate suna oricând: oastea rupe lupta în 3 secunde și pierde
+**Retragerea** se poate suna oricând în afară de fereastra de la spărtură:
+oastea rupe lupta în 3 secunde și pierde
 10% din câți mai sunt în picioare. Semnalul nu se ia înapoi, și îl poate da doar
 cine a plecat de acasă — cine e atacat la propriile ziduri n-are unde fugi.
 
@@ -111,6 +113,26 @@ Când zidul cade, cei rămași pe el se retrag înăuntru — dar numai 70% din 
 ajung — și se alătură garnizoanei. Abia atunci atacatorul vede cu cine are de-a
 face. Dacă apărătorul rămâne fără niciun soldat, **cetatea cade și meciul se
 încheie pe loc**.
+
+### Clopotul de la spărtură
+
+Asaltul nu curge dintr-o suflare. La spărtură se oprește, iar apărătorul are
+**10 secunde** ca să-și cheme satul la arme: **2 aur de fiecare sătean**, dublu
+față de înarmarea dată din vreme. Cei chemați intră pe loc în garnizoană, nu pe
+zid — la spărtură zidul oricum nu mai e.
+
+- Dacă se hotărăște mai devreme, fereastra se închide pe loc și asaltul pornește.
+- Dacă nu apucă să hotărască, nimeni nu ia arma.
+- Fereastra se deschide și când asaltul intră într-o cetate **fără ziduri**.
+- **Atacatorul nu se poate retrage** cât ține fereastra, și nu vede câți răspund.
+- **Cine ia arma rămâne soldat** și după asediu, chiar dacă atacul e respins.
+  Aurul e cheltuit, sătenii nu se întorc la plug.
+
+Prețul dublu are un rost: la preț egal n-ar mai avea nimeni motiv să se
+pregătească din vreme, fiindcă a aștepta ar fi la fel de scump și, pe deasupra,
+te-ai lămuri întâi dacă ești chiar atacat. Și mai e o piedică pe care n-o vezi
+în preț: **negustorii plecați cu caravana nu se pot chema** — cine își ține
+sătenii pe drum după aur nu-i are acasă la spărtură.
 
 ### Zidul rămâne spart
 

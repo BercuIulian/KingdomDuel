@@ -29,6 +29,7 @@ public static class GameConstants
     public const int RetreatSeconds = 3;
     public const int RetreatLossPercent = 10;
     public const int MarchChoiceSeconds = 10;
+    public const int RallySeconds = 10;
 
     public const int TradeGoldPerSoldier = 1;
     public const double TradeYieldMin = 1.4;
@@ -45,6 +46,7 @@ public static class GameConstants
     public const int VillagerBundleCost = 8;
     public const int VillagersPerBundle = 5;
     public const int ArmCost = 1;
+    public const int RallyCost = 2;
     public const double VillagerFeastWeight = 0.5;
 
     public const int RecruitCost = 12;

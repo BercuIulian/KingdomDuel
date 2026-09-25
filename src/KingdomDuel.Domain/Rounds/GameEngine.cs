@@ -460,49 +460,94 @@ public static class GameEngine
         var wall = defender.Kingdom.WallIsDown
             ? 0
             : Math.Min(defenceOrder[ActionType.Defend], defender.Kingdom.Troops);
-        var log = Battle.Assault(
-            army,
-            wall,
-            defender.Kingdom.Troops - wall,
-            seconds,
-            capacity,
-            attacker.Morale,
-            defender.Kingdom.Morale,
-            random);
 
-        var falls = log.Walls.Ticks
+        var onTheWall = Math.Clamp(wall, 0, capacity);
+        var log = Battle.Walls(army, onTheWall, seconds, random);
+
+        var falls = log.Ticks
             .Select(tick => new BattleFall(tick.At, tick.Army == 1 ? attackerSide : defenderSide, BattlePhase.Walls))
             .ToList();
 
-        var keepDefenders = defender.Kingdom.Troops - log.OnTheWall + log.Reinforcements;
+        var keepDefenders = defender.Kingdom.Troops - onTheWall + Battle.FallBack(log.Army2Left);
 
-        if (log.Keep is null)
-        {
-            return new BattleReplay(
+        return log.Army1Left <= 0
+            ? new BattleReplay(
                 attackerSide,
-                attackerSide == 1 ? army : log.OnTheWall,
-                attackerSide == 1 ? log.OnTheWall : army,
+                attackerSide == 1 ? army : onTheWall,
+                attackerSide == 1 ? onTheWall : army,
                 keepDefenders,
                 null,
                 falls.Count == 0 ? 0 : falls[^1].At,
+                falls)
+            : new BattleReplay(
+                attackerSide,
+                attackerSide == 1 ? army : onTheWall,
+                attackerSide == 1 ? onTheWall : army,
+                keepDefenders,
+                seconds,
+                seconds,
                 falls);
-        }
+    }
 
-        var breachAt = seconds;
+    public static BattleReplay StormKeep(
+        BattleReplay walls,
+        int rallied,
+        int attackerMorale,
+        int defenderMorale,
+        Random random)
+    {
+        var breach = walls.BreachAt ?? 0;
+        var defenderSide = walls.AttackerSide == 1 ? 2 : 1;
 
-        falls.AddRange(log.Keep.Ticks.Select(tick => new BattleFall(
-            breachAt + tick.At,
-            tick.Army == 1 ? attackerSide : defenderSide,
+        var storming = (walls.AttackerSide == 1 ? walls.Player1Start : walls.Player2Start)
+            - walls.FallsOf(walls.AttackerSide, breach);
+        var defenders = walls.DefenderInKeep + rallied;
+
+        var keep = Battle.Fight(storming, attackerMorale, defenders, defenderMorale, random);
+
+        var falls = walls.Falls.ToList();
+
+        falls.AddRange(keep.Ticks.Select(tick => new BattleFall(
+            breach + tick.At,
+            tick.Army == 1 ? walls.AttackerSide : defenderSide,
             BattlePhase.Keep)));
 
-        return new BattleReplay(
-            attackerSide,
-            attackerSide == 1 ? army : log.OnTheWall,
-            attackerSide == 1 ? log.OnTheWall : army,
-            keepDefenders,
-            breachAt,
-            breachAt + log.Keep.Ticks.Count,
-            falls);
+        return walls with
+        {
+            DefenderInKeep = defenders,
+            Duration = breach + keep.Ticks.Count,
+            Falls = falls,
+        };
+    }
+
+    public static bool KeepToCome(BattleReplay replay, double endsAt, Retreat? retreat) =>
+        retreat is null
+        && replay.AttackerSide != 0
+        && replay.BreachAt is { } breach
+        && endsAt >= breach
+        && replay.Duration <= breach;
+
+    public static int RallyCeiling(KingdomState kingdom) =>
+        Math.Min(kingdom.Villagers, kingdom.Gold / GameConstants.RallyCost);
+
+    public static RoundOutcome Rally(RoundOutcome before, int side, int villagers)
+    {
+        var events = before.Events.ToList();
+        events.Add(new RoundEvent(RoundEventKind.VillagersRallied, side, villagers, ActionType.Defend));
+
+        var rallied = (side == 1 ? before.Player1 : before.Player2);
+
+        rallied = rallied with
+        {
+            Kingdom = rallied.Kingdom.With(
+                goldDelta: -villagers * GameConstants.RallyCost,
+                troopsDelta: villagers,
+                villagersDelta: -villagers),
+        };
+
+        return side == 1
+            ? before with { Player1 = rallied, Events = events }
+            : before with { Player2 = rallied, Events = events };
     }
 
     private static SideOutcome ResolveSide(

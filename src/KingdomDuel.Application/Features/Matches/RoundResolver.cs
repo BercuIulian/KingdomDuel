@@ -93,32 +93,39 @@ internal static class RoundResolver
 
         if (match.LiveBattle is { } battle && battle.IsOverAt(now))
         {
-            match.LiveBattle = null;
-
-            var afterBattle = GameEngine.SettleBattle(
-                battle.BeforeBattle,
-                battle.Replay,
-                battle.EndsAt,
-                match.Round,
-                match.TotalRounds,
-                battle.Retreat);
-
-            var chooser = GameEngine.MarchChoiceSide(battle.Replay, battle.EndsAt, battle.Retreat);
-
-            if (chooser == 0)
+            if (GameEngine.KeepToCome(battle.Replay, battle.EndsAt, battle.Retreat))
             {
-                Apply(match, afterBattle);
+                changed = CallTheVillage(match, battle, now);
             }
             else
             {
-                match.MarchChoice = new MarchChoice(
-                    chooser,
-                    GameEngine.SurvivingExpedition(battle.Replay, battle.EndsAt, chooser),
-                    now.AddSeconds(GameConstants.MarchChoiceSeconds),
-                    afterBattle with { GameOverReason = GameOverReason.None });
-            }
+                match.LiveBattle = null;
 
-            changed = true;
+                var afterBattle = GameEngine.SettleBattle(
+                    battle.BeforeBattle,
+                    battle.Replay,
+                    battle.EndsAt,
+                    match.Round,
+                    match.TotalRounds,
+                    battle.Retreat);
+
+                var chooser = GameEngine.MarchChoiceSide(battle.Replay, battle.EndsAt, battle.Retreat);
+
+                if (chooser == 0)
+                {
+                    Apply(match, afterBattle);
+                }
+                else
+                {
+                    match.MarchChoice = new MarchChoice(
+                        chooser,
+                        GameEngine.SurvivingExpedition(battle.Replay, battle.EndsAt, chooser),
+                        now.AddSeconds(GameConstants.MarchChoiceSeconds),
+                        afterBattle with { GameOverReason = GameOverReason.None });
+                }
+
+                changed = true;
+            }
         }
 
         if (match.MarchChoice is { } choice && choice.IsDueAt(DateTimeOffset.UtcNow))
@@ -167,6 +174,79 @@ internal static class RoundResolver
             DateTimeOffset.UtcNow);
 
         return true;
+    }
+
+    public static bool Rally(Match match, int side, int villagers)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        if (match.BreachCall is not { } call || call.Side != side || call.IsDueAt(now))
+        {
+            return false;
+        }
+
+        if (match.LiveBattle is not { } battle)
+        {
+            return false;
+        }
+
+        StormKeep(match, battle, Math.Clamp(villagers, 0, call.Most));
+
+        return true;
+    }
+
+    private static bool CallTheVillage(Match match, LiveBattle battle, DateTimeOffset now)
+    {
+        if (match.BreachCall is { } call)
+        {
+            if (!call.IsDueAt(now))
+            {
+                return false;
+            }
+
+            StormKeep(match, battle, 0);
+
+            return true;
+        }
+
+        var side = battle.Replay.AttackerSide == 1 ? 2 : 1;
+        var defender = side == 1 ? battle.BeforeBattle.Player1 : battle.BeforeBattle.Player2;
+        var most = GameEngine.RallyCeiling(defender.Kingdom);
+
+        if (most <= 0)
+        {
+            StormKeep(match, battle, 0);
+
+            return true;
+        }
+
+        match.BreachCall = new BreachCall(side, most, now.AddSeconds(GameConstants.RallySeconds));
+
+        return true;
+    }
+
+    private static void StormKeep(Match match, LiveBattle battle, int villagers)
+    {
+        var side = battle.Replay.AttackerSide == 1 ? 2 : 1;
+        var before = villagers > 0
+            ? GameEngine.Rally(battle.BeforeBattle, side, villagers)
+            : battle.BeforeBattle;
+
+        var attacker = battle.Replay.AttackerSide == 1 ? before.Player1 : before.Player2;
+        var defender = side == 1 ? before.Player1 : before.Player2;
+
+        var replay = GameEngine.StormKeep(
+            battle.Replay,
+            villagers,
+            attacker.Kingdom.Morale,
+            defender.Kingdom.Morale,
+            Random.Shared);
+
+        match.BreachCall = null;
+        match.LiveBattle = new LiveBattle(
+            replay,
+            before,
+            DateTimeOffset.UtcNow.AddSeconds(-(replay.BreachAt ?? 0)));
     }
 
     public static bool SignalRetreat(Match match, int side)

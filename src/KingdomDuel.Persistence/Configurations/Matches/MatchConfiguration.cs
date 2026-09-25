@@ -33,6 +33,10 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
             .HasColumnType("jsonb")
             .HasConversion(JsonColumns.NullableConverter<MarchChoice>(), JsonColumns.NullableComparer<MarchChoice>());
 
+        builder.Property(m => m.BreachCall)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<BreachCall>(), JsonColumns.NullableComparer<BreachCall>());
+
         builder.Property(m => m.Status).HasConversion<string>().HasMaxLength(32);
         builder.Property(m => m.GameOverReason).HasConversion<string>().HasMaxLength(32);
         builder.HasIndex(m => m.Status);
