@@ -16,6 +16,8 @@ public static class GameEngine
         var after1 = ResolveSide(1, input.Player1, order1, input.Round, random, events);
         var after2 = ResolveSide(2, input.Player2, order2, input.Round, random, events);
 
+        (after1, after2) = HuntSpies(after1, after2, order1, order2, events);
+
         var battle = PlanBattle(after1, after2, order1, order2, random);
 
         if (battle is not null)
@@ -364,7 +366,8 @@ public static class GameEngine
 
         if (replay.BreachAt is { } breach && endsAt >= breach)
         {
-            var reinforcements = replay.DefenderInKeep - defenderBefore + onTheWall;
+            var reinforcements = Battle.FallBack(
+                onTheWall - replay.FallsOf(defenderSide, breach, BattlePhase.Walls));
 
             if (breach > 0)
             {
@@ -468,7 +471,8 @@ public static class GameEngine
             .Select(tick => new BattleFall(tick.At, tick.Army == 1 ? attackerSide : defenderSide, BattlePhase.Walls))
             .ToList();
 
-        var keepDefenders = defender.Kingdom.Troops - onTheWall + Battle.FallBack(log.Army2Left);
+        var keepDefenders = defender.Kingdom.Troops - onTheWall - defenceOrder.Searching
+            + Battle.FallBack(log.Army2Left);
 
         return log.Army1Left <= 0
             ? new BattleReplay(
@@ -487,6 +491,43 @@ public static class GameEngine
                 seconds,
                 seconds,
                 falls);
+    }
+
+    private static (SideOutcome, SideOutcome) HuntSpies(
+        SideOutcome side1,
+        SideOutcome side2,
+        OrderPlan order1,
+        OrderPlan order2,
+        List<RoundEvent> events)
+    {
+        side2 = Comb(1, order1, side2, events);
+        side1 = Comb(2, order2, side1, events);
+
+        return (side1, side2);
+    }
+
+    private static SideOutcome Comb(int side, OrderPlan order, SideOutcome watched, List<RoundEvent> events)
+    {
+        if (order.Hunt is not { } chase)
+        {
+            return watched;
+        }
+
+        var had = watched.Spies?.Villagers ?? 0;
+        var left = watched.Spies is { } ring
+            ? GameConstants.SpyAtLevel(GameConstants.SpyLevel(ring.Tier) - GameConstants.HuntLevels(chase))
+            : null;
+
+        var caught = had - (left is { } smaller ? GameConstants.SpyVillagers(smaller) : 0);
+
+        events.Add(new RoundEvent(RoundEventKind.SpiesHunted, side, caught));
+
+        if (caught > 0)
+        {
+            events.Add(new RoundEvent(RoundEventKind.SpiesKilled, side == 1 ? 2 : 1, caught));
+        }
+
+        return watched with { Spies = left is { } kept ? new SpyRing(kept) : null };
     }
 
     public static BattleReplay StormKeep(
@@ -619,6 +660,11 @@ public static class GameEngine
 
                 events.Add(new RoundEvent(RoundEventKind.SpiesStarved, side, ring.Villagers));
             }
+        }
+
+        if (order.Hunt is { } chase && state.Gold >= GameConstants.HuntCost(chase))
+        {
+            state = state.With(goldDelta: -GameConstants.HuntCost(chase));
         }
 
         state = state.With(moraleDelta: -GameConstants.MoraleDecayPerRound);

@@ -17,7 +17,8 @@ public sealed record OrderPlan
         int hired = 0,
         int armed = 0,
         SpyTier? spies = null,
-        bool recallSpies = false)
+        bool recallSpies = false,
+        HuntTier? hunt = null)
     {
         this.troops = troops
             .Where(pair => pair.Value > 0)
@@ -30,6 +31,7 @@ public sealed record OrderPlan
         Armed = Math.Max(0, armed);
         Spies = recallSpies ? null : spies;
         RecallSpies = recallSpies;
+        Hunt = hunt;
 
         Committed = this[ActionType.Attack] + this[ActionType.Defend];
         Sent = this[ActionType.Trade];
@@ -45,6 +47,10 @@ public sealed record OrderPlan
 
     public bool RecallSpies { get; }
 
+    public HuntTier? Hunt { get; }
+
+    public int Searching => Hunt is { } tier ? GameConstants.HuntSoldiers(tier) : 0;
+
     public int Hired { get; }
 
     public int Armed { get; }
@@ -53,7 +59,7 @@ public sealed record OrderPlan
 
     public int Sent { get; }
 
-    public int GoldCost => Cost(Feast, purchases, Hired, Armed);
+    public int GoldCost => Cost(Feast, purchases, Hired, Armed) + (Hunt is { } tier ? GameConstants.HuntCost(tier) : 0);
 
     public int this[ActionType direction] => troops.GetValueOrDefault(direction);
 
@@ -62,7 +68,7 @@ public sealed record OrderPlan
     public int ReserveIn(KingdomState state) => Math.Max(0, state.Troops - Committed);
 
     public bool FitsIn(KingdomState state) =>
-        Committed <= state.Troops && Sent <= state.Villagers && GoldCost <= state.Gold;
+        Committed + Searching <= state.Troops && Sent <= state.Villagers && GoldCost <= state.Gold;
 
     public OrderPlan ClampTo(KingdomState state)
     {
@@ -103,7 +109,16 @@ public sealed record OrderPlan
             spies = tier == SpyTier.Lone ? null : tier - 1;
         }
 
-        return new OrderPlan(scaled, feast, kept, hired, armed, spies, RecallSpies);
+        var hunt = Hunt;
+
+        while (hunt is { } chase
+            && (GameConstants.HuntSoldiers(chase) > Math.Max(0, state.Troops - Committed)
+                || GameConstants.HuntCost(chase) + Cost(feast, kept, hired, armed) > state.Gold))
+        {
+            hunt = chase == HuntTier.Scout ? null : chase - 1;
+        }
+
+        return new OrderPlan(scaled, feast, kept, hired, armed, spies, RecallSpies, hunt);
     }
 
     public static OrderPlan Of(ActionType direction, int count) =>

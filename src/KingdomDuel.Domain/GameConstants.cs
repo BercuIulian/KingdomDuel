@@ -121,4 +121,38 @@ public static class GameConstants
     };
 
     public static bool SpiesReadOrders(SpyTier tier) => tier == SpyTier.Ring;
+
+    public static int SpyLevel(SpyTier tier) => tier switch
+    {
+        SpyTier.Lone => 1,
+        SpyTier.Pair => 2,
+        SpyTier.Ring => 3,
+        _ => 0,
+    };
+
+    public static SpyTier? SpyAtLevel(int level) => level switch
+    {
+        1 => SpyTier.Lone,
+        2 => SpyTier.Pair,
+        >= 3 => SpyTier.Ring,
+        _ => null,
+    };
+
+    public static int HuntSoldiers(HuntTier tier) => tier switch
+    {
+        HuntTier.Scout => 1,
+        HuntTier.Patrol => 2,
+        HuntTier.Sweep => 3,
+        _ => 0,
+    };
+
+    public static int HuntCost(HuntTier tier) => tier switch
+    {
+        HuntTier.Scout => 1,
+        HuntTier.Patrol => 2,
+        HuntTier.Sweep => 5,
+        _ => 0,
+    };
+
+    public static int HuntLevels(HuntTier tier) => HuntSoldiers(tier);
 }

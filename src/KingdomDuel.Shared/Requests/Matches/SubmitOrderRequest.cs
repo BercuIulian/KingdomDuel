@@ -20,4 +20,6 @@ public sealed class SubmitOrderRequest
     public SpyTier? Spies { get; set; }
 
     public bool RecallSpies { get; set; }
+
+    public HuntTier? Hunt { get; set; }
 }

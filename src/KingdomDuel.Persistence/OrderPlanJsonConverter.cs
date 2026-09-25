@@ -14,6 +14,7 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
     private const string ArmedProperty = "Armed";
     private const string SpiesProperty = "Spies";
     private const string RecallProperty = "RecallSpies";
+    private const string HuntProperty = "Hunt";
 
     public override OrderPlan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -54,7 +55,8 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
             Count(root, HiredProperty),
             Count(root, ArmedProperty),
             Tier<SpyTier>(root, SpiesProperty),
-            Find(root, RecallProperty) is { ValueKind: JsonValueKind.True });
+            Find(root, RecallProperty) is { ValueKind: JsonValueKind.True },
+            Tier<HuntTier>(root, HuntProperty));
     }
 
     public override void Write(Utf8JsonWriter writer, OrderPlan value, JsonSerializerOptions options)
@@ -105,6 +107,11 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
         if (value.RecallSpies)
         {
             writer.WriteBoolean(RecallProperty, true);
+        }
+
+        if (value.Hunt is { } hunt)
+        {
+            writer.WriteString(HuntProperty, hunt.ToString());
         }
 
         writer.WriteEndObject();

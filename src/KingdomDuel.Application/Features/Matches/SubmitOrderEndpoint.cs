@@ -33,7 +33,8 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
             req.Hired,
             req.Armed,
             req.Spies,
-            req.RecallSpies);
+            req.RecallSpies,
+            req.Hunt);
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {

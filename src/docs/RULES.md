@@ -82,6 +82,31 @@ Ordinele sunt ce a **făcut** în runda aceea, nu ce are pe teren. Dacă adversa
 afla că ești privit: el n-a mai umblat la ei. Îl prinzi doar în runda în care
 schimbă treapta sau își cheamă spionii acasă.
 
+### Caută spioni
+
+Celălalt capăt al aceluiași ordin: trimiți soldați să scotocească cetatea. Cine
+e găsit e **ucis** — sătenii aceia nu se mai întorc niciodată în sat.
+
+| | soldați | cost | stinge |
+|---|---|---|---|
+| iscoadă | 1 | 1 aur | 1 nivel |
+| patrulă | 2 | 2 aur | 2 nivele |
+| scotocire | 3 | 5 aur | 3 nivele |
+
+Rețelele de spioni au și ele nivele: un spion e nivelul 1, trei spioni nivelul 2,
+cinci spioni nivelul 3. Căutarea **scade nivel din nivel**, iar ce rămâne rămâne
+în viață: o rețea de cinci lovită de o patrulă coboară la nivelul 1 — patru morți,
+unul rămas, iar cel rămas costă și vede de acum ca o rețea de unul singur.
+
+- Căutarea prinde și rețeaua trimisă **în aceeași rundă**: scotocești cetatea la
+  urmă, deci găsești pe cine e acolo atunci.
+- **Afli câți ai prins** — și afli și când n-ai prins pe nimeni. Așa se poate
+  ști dacă ești privit, dar plătind aur și soldați pentru răspuns.
+- Cel păgubit află că i-au murit spionii, altfel n-ar înțelege de ce raportul
+  lui s-a subțiat.
+- **Soldații plecați în căutare nu apără zidul** în runda aceea și nu intră în
+  garnizoană. Se întorc la sfârșitul rundei, nu se pierd.
+
 Dacă rămâi fără aur de întreținere, **toți spionii se întorc acasă** de la
 sine. Sătenii se întorc în sat și când îi chemi, și când rămâi fără aur — nu se
 pierd. Cât sunt plecați se numără la puterea ta, ca negustorii din caravană, dar

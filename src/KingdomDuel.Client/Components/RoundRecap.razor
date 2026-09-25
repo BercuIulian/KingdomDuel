@@ -51,6 +51,7 @@
     private static bool Counts(RoundLineDto line) =>
         line.Kind is RoundEventKind.Purchased or RoundEventKind.CastleDestroyed
             or RoundEventKind.WallsRuined or RoundEventKind.WallsRepaired or RoundEventKind.CatapultsLost
+            or RoundEventKind.SpiesHunted
         || line.Amount > 0;
 
     private IEnumerable<RoundLineDto> Told => Recap.Lines.Where(Counts).Where(Tells);
@@ -59,6 +60,8 @@
         line.Kind != RoundEventKind.OrderGiven
         || (line.Direction == ActionType.Defend && !Recap.Lines.Any(other =>
             other.Kind == RoundEventKind.BattleJoined && other.Direction == ActionType.Defend));
+
+    private static string Spies(int many) => many == 1 ? "un spion" : $"{many} spioni";
 
     private static string Signed(int amount) => amount > 0 ? $"+{amount}" : amount.ToString();
 
@@ -81,6 +84,10 @@
         RoundEventKind.SpiesRecalled => $"Spionii s-au întors acasă, {line.Amount} săteni.",
         RoundEventKind.SpiesPaid => $"Spionii au costat {line.Amount} aur.",
         RoundEventKind.SpiesStarved => $"N-a mai fost aur de spioni; s-au întors toți, {line.Amount} săteni.",
+        RoundEventKind.SpiesHunted => line.Amount > 0
+            ? $"Soldații au scotocit cetatea și au ucis {Spies(line.Amount)}."
+            : "Soldații au scotocit cetatea, dar n-au găsit niciun spion.",
+        RoundEventKind.SpiesKilled => $"Ți-au fost prinși și uciși {Spies(line.Amount)}.",
         RoundEventKind.CaravanSent => $"Caravana a plecat la drum cu {line.Amount} săteni.",
         RoundEventKind.CaravanReturned => $"Caravana s-a întors cu {line.Amount} săteni.",
         RoundEventKind.TradeIncome => $"Negoțul a adus {line.Amount} aur.",

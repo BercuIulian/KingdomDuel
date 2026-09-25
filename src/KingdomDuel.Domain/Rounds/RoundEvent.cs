@@ -30,6 +30,8 @@ public enum RoundEventKind
     SpiesRecalled,
     SpiesPaid,
     SpiesStarved,
+    SpiesHunted,
+    SpiesKilled,
     MarchedOn,
     TurnedBack
 }
