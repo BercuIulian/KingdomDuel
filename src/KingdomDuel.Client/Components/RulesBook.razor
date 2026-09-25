@@ -1,4 +1,5 @@
 @using KingdomDuel.Domain
+@using KingdomDuel.Domain.Enums
 
 <button type="button" class="rules-open" aria-haspopup="dialog" title="Regulile jocului" @onclick="Open">
     <span class="rules-open-ico"><Glyph Name="book" /></span>
@@ -31,7 +32,7 @@
             <article class="rule-card wide">
                 <h3><span class="rule-ico"><Glyph Name="crown" /></span> Cum se câștigă</h3>
                 <p class="rule-lead">
-                    Puterea unui regat e <b>aur + soldați + moral</b>.
+                    Puterea unui regat e <b>aur + soldați + săteni + moral</b>.
                 </p>
                 <ol class="rule-steps">
                     <li>Dărâmi cetatea adversarului.</li>
@@ -41,14 +42,17 @@
             </article>
 
             <article class="rule-card">
-                <h3><span class="rule-ico"><Glyph Name="helm" /></span> Soldații</h3>
-                <p class="rule-lead">Îi împarți cum vrei; cine nu primește nimic rămâne în cetate.</p>
+                <h3><span class="rule-ico"><Glyph Name="helm" /></span> Oamenii</h3>
+                <p class="rule-lead">
+                    Soldații luptă, sătenii muncesc. Îi împarți cum vrei; cine nu primește porunci
+                    rămâne în cetate.
+                </p>
                 <dl class="rule-defs">
-                    <dt>Atac</dt>
+                    <dt>Atac <span class="rule-who">soldați</span></dt>
                     <dd>Pleacă spre cetatea adversarului.</dd>
-                    <dt>Apărare</dt>
+                    <dt>Apărare <span class="rule-who">soldați</span></dt>
                     <dd>Urcă pe zid, cel mult @GameConstants.WallCapacity; restul așteaptă înăuntru.</dd>
-                    <dt>Comerț</dt>
+                    <dt>Comerț <span class="rule-who">săteni</span></dt>
                     <dd>
                         Se întorc peste o rundă, cu @GameConstants.TradeYieldMin.ToString("0.#")–@GameConstants.TradeYieldMax.ToString("0.#")
                         aur de fiecare. Cât sunt pe drum nu apără nimic.
@@ -71,15 +75,23 @@
                     <dt>Fortificație</dt>
                     <dd>@GameConstants.FortifyCost aur: zidul ține cu @GameConstants.FortifySeconds s mai mult și încap încă @GameConstants.FortifyArchers arcași.</dd>
                     <dt>Catapultă</dt>
-                    <dd>@GameConstants.CatapultCost aur: spargi zidul cu @GameConstants.CatapultSeconds s mai repede.</dd>
+                    <dd>
+                        @GameConstants.CatapultCost aur: spargi zidul cu @GameConstants.CatapultSeconds s mai repede.
+                        Merg cu oastea; le pierzi dacă suni retragerea sau dacă expediția e nimicită.
+                    </dd>
+                    <dt>Cumpără săteni</dt>
+                    <dd>@GameConstants.VillagerBundleCost aur pachetul de @GameConstants.VillagersPerBundle săteni, sosiți pe loc. Se ia de câte ori vrei.</dd>
+                    <dt>Înarmare</dt>
+                    <dd>@GameConstants.ArmCost aur de cap: sătenii tăi iau arma și intră în oaste runda următoare.</dd>
+                    <dt>Ridicarea zidului</dt>
+                    <dd>@GameConstants.RepairCost aur când zidul e dărâmat; treptele pierdute se răscumpără ieftin, doar runda de după.</dd>
                 </dl>
             </article>
 
             <article class="rule-card">
                 <h3><span class="rule-ico"><Glyph Name="swords" /></span> Ciocnirea în câmp</h3>
                 <p class="rule-lead">
-                    Dacă amândoi trimit soldați la atac, oștile se întâlnesc pe drum și niciuna
-                    nu mai ajunge la cetate în runda aceea.
+                    Dacă amândoi trimit soldați la atac, oștile se întâlnesc pe drum.
                 </p>
                 <ul class="rule-list">
                     <li>Retragerea rupe lupta în @GameConstants.RetreatSeconds s și costă @GameConstants.RetreatLossPercent% din cei rămași.</li>
@@ -97,6 +109,11 @@
                     <li>Cât ține zidul, apărătorii trag cu arcurile în atacatori.</li>
                     <li>Când zidul cade, doar @(100 - GameConstants.WallBreachLossPercent)% din apărători supraviețuiesc.</li>
                     <li>Dacă apărătorul rămâne fără niciun soldat, cetatea cade.</li>
+                    <li>Un zid străpuns rămâne dărâmat: până nu-l ridici, asaltul următor intră direct în cetate.</li>
+                    <li>
+                        La spărtură asaltul se oprește @GameConstants.RallySeconds s, cât apărătorul își cheamă satul
+                        la arme cu @GameConstants.RallyCost aur de cap. Cine ia arma rămâne soldat.
+                    </li>
                 </ul>
             </article>
 
@@ -110,10 +127,33 @@
                 </ul>
             </article>
 
+            <article class="rule-card">
+                <h3><span class="rule-ico"><Glyph Name="eye" /></span> Spionii</h3>
+                <p class="rule-lead">
+                    Sătenii trimiși ca spioni rămân plecați până îi chemi, cu un aur de cap pe rundă.
+                    Vestea vine pentru rundă precedentă.
+                </p>
+                <dl class="rule-defs">
+                    <dt>Un spion</dt>
+                    <dd>@GameConstants.SpyUpkeep(SpyTier.Lone) aur: @((int)(GameConstants.SpyAccuracy(SpyTier.Lone) * 100))% acuratețe.</dd>
+                    <dt>Trei spioni</dt>
+                    <dd>@GameConstants.SpyUpkeep(SpyTier.Pair) aur: @((int)(GameConstants.SpyAccuracy(SpyTier.Pair) * 100))% acuratețe.</dd>
+                    <dt>Cinci spioni</dt>
+                    <dd>@GameConstants.SpyUpkeep(SpyTier.Ring) aur: @((int)(GameConstants.SpyAccuracy(SpyTier.Ring) * 100))% și ordinele din runda trecută.</dd>
+                    <dt>Caută spioni</dt>
+                    <dd>
+                        @GameConstants.HuntCost(HuntTier.Scout)/@GameConstants.HuntCost(HuntTier.Patrol)/@GameConstants.HuntCost(HuntTier.Sweep) aur
+                        pentru 1/2/3 soldați, care sting o rețea de până la nivelul 1/2/3. Cine e prins moare;
+                        soldații trimiși nu apără runda aceea.
+                    </dd>
+                </dl>
+            </article>
+
             <article class="rule-card wide">
                 <h3><span class="rule-ico"><Glyph Name="hourglass" /></span> Ce nu vezi</h3>
                 <p class="rule-lead">
-                    Cât ține meciul, cetatea adversarului scrie „necunoscut”. Vezi doar ce se
+                    Cât ține meciul, cetatea adversarului scrie „necunoscut”, până trimiți spioni —
+                    cifrele auzite de la ei iau locul lui, scrise cu tildă. Aurul rămâne necunoscut oricum. Vezi doar ce se
                     petrece între voi — bătăliile, zidurile, retragerile — și socoteala ta la
                     sfârșitul fiecărei runde. La asalt vezi câți arcași sunt pe zid, dar nu și
                     câți așteaptă înăuntru. Totul se dezvăluie la final, odată cu povestea meciului.
