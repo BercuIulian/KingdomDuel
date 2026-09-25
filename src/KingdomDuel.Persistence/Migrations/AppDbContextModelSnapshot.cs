@@ -179,6 +179,12 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<string>("PendingOrder")
                         .HasColumnType("jsonb");
 
+                    b.Property<string>("Report")
+                        .HasColumnType("jsonb");
+
+                    b.Property<string>("Spies")
+                        .HasColumnType("jsonb");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uuid");
 

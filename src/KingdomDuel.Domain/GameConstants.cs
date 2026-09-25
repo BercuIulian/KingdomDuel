@@ -101,4 +101,24 @@ public static class GameConstants
         FeastTier.Grand => FeastGrandMorale,
         _ => 0,
     };
+
+    public static int SpyVillagers(SpyTier tier) => tier switch
+    {
+        SpyTier.Lone => 1,
+        SpyTier.Pair => 3,
+        SpyTier.Ring => 5,
+        _ => 0,
+    };
+
+    public static int SpyUpkeep(SpyTier tier) => SpyVillagers(tier);
+
+    public static double SpyAccuracy(SpyTier tier) => tier switch
+    {
+        SpyTier.Lone => 0.65,
+        SpyTier.Pair => 0.85,
+        SpyTier.Ring => 0.95,
+        _ => 0,
+    };
+
+    public static bool SpiesReadOrders(SpyTier tier) => tier == SpyTier.Ring;
 }

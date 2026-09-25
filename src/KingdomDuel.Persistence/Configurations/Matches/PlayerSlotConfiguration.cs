@@ -35,5 +35,13 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
         builder.Property(p => p.Caravan)
             .HasColumnType("jsonb")
             .HasConversion(JsonColumns.NullableConverter<Caravan>(), JsonColumns.NullableComparer<Caravan>());
+
+        builder.Property(p => p.Spies)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<SpyRing>(), JsonColumns.NullableComparer<SpyRing>());
+
+        builder.Property(p => p.Report)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<SpyReport>(), JsonColumns.NullableComparer<SpyReport>());
     }
 }

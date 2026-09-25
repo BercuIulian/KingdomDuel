@@ -31,7 +31,9 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
             req.Feast,
             req.Purchases,
             req.Hired,
-            req.Armed);
+            req.Armed,
+            req.Spies,
+            req.RecallSpies);
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
@@ -93,6 +95,18 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 AddError($"Vrei să înarmezi {plan.Armed} săteni, dar satul are {slot.Kingdom.Villagers}.");
                 await Send.ErrorsAsync(cancellation: ct);
                 return;
+            }
+
+            if (plan.Spies is { } wanted)
+            {
+                var leaving = GameConstants.SpyVillagers(wanted) - (slot.Spies?.Villagers ?? 0);
+
+                if (leaving > slot.Kingdom.Villagers)
+                {
+                    AddError($"Iscoada cere {leaving} săteni în plus, dar satul are {slot.Kingdom.Villagers}.");
+                    await Send.ErrorsAsync(cancellation: ct);
+                    return;
+                }
             }
 
             if (plan.GoldCost > slot.Kingdom.Gold)

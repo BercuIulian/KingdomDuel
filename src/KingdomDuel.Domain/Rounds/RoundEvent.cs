@@ -26,6 +26,10 @@ public enum RoundEventKind
     VillagersHired,
     VillagersArmed,
     VillagersRallied,
+    SpiesSent,
+    SpiesRecalled,
+    SpiesPaid,
+    SpiesStarved,
     MarchedOn,
     TurnedBack
 }

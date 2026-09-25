@@ -72,6 +72,20 @@
             }
         </button>
 
+        <button type="button"
+                class="order"
+                aria-pressed="@(SpiesOut is not null || spies is not null)"
+                disabled="@orderSent"
+                @onclick="OpenSpies">
+            <span class="order-ico"><Glyph Name="eye" /></span>
+            <b>Spioni</b>
+            <small>@SpyHint</small>
+            @if (SpyShift is { } shift)
+            {
+                <span class="shift">@shift</span>
+            }
+        </button>
+
         <div class="order-action">
             @if (orderSent)
             {
@@ -266,6 +280,52 @@
         </div>
     </section>
 }
+
+@if (spyPopup)
+{
+    <div class="result-scrim" @onclick="() => spyPopup = false"></div>
+
+    <section class="result spies" role="dialog" aria-modal="true" aria-labelledby="spy-title">
+        <span class="result-ico"><Glyph Name="eye" /></span>
+        <h2 id="spy-title">Spionii</h2>
+        <p class="result-text">
+            Sătenii trimiși ca spioni costă un aur de cap în fiecare rundă. Cu cât sunt mai mulți,
+            cu atât vestea vine mai aproape de adevăr.
+        </p>
+
+        <div class="choices">
+            @foreach (var tier in SpyTiers)
+            {
+                <button type="button"
+                        class="choice @(ChosenSpies == tier ? "chosen" : "")"
+                        @onclick="() => PickSpies(tier)">
+                    <span class="choice-text">
+                        <b>@SpyStaffName(tier)</b>
+                        <small>@SpyNote(tier)</small>
+                    </span>
+                    <span class="choice-price">@GameConstants.SpyUpkeep(tier) aur / rundă</span>
+                </button>
+            }
+        </div>
+
+        @if (State.YourReport is { } report)
+        {
+            <SpyReportView Report="report" />
+        }
+        else if (SpiesOut is not null)
+        {
+            <p class="spy-wait">Spionii au plecat. Prima veste sosește runda viitoare.</p>
+        }
+
+        <div class="result-actions">
+            @if (SpiesOut is not null)
+            {
+                <button type="button" class="result-ghost" @onclick="CallSpiesHome">Retrage spionii</button>
+            }
+            <button type="button" class="send" @onclick="() => spyPopup = false">Gata</button>
+        </div>
+    </section>
+}
 @code {
     [Parameter, EditorRequired] public MatchStateDto State { get; set; } = default!;
     [Parameter] public EventCallback<MatchStateDto> OnSubmitted { get; set; }
@@ -306,6 +366,9 @@
     private int armed;
     private bool hirePopup;
     private bool armPopup;
+    private SpyTier? spies;
+    private bool recallSpies;
+    private bool spyPopup;
 
     private int round;
     private bool sending;
@@ -324,7 +387,11 @@
 
     private int Free => Math.Max(0, Troops - Fighting);
 
-    private int FreeVillagers => Math.Max(0, Villagers - Allocated(ActionType.Trade) - armed);
+    private int FreeVillagers => Math.Max(0, Villagers - Allocated(ActionType.Trade) - armed - LeavingToSpy);
+
+    private int LeavingToSpy => Math.Max(0, SpyStaff - (SpiesOut?.Villagers ?? 0));
+
+    private int SpyStaff => ChosenSpies is { } tier ? GameConstants.SpyVillagers(tier) : 0;
 
     private int Fighting => Allocated(ActionType.Attack) + Allocated(ActionType.Defend);
 
@@ -333,7 +400,8 @@
         + bought.Sum(GameConstants.PurchaseCost)
         + Repairs.Sum(GameConstants.PurchaseCost)
         + hired * GameConstants.VillagerBundleCost
-        + armed * GameConstants.ArmCost;
+        + armed * GameConstants.ArmCost
+        + (ChosenSpies is { } spied ? GameConstants.SpyUpkeep(spied) : 0);
 
     private IEnumerable<PurchaseType> Repairs
     {
@@ -389,6 +457,9 @@
         armed = 0;
         hirePopup = false;
         armPopup = false;
+        spies = null;
+        recallSpies = false;
+        spyPopup = false;
         orderSent = false;
         error = null;
     }
@@ -530,6 +601,45 @@
         feastPopup = true;
     }
 
+    private SpyRingDto? SpiesOut => State.YourSpies;
+
+    private string SpyHint => SpiesOut is { } ring
+        ? $"{SpyStaffName(ring.Tier)} pe teren, {ring.Upkeep} aur pe rundă"
+        : "Trimite săteni ca spioni";
+
+    private string? SpyShift => recallSpies
+        ? "îi chem acasă"
+        : spies is { } tier ? SpyStaffName(tier) : null;
+
+    private static readonly SpyTier[] SpyTiers = [SpyTier.Lone, SpyTier.Pair, SpyTier.Ring];
+
+    private SpyTier? ChosenSpies => recallSpies ? null : spies ?? SpiesOut?.Tier;
+
+    private static string SpyStaffName(SpyTier tier) =>
+        GameConstants.SpyVillagers(tier) is var many && many == 1 ? "1 sătean" : $"{many} săteni";
+
+    private static string SpyNote(SpyTier tier) => tier switch
+    {
+        SpyTier.Lone => "Vești aproximative, la un preț mic",
+        SpyTier.Pair => "Cifre mai apropiate de adevăr",
+        _ => "Aproape exact, și îi afli și ordinele din runda trecută",
+    };
+
+    private void OpenSpies() => spyPopup = true;
+
+    private void PickSpies(SpyTier? tier)
+    {
+        spies = tier;
+        recallSpies = false;
+    }
+
+    private void CallSpiesHome()
+    {
+        spies = null;
+        recallSpies = true;
+        spyPopup = false;
+    }
+
     private void CloseFeast() => feastPopup = false;
 
     private void CommitFeast()
@@ -583,6 +693,8 @@
                     Purchases = [.. bought, .. Repairs],
                     Hired = hired,
                     Armed = armed,
+                    Spies = spies,
+                    RecallSpies = recallSpies,
                 },
                 State.Code);
 

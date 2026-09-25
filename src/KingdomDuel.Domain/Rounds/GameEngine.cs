@@ -582,10 +582,49 @@ public static class GameEngine
             events.Add(new RoundEvent(RoundEventKind.CaravanSent, side, traders, ActionType.Trade));
         }
 
+        var spies = input.Spies;
+
+        if (order.RecallSpies && spies is { } called)
+        {
+            state = state.With(villagersDelta: called.Villagers);
+            spies = null;
+
+            events.Add(new RoundEvent(RoundEventKind.SpiesRecalled, side, called.Villagers));
+        }
+        else if (order.Spies is { } wanted && wanted != spies?.Tier)
+        {
+            var had = spies?.Villagers ?? 0;
+            var needs = GameConstants.SpyVillagers(wanted);
+
+            if (needs - had <= state.Villagers)
+            {
+                state = state.With(villagersDelta: had - needs);
+                spies = new SpyRing(wanted);
+
+                events.Add(new RoundEvent(RoundEventKind.SpiesSent, side, needs));
+            }
+        }
+
+        if (spies is { } ring)
+        {
+            if (state.Gold >= ring.Upkeep)
+            {
+                state = state.With(goldDelta: -ring.Upkeep);
+                events.Add(new RoundEvent(RoundEventKind.SpiesPaid, side, ring.Upkeep));
+            }
+            else
+            {
+                state = state.With(villagersDelta: ring.Villagers);
+                spies = null;
+
+                events.Add(new RoundEvent(RoundEventKind.SpiesStarved, side, ring.Villagers));
+            }
+        }
+
         state = state.With(moraleDelta: -GameConstants.MoraleDecayPerRound);
         events.Add(new RoundEvent(RoundEventKind.MoraleDecay, side, GameConstants.MoraleDecayPerRound));
 
-        state = Feast(side, state, order, input, events);
+        state = Feast(side, state, order, input, spies, events);
 
         var recruits = 0;
 
@@ -673,7 +712,7 @@ public static class GameEngine
                 Purchase: PurchaseType.Catapult));
         }
 
-        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits);
+        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits, spies);
     }
 
     private static KingdomState Feast(
@@ -681,6 +720,7 @@ public static class GameEngine
         KingdomState state,
         OrderPlan order,
         SideInput input,
+        SpyRing? spies,
         List<RoundEvent> events)
     {
         if (order.Feast is not { } tier || state.Gold < GameConstants.FeastCost(tier))
@@ -691,7 +731,7 @@ public static class GameEngine
         var gone = order.Committed;
         var homeSoldiers = Math.Max(0, input.Kingdom.Troops - gone);
         var homeVillagers = state.Villagers;
-        var awayVillagers = (input.Caravan?.Troops ?? 0) + order.Sent;
+        var awayVillagers = (input.Caravan?.Troops ?? 0) + order.Sent + (spies?.Villagers ?? 0);
 
         var morale = FeastMorale(
             tier,

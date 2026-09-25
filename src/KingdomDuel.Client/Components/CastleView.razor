@@ -87,8 +87,8 @@
         <dl class="stats">
             <div class="stat">
                 <dt><Glyph Name="coin" /> Aur</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">
-                    @Value(Kingdom?.Gold)
+                <dd class="@(Kingdom is null || Hearsay ? "unknown" : "")">
+                    @(Hearsay ? "necunoscut" : Value(Kingdom?.Gold))
                     @if (Moved(Drift?.GoldDelta) is { } goldShift)
                     {
                         <span class="drift @(goldShift > 0 ? "up" : "down")">@Signed(goldShift)</span>
@@ -97,8 +97,8 @@
             </div>
             <div class="stat">
                 <dt><Glyph Name="helm" /> Soldați</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">
-                    @Value(Kingdom?.Troops)
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Troops)
                     @if (Moved(Drift?.TroopsDelta) is { } troopShift)
                     {
                         <span class="drift @(troopShift > 0 ? "up" : "down")">@Signed(troopShift)</span>
@@ -107,8 +107,8 @@
             </div>
             <div class="stat">
                 <dt><Glyph Name="folk" /> Săteni</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">
-                    @Value(Kingdom?.Villagers)
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Villagers)
                     @if (Moved(Drift?.VillagersDelta) is { } villageShift)
                     {
                         <span class="drift @(villageShift > 0 ? "up" : "down")">@Signed(villageShift)</span>
@@ -117,8 +117,8 @@
             </div>
             <div class="stat">
                 <dt><Glyph Name="flame" /> Moral</dt>
-                <dd class="@(Kingdom is null ? "unknown" : "")">
-                    @Value(Kingdom?.Morale)
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Morale)
                     @if (Moved(Drift?.MoraleDelta) is { } moraleShift)
                     {
                         <span class="drift @(moraleShift > 0 ? "up" : "down")">@Signed(moraleShift)</span>
@@ -187,6 +187,13 @@
     private static int? Moved(int? amount) => amount is { } shift && shift != 0 ? shift : null;
 
     private static string Signed(int amount) => amount > 0 ? $"+{amount}" : amount.ToString();
+
+    private bool Hearsay => Kingdom?.IsHearsay == true;
+
+    private string Tone => Kingdom is null ? "unknown" : Hearsay ? "heard" : string.Empty;
+
+    private string Heard(int? amount) =>
+        Kingdom is null ? "necunoscut" : Hearsay ? $"~{amount}" : Value(amount);
 
     private static string Value(int? amount) => amount?.ToString() ?? "necunoscut";
 }

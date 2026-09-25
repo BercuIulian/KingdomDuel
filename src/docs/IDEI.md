@@ -9,13 +9,12 @@ Ordinea hotărâtă: zidurile sparte, sătenii și soldații, recrutarea instant
 spionii, apoi mobilizarea și îngreunarea asaltului.
 
 **Făcute:** zidurile rămân sparte; sătenii și soldații, două neamuri;
-catapultele se pierd la retragere sau odată cu expediția nimicită. Ce a rămas e
-mai jos.
+catapultele se pierd la retragere sau odată cu expediția nimicită; clopotul de
+la spărtură; spionii. Ce a rămas e mai jos.
 
-Mobilizarea, spionii și îngreunarea asaltului au ieșit din S7 ca planul să nu se
-contrazică; mobilizarea și spionii adaugă suprafață de interfață — un buton pe
-ordinul de atac și o direcție nouă de alocare — deci panoul de ordine primește o
-a doua trecere când le facem.
+Mobilizarea și îngreunarea asaltului au ieșit din S7 ca planul să nu se
+contrazică. Mobilizarea adaugă un buton pe ordinul de atac, deci panoul de
+ordine mai primește o trecere când o facem.
 
 ### Recrutarea instantă în timpul unui asalt
 
@@ -23,7 +22,7 @@ Azi, în timpul unui asalt, atacatorul poate suna retragerea, iar apărătorul e
 doar spectator. Ideea îi dă și lui ceva de făcut: **când zidul cade, satul
 poate lua arma pe loc.**
 
-**Ce s-a hotărât**
+**Făcută.** Ce s-a hotărât:
 
 - **Oamenii sunt sătenii tăi, nu recruți cumpărați.** Mecanismul e înarmarea de
   la etapa sătenilor, doar că se întâmplă în mijlocul asaltului.
@@ -112,36 +111,28 @@ există ideea de mai jos, cu spionii.
 
 ### Spionii
 
-Un **ordin nou**: trimite sau cheamă spionii. Pleacă un număr fix de soldați
-(probabil 2) și **rămân plecați rundă după rundă** până sunt chemați înapoi. Cât
-sunt afară, în fiecare rundă se scade o sumă de aur — întreținerea lor departe de
-cetate.
+**Făcută.** Un ordin aparte cu trei trepte, ca ospățul: 1, 3 sau 5 săteni, cu
+un aur de cap pe rundă, la 65%, 85% și 95% acuratețe. Rămân plecați până îi
+chemi, se întorc singuri când rămâi fără aur, și se numără la putere ca
+negustorii din caravană.
 
-Ce raportează:
+Raportul vine cu o rundă în urmă și se aruncă **o singură dată**, la închiderea
+rundei. Asta nu e detaliu: dacă abaterea s-ar recalcula la fiecare desenare a
+panoului, jucătorul ar citi numărul de zece ori și ar face media, adică ar primi
+adevărul pe gratis, oricâți spioni ar avea.
 
-- dacă inamicul a trimis o **caravană** la comerț;
-- dacă inamicul își **mobilizează** oastea pentru un atac cu toți soldații (vezi „Mobilizarea”).
+Exact, la orice treaptă: caravana (da/nu) și nivelul zidului — cetatea
+adversarului de pe masă se desenează după el. Cu abatere: soldați, săteni,
+moral, negustori pe drum. Aurul nu se iscodește deloc. La treapta de cinci, și
+ordinele din runda trecută, exacte.
 
-Deci spionii sunt răspunsul la faptul că mobilizarea e telegrafiată: fără ei nu
-vezi semnalul, cu ei plătești aur ca să-l vezi.
+**Ce s-a schimbat față de planul de mai sus:** nu e o direcție nouă de alocare,
+ci o treaptă, ca ospățul. Deci proba promisă la S2 — „un `ActionType` nou fără
+să umblăm în șase fișiere" — nu s-a dat aici. Rămâne de dat altă dată.
 
-E și prima probă adevărată a promisiunii de la S2 — **o direcție nouă de alocare
-fără să umblăm în șase fișiere**. Dacă adăugarea lui cere mai mult decât un
-`ActionType`, o regulă în motor și o linie în panou, atunci segmentul nu era
-scalabil și se vede aici.
-
-**De decis la implementare:**
-
-- Câți soldați pleacă și cât costă întreținerea pe rundă.
-- Spionii se pierd? Îi poate prinde adversarul, sau sunt doar o cheltuială?
-- Ce se întâmplă dacă nu mai ai aur de întreținere: se întorc singuri, sunt
-  pierduți, sau intri pe datorie?
-- Contează la puterea finală de departajare, ca și caravana?
-- Raportul e din runda trecută sau din cea în curs? Contează: un raport despre
-  runda în curs ar însemna să vezi ordinul adversarului **înainte** să-l dai pe
-  al tău, ceea ce sparge simultaneitatea. Recomand raport despre runda
-  **încheiată**.
-- Se pot trimite spioni cât oastea e mobilizată?
+**Ce a rămas pentru mai târziu:** nimicirea spionilor. Azi nu se pierd niciodată
+— cine plătește, vede. Următorul pas discutat e trimiterea de soldați în
+căutarea spionilor inamice.
 
 ### Îngreunarea asaltului
 

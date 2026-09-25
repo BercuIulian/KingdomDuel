@@ -10,6 +10,10 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
     private const string TroopsProperty = "Troops";
     private const string FeastProperty = "Feast";
     private const string PurchasesProperty = "Purchases";
+    private const string HiredProperty = "Hired";
+    private const string ArmedProperty = "Armed";
+    private const string SpiesProperty = "Spies";
+    private const string RecallProperty = "RecallSpies";
 
     public override OrderPlan Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
@@ -29,14 +33,6 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
             }
         }
 
-        FeastTier? feast = null;
-
-        if (Find(root, FeastProperty) is { ValueKind: JsonValueKind.String } tier
-            && Enum.TryParse<FeastTier>(tier.GetString(), ignoreCase: true, out var parsed))
-        {
-            feast = parsed;
-        }
-
         var purchases = new List<PurchaseType>();
 
         if (Find(root, PurchasesProperty) is { ValueKind: JsonValueKind.Array } bought)
@@ -51,7 +47,14 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
             }
         }
 
-        return new OrderPlan(troops, feast, purchases);
+        return new OrderPlan(
+            troops,
+            Tier<FeastTier>(root, FeastProperty),
+            purchases,
+            Count(root, HiredProperty),
+            Count(root, ArmedProperty),
+            Tier<SpyTier>(root, SpiesProperty),
+            Find(root, RecallProperty) is { ValueKind: JsonValueKind.True });
     }
 
     public override void Write(Utf8JsonWriter writer, OrderPlan value, JsonSerializerOptions options)
@@ -84,8 +87,38 @@ internal sealed class OrderPlanJsonConverter : JsonConverter<OrderPlan>
             writer.WriteEndArray();
         }
 
+        if (value.Hired > 0)
+        {
+            writer.WriteNumber(HiredProperty, value.Hired);
+        }
+
+        if (value.Armed > 0)
+        {
+            writer.WriteNumber(ArmedProperty, value.Armed);
+        }
+
+        if (value.Spies is { } spies)
+        {
+            writer.WriteString(SpiesProperty, spies.ToString());
+        }
+
+        if (value.RecallSpies)
+        {
+            writer.WriteBoolean(RecallProperty, true);
+        }
+
         writer.WriteEndObject();
     }
+
+    private static int Count(JsonElement root, string name) =>
+        Find(root, name) is { ValueKind: JsonValueKind.Number } number ? number.GetInt32() : 0;
+
+    private static TTier? Tier<TTier>(JsonElement root, string name)
+        where TTier : struct, Enum =>
+        Find(root, name) is { ValueKind: JsonValueKind.String } text
+        && Enum.TryParse<TTier>(text.GetString(), ignoreCase: true, out var parsed)
+            ? parsed
+            : null;
 
     private static JsonElement? Find(JsonElement root, string name)
     {

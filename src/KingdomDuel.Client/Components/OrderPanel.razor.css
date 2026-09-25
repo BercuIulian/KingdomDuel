@@ -80,7 +80,7 @@
 /* ---------- Butoanele de ordin ---------- */
 .orders {
     display: grid;
-    grid-template-columns: repeat(4, 1fr) auto;
+    grid-template-columns: repeat(5, 1fr);
     gap: 0.6rem;
     align-items: stretch;
 }
@@ -155,11 +155,12 @@
 }
 
 .order-action {
+    grid-column: 1 / -1;
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 0.4rem;
-    min-width: 11rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.6rem;
 }
 
 .order-sent {
@@ -425,4 +426,14 @@
     margin: 0.1rem 0 0;
     font-size: 0.82rem;
     color: #e0c07f;
+}
+
+.spies {
+    max-width: 30rem;
+}
+
+.spy-wait {
+    margin: 0.2rem 0 0;
+    font-size: 0.78rem;
+    color: var(--text-dim);
 }

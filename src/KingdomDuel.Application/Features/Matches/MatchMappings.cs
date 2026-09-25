@@ -1,3 +1,4 @@
+using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
 using KingdomDuel.Domain.Rounds;
@@ -35,6 +36,8 @@ internal static class MatchMappings
         Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
         Breach = match.BreachCall?.ToBreachDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        YourSpies = match.SlotOf(userId)?.Spies?.ToSpyRingDto(),
+        YourReport = match.SlotOf(userId)?.Report?.ToSpyReportDto(),
         LastRound = match.LastRoundSeenBy(userId),
         Story = match.StoryOf(),
     };
@@ -200,10 +203,55 @@ internal static class MatchMappings
             return null;
         }
 
-        return match.Status == MatchStatus.InProgress && match.SideOf(userId) != side
-            ? null
-            : slot.Kingdom.ToKingdomDto();
+        if (match.Status != MatchStatus.InProgress || match.SideOf(userId) == side)
+        {
+            return slot.Kingdom.ToKingdomDto();
+        }
+
+        return match.SlotOf(userId)?.Report is { } heard ? heard.ToHearsayDto() : null;
     }
+
+    private static KingdomDto ToHearsayDto(this SpyReport report) => new()
+    {
+        Gold = 0,
+        Troops = report.Troops,
+        Villagers = report.Villagers,
+        Morale = report.Morale,
+        TotalPower = 0,
+        Fortification = report.Fortification,
+        Catapults = 0,
+        RuinedFrom = 0,
+        IsHearsay = true,
+    };
+
+    private static SpyRingDto ToSpyRingDto(this SpyRing ring) => new()
+    {
+        Tier = ring.Tier,
+        Villagers = ring.Villagers,
+        Upkeep = ring.Upkeep,
+    };
+
+    private static SpyReportDto ToSpyReportDto(this SpyReport report) => new()
+    {
+        Round = report.Round,
+        Tier = report.Tier,
+        Accuracy = GameConstants.SpyAccuracy(report.Tier),
+        CaravanSent = report.CaravanSent,
+        CaravanVillagers = report.CaravanVillagers,
+        Fortification = report.Fortification,
+        Villagers = report.Villagers,
+        Troops = report.Troops,
+        Morale = report.Morale,
+        Orders = report.Orders is { } orders
+            ? new SpyOrdersDto
+            {
+                Feast = orders.Feast,
+                Defenders = orders.Defenders,
+                Recruited = orders.Recruited,
+                Spied = orders.Spied,
+            }
+            : null,
+    };
 
     private static KingdomDto ToKingdomDto(this KingdomState kingdom) => new()
     {

@@ -15,7 +15,9 @@ public sealed record OrderPlan
         FeastTier? feast = null,
         IEnumerable<PurchaseType>? purchases = null,
         int hired = 0,
-        int armed = 0)
+        int armed = 0,
+        SpyTier? spies = null,
+        bool recallSpies = false)
     {
         this.troops = troops
             .Where(pair => pair.Value > 0)
@@ -26,6 +28,8 @@ public sealed record OrderPlan
         Feast = feast;
         Hired = Math.Max(0, hired);
         Armed = Math.Max(0, armed);
+        Spies = recallSpies ? null : spies;
+        RecallSpies = recallSpies;
 
         Committed = this[ActionType.Attack] + this[ActionType.Defend];
         Sent = this[ActionType.Trade];
@@ -36,6 +40,10 @@ public sealed record OrderPlan
     public IReadOnlyCollection<PurchaseType> Purchases => purchases;
 
     public FeastTier? Feast { get; }
+
+    public SpyTier? Spies { get; }
+
+    public bool RecallSpies { get; }
 
     public int Hired { get; }
 
@@ -86,7 +94,16 @@ public sealed record OrderPlan
         var scaled = Fit(troops, ActionType.Attack, ActionType.Defend, Committed, state.Troops);
         scaled = Fit(scaled, ActionType.Trade, ActionType.Trade, Sent, state.Villagers);
 
-        return new OrderPlan(scaled, feast, kept, hired, armed);
+        var spies = Spies;
+
+        while (spies is { } tier
+            && (GameConstants.SpyVillagers(tier) > state.Villagers
+                || GameConstants.SpyUpkeep(tier) + Cost(feast, kept, hired, armed) > state.Gold))
+        {
+            spies = tier == SpyTier.Lone ? null : tier - 1;
+        }
+
+        return new OrderPlan(scaled, feast, kept, hired, armed, spies, RecallSpies);
     }
 
     public static OrderPlan Of(ActionType direction, int count) =>

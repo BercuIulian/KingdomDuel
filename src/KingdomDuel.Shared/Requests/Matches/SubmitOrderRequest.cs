@@ -16,4 +16,8 @@ public sealed class SubmitOrderRequest
     public int Armed { get; set; }
 
     public List<PurchaseType> Purchases { get; set; } = new();
+
+    public SpyTier? Spies { get; set; }
+
+    public bool RecallSpies { get; set; }
 }

@@ -27,6 +27,8 @@ public sealed class MatchStateDto
     public BattleDto? Battle { get; set; }
     public MarchDto? March { get; set; }
     public BreachDto? Breach { get; set; }
+    public SpyRingDto? YourSpies { get; set; }
+    public SpyReportDto? YourReport { get; set; }
     public RoundRecapDto? LastRound { get; set; }
     public MatchStoryDto? Story { get; set; }
     public CaravanDto? YourCaravan { get; set; }

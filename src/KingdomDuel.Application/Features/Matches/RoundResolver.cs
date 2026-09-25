@@ -69,8 +69,8 @@ internal static class RoundResolver
         var outcome = GameEngine.Resolve(new RoundInput(
             match.Round,
             match.TotalRounds,
-            new SideInput(match.Player1.Kingdom, order1, match.Player1.Caravan),
-            new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan)),
+            new SideInput(match.Player1.Kingdom, order1, match.Player1.Caravan, match.Player1.Spies),
+            new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan, match.Player2.Spies)),
             Random.Shared);
 
         if (outcome.Battle is { } battle)
@@ -302,10 +302,19 @@ internal static class RoundResolver
             GameOverReason = outcome.GameOverReason,
         });
 
+        var order1 = match.Player1.PendingOrder;
+        var order2 = match.Player2.PendingOrder;
+
         match.Player1.Kingdom = outcome.Player1.Kingdom;
         match.Player2.Kingdom = outcome.Player2.Kingdom;
         match.Player1.Caravan = outcome.Player1.Caravan;
         match.Player2.Caravan = outcome.Player2.Caravan;
+        match.Player1.Spies = outcome.Player1.Spies;
+        match.Player2.Spies = outcome.Player2.Spies;
+        match.Player1.Report = Spying.ReportOn(
+            match.Round, outcome.Player1.Spies, outcome.Player2, order2, Random.Shared);
+        match.Player2.Report = Spying.ReportOn(
+            match.Round, outcome.Player2.Spies, outcome.Player1, order1, Random.Shared);
         match.Player1.PendingOrder = null;
         match.Player2.PendingOrder = null;
         match.GameOverReason = outcome.GameOverReason;

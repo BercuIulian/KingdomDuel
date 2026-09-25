@@ -23,4 +23,8 @@ public sealed class PlayerSlot : Entity
     public OrderPlan? PendingOrder { get; set; }
 
     public Caravan? Caravan { get; set; }
+
+    public SpyRing? Spies { get; set; }
+
+    public SpyReport? Report { get; set; }
 }

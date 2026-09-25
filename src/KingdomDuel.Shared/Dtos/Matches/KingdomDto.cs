@@ -10,4 +10,5 @@ public sealed class KingdomDto
     public int Fortification { get; set; }
     public int Catapults { get; set; }
     public int RuinedFrom { get; set; }
+    public bool IsHearsay { get; set; }
 }

@@ -49,12 +49,46 @@ sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
   3, cu **1,4–1,6 aur de fiecare negustor**. Cât sunt pe drum nu apără nimic, și
   nu poți trimite o a doua caravană până nu se întoarce prima.
 
+### Spionii
+
+Un ordin aparte, cu trei trepte. Sătenii trimiși ca spioni **rămân plecați
+rundă după rundă**, până îi chemi acasă, și costă **un aur de cap în fiecare
+rundă**, inclusiv în cea în care pleacă.
+
+| | săteni | pe rundă | acuratețe |
+|---|---|---|---|
+| un spion | 1 | 1 aur | 65% |
+| trei spioni | 3 | 3 aur | 85% |
+| cinci spioni | 5 | 5 aur | 95%, plus ordinele |
+
+**Raportul vine cu o rundă în urmă**: ce afli în runda 4 s-a petrecut în runda 3.
+Se aruncă o singură dată, la închiderea rundei, și nu se mai schimbă cât îl
+privești.
+
+Ce spun **exact**, la orice treaptă: dacă adversarul a trimis caravană, și ce
+nivel are zidul lui — cetatea lui de pe masă se desenează după cum arată cu
+adevărat.
+
+Ce spun **cu aproximație**, după treapta aleasă: câți soldați, câți săteni, ce
+moral, și câți negustori are pe drum. La 65% acuratețe o caravană de 7 poate fi
+raportată ca 5 sau ca 9. Aurul nu se iscodește deloc.
+
+La treapta de cinci afli pe deasupra **ordinele din runda trecută**, exact: ce
+ospăț a ținut, câți soldați a pus la apărare, dacă a plătit recrutare, și dacă
+are și el spioni pe teren.
+
+Dacă rămâi fără aur de întreținere, **toți spionii se întorc acasă** de la
+sine. Sătenii se întorc în sat și când îi chemi, și când rămâi fără aur — nu se
+pierd. Cât sunt plecați se numără la puterea ta, ca negustorii din caravană, dar
+nu petrec la ospăț și nu pot lua arma la spărtură.
+
 ### Aurul
 
 - **Ospăț** — ridică moralul celor rămași acasă: masă mică 5 aur pentru +4,
   ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine e plecat — la
   atac sau cu caravana — nu petrece, deci sporul scade pe măsură. La masă un
-  sătean cântărește **jumătate** de soldat. Moralul nu trece de 100.
+  sătean cântărește **jumătate** de soldat, iar spionii sunt și ei plecați.
+  Moralul nu trece de 100.
 - **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare. O singură
   dată pe rundă.
 - **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți pe loc. Se ia de
@@ -166,6 +200,8 @@ amândurora rundă de rundă, cu cotiturile însemnate pe ea.
 ## Ce vezi și ce nu
 
 Cât ține meciul, **cetatea adversarului e ascunsă** — aurul, soldații, sătenii
-și moralul lui scriu „necunoscut”. Vezi doar ce se petrece între voi: bătăliile, zidurile,
+și moralul lui scriu „necunoscut”, până trimiți spioni. Cifrele auzite de la
+ele iau locul lui „necunoscut”, scrise cu tilde și în alt ton, ca să se vadă că
+sunt zvon, nu socoteală. Aurul rămâne necunoscut oricâți spioni ai. Vezi doar ce se petrece între voi: bătăliile, zidurile,
 retragerile. La sfârșitul fiecărei runde ți se spune socoteala ta: ce s-a
 schimbat la aur, soldați, săteni și moral, și din ce anume.

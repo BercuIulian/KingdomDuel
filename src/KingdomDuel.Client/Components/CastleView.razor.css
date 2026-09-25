@@ -296,3 +296,7 @@
     font-size: 0.78rem;
     color: var(--gold-lit);
 }
+
+.stat dd.heard {
+    color: #9fb4cf;
+}
