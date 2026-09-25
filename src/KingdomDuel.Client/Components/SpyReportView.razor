@@ -1,0 +1,85 @@
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Shared.Dtos.Matches
+
+<div class="report">
+
+    <p class="report-head">
+        Vestea din runda @Report.Round, adusă de @Who.
+        <span>@Sureness</span>
+    </p>
+
+    <dl class="report-rows">
+        <div>
+            <dt><Glyph Name="helm" /> Soldați</dt>
+            <dd>@Report.Troops</dd>
+        </div>
+        <div>
+            <dt><Glyph Name="folk" /> Săteni</dt>
+            <dd>@Report.Villagers</dd>
+        </div>
+        <div>
+            <dt><Glyph Name="flame" /> Moral</dt>
+            <dd>@Report.Morale</dd>
+        </div>
+        <div>
+            <dt><Glyph Name="shield" /> Zid</dt>
+            <dd class="sure">@WallText</dd>
+        </div>
+    </dl>
+
+    <ul class="report-lines">
+        <li class="sure">
+            @(Report.CaravanSent
+                ? $"A trimis caravană, cu vreo {Report.CaravanVillagers} negustori."
+                : "N-a trimis nicio caravană.")
+        </li>
+
+        @if (Report.Orders is { } orders)
+        {
+            <li class="sure">@(orders.Feast is { } tier ? $"A ținut {FeastName(tier)}." : "N-a ținut ospăț.")</li>
+            <li class="sure">
+                @(orders.Defenders > 0 ? $"A pus {orders.Defenders} soldați la apărare." : "N-a pus pe nimeni la apărare.")
+            </li>
+            @if (orders.Recruited)
+            {
+                <li class="sure">A plătit recrutare.</li>
+            }
+            @if (orders.TouchedSpies)
+            {
+                <li class="sure">A dat un ordin de spionaj.</li>
+            }
+        }
+    </ul>
+
+    <p class="report-foot">
+        Rândurile însemnate sunt sigure. Cifrele de sus sunt auzite, nu numărate.
+    </p>
+
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SpyReportDto Report { get; set; } = default!;
+
+    private string Who => Report.Tier switch
+    {
+        SpyTier.Lone => "un singur spion",
+        SpyTier.Pair => "trei spioni",
+        _ => "cinci spioni",
+    };
+
+    private string Sureness => $"{Report.Accuracy * 100:0} la sută acuratețe";
+
+    private string WallText => Report.Fortification switch
+    {
+        < 0 => "dărâmat",
+        0 => "de bază",
+        var level => $"nivel {level}",
+    };
+
+    private static string FeastName(FeastTier tier) => tier switch
+    {
+        FeastTier.Small => "o masă mică",
+        FeastTier.Court => "un ospăț de curte",
+        _ => "un ospăț mare",
+    };
+}

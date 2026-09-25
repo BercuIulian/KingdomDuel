@@ -8,7 +8,9 @@ public sealed class UpdateLobbyValidator : AbstractValidator<UpdateLobbyRequest>
 {
     public UpdateLobbyValidator()
     {
-        RuleFor(x => x.TotalRounds).InclusiveBetween(1, 20);
+        RuleFor(x => x.TotalRounds)
+            .InclusiveBetween(GameConstants.MinTotalRounds, GameConstants.MaxTotalRounds)
+            .WithMessage($"Numărul de runde trebuie să fie între {GameConstants.MinTotalRounds} și {GameConstants.MaxTotalRounds}.");
         RuleFor(x => x.StartingGold).InclusiveBetween(0, 500);
 
         RuleFor(x => x.StartingTroops)

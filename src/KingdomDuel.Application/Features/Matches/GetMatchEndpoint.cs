@@ -27,7 +27,9 @@ internal sealed class GetMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        if (RoundResolver.ExpireIfDue(match))
+        var settled = RoundResolver.SettleIfDue(match);
+
+        if (settled || RoundResolver.ExpireIfDue(match))
         {
             MatchRecorder.RecordCompleted(dbContext, match);
 

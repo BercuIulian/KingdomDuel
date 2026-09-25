@@ -1,0 +1,154 @@
+.recap-scrim {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 700;
+    background: rgba(6, 8, 13, 0.72);
+}
+
+.recap {
+    position: fixed;
+    z-index: 701;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(34rem, calc(100% - 3rem));
+    max-height: calc(100dvh - 3rem);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 1.4rem 1.6rem 1.2rem;
+    text-align: center;
+    border: 1px solid var(--hairline-strong);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(20, 24, 33, 0.98), rgba(12, 15, 21, 0.98));
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+.recap-ico {
+    display: block;
+    font-size: 1.8rem;
+    color: var(--gold-lit);
+}
+
+.recap h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--gold-lit);
+}
+
+/* ---------- Cât s-a schimbat ---------- */
+.deltas {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.6rem;
+    width: 100%;
+    margin: 0.2rem 0 0;
+}
+
+.delta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.55rem 0.5rem 0.6rem;
+    border: 1px solid var(--hairline);
+    border-radius: 10px;
+    background: rgba(12, 15, 21, 0.45);
+}
+
+.delta dt {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+}
+
+.delta dd {
+    margin: 0;
+    font-family: var(--font-data);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.delta dd.up { color: var(--verdant, #7fb069); }
+
+.delta dd.down { color: #e39b9b; }
+
+.delta dd.flat { color: var(--text-dim); }
+
+/* ---------- Ce s-a petrecut ---------- */
+.lines {
+    width: 100%;
+    margin: 0.3rem 0 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    text-align: left;
+}
+
+.lines li {
+    position: relative;
+    padding: 0.32rem 0 0.32rem 0.9rem;
+    font-size: 0.84rem;
+    line-height: 1.45;
+    color: #c2c6cf;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.lines li:last-child {
+    border-bottom: 0;
+}
+
+.lines li::before {
+    content: "";
+    position: absolute;
+    top: 0.78rem;
+    left: 0.1rem;
+    width: 0.3rem;
+    height: 0.3rem;
+    border-radius: 50%;
+    background: var(--gold);
+}
+
+.recap-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.5rem;
+}
+
+.send {
+    padding: 0.7rem 1.4rem;
+    border-radius: 10px;
+    border: 1px solid rgba(198, 161, 91, 0.65);
+    background: linear-gradient(180deg, #d9bd72, #c6a15b);
+    color: #1b1408;
+    font-family: var(--font-display);
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.send:hover {
+    filter: brightness(1.06);
+}

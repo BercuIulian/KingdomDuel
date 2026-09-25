@@ -32,10 +32,9 @@
             </h1>
 
             <p class="lead">
-                Kingdom Duel e un joc de strategie pentru doi jucători. Fiecare
-                conduce un regat gestionând resursele disponibile. În fiecare rundă dați
-                câte un ordin, fără să vedeți ce alege celălalt — și ciocnirea celor
-                două ordine decide ce se întâmplă.
+                Kingdom Duel e un joc de strategie pentru doi jucători. Fiecare conduce un
+                regat gestionând resursele disponibile. Ordinele se dau în același
+                timp, iar ciocnirea lor decide runda.
             </p>
 
             <div class="cta-row">
@@ -58,48 +57,32 @@
                     <figcaption>sigilat</figcaption>
                 </figure>
             </div>
-
-            <p class="duel-note">
-                Ordinele se dezvăluie abia după ce le-ați trimis amândoi.
-            </p>
         </section>
 
         <section class="band">
             <p class="eyebrow">Anatomia unei runde</p>
-            <h2>Cele 3 etape ale unei runde</h2>
+            <h2>Cele 2 etape ale unei runde</h2>
 
             <ol class="steps">
                 <li>
                     <span class="step-head">
                         <span class="step-no">I</span>
-                        <span class="step-ico"><Glyph Name="moon" /></span>
+                        <span class="step-ico"><Glyph Name="seal" /></span>
                     </span>
-                    <h3>Se trage evenimentul</h3>
+                    <h3>Trimiteți ordinele</h3>
                     <p>
-                        În fiecare rundă se va petrece un eveniment aleatoriu. Efectul ține doar o rundă
-                        și e același pentru ambii jucători.
+                        Îți aloci soldații și sătenii pe direcții și îți cheltui aurul în timpul oferit.
                     </p>
                 </li>
                 <li>
                     <span class="step-head">
                         <span class="step-no">II</span>
-                        <span class="step-ico"><Glyph Name="seal" /></span>
-                    </span>
-                    <h3>Trimiteți ordinele</h3>
-                    <p>
-                        Alegeți fiecare una din ordinele valabile în timpul oferit.
-                    </p>
-                </li>
-                <li>
-                    <span class="step-head">
-                        <span class="step-no">III</span>
                         <span class="step-ico"><Glyph Name="scales" /></span>
                     </span>
                     <h3>Se rezolvă runda</h3>
                     <p>
-                        Se aplică costurile și câștigurile fiecărui ordin, apoi
-                        interacțiunea dintre ele. Vezi ce s-a întâmplat și cum au rămas
-                        cele două regate.
+                        Se plătesc costurile, pleacă și se întorc caravanele, spionii aduc rapoartele,
+                        iar dacă oștile se întâlnesc, bătălia se joacă sub ochii voștri, secundă cu secundă.
                     </p>
                 </li>
             </ol>
@@ -107,26 +90,30 @@
 
         <section class="band">
             <p class="eyebrow">Tabla de joc</p>
-            <h2>Vezi mereu starea regatelor</h2>
+            <h2>Îți vezi cetatea, nu și pe a lui</h2>
             <p class="band-lead">
-                Cele două regate stau față în față, cu resursele la vedere. Balanța din
-                mijloc cântărește puterea totală — aur plus trupe plus moral — și ea
-                departajează meciul dacă se termină rundele fără o prăbușire.
+                Cele două regate stau față în față, dar cât ține meciul îți vezi doar
+                cetatea ta — la adversar scrie „necunoscut”, până trimiți spioni. Puterea
+                totală — aur plus soldați plus săteni plus moral — departajează meciul dacă se
+                termină rundele fără o cetate dărâmată, și abia atunci se dezvăluie amândouă.
             </p>
 
             <div class="board-art">
                 <CastleView House="amber" Name="Regatul tău" Kingdom="preview1" />
 
-                <PowerScale Power1="preview1.TotalPower" Power2="preview2.TotalPower"
-                            Name1="Regatul tău" Name2="Adversarul" />
+                <p class="board-note">
+                    Cifrele lui le afli de la spioni, cu aproximație, ori abia la departajare.
+                </p>
 
-                <CastleView House="steel" Name="Adversarul" Kingdom="preview2" Mirrored="true" />
+                <CastleView House="steel" Name="Adversarul" Mirrored="true" />
             </div>
+
+            <h3 class="ending-title">Cum se câștigă</h3>
 
             <dl class="ending">
                 <div>
                     <dt>un regat se prăbușește</dt>
-                    <dd>Trupele sau moralul ajung la 0. Meciul se oprește instant.</dd>
+                    <dd>Zidul cade și apărătorul rămâne fără niciun soldat. Meciul se oprește pe loc.</dd>
                 </div>
                 <div>
                     <dt>se termină rundele</dt>
@@ -135,7 +122,8 @@
                 <div>
                     <dt>cineva pleacă sau tace</dt>
                     <dd>
-                        Cine părăsește meciul sau nu mai trimite ordine îl pierde.
+                        Cine părăsește masa pierde pe loc, iar cine tace trei runde la rând
+                        pierde prin abandon.
                     </dd>
                 </div>
             </dl>
@@ -167,13 +155,6 @@
         TotalPower = 173,
     };
 
-    private readonly KingdomDto preview2 = new()
-    {
-        Gold = 32,
-        Troops = 55,
-        Morale = 46,
-        TotalPower = 133,
-    };
 
     protected override async Task OnInitializedAsync()
     {

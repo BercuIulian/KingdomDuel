@@ -9,7 +9,6 @@ public sealed class MatchStateDto
     public bool IsHost { get; set; }
     public MatchStatus Status { get; set; }
     public int Round { get; set; }
-    public GameEventType CurrentEvent { get; set; }
     public GameOverReason GameOverReason { get; set; }
     public int TotalRounds { get; set; }
     public int StartingGold { get; set; }
@@ -25,7 +24,12 @@ public sealed class MatchStateDto
     public int Player2MissedRounds { get; set; }
     public KingdomDto? Player1Kingdom { get; set; }
     public KingdomDto? Player2Kingdom { get; set; }
-    public bool WaitingOnPlayer1Action { get; set; }
-    public bool WaitingOnPlayer2Action { get; set; }
-    public List<RoundResultDto> History { get; set; } = new();
+    public BattleDto? Battle { get; set; }
+    public MarchDto? March { get; set; }
+    public BreachDto? Breach { get; set; }
+    public SpyRingDto? YourSpies { get; set; }
+    public SpyReportDto? YourReport { get; set; }
+    public RoundRecapDto? LastRound { get; set; }
+    public MatchStoryDto? Story { get; set; }
+    public CaravanDto? YourCaravan { get; set; }
 }

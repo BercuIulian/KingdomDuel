@@ -1,9 +1,12 @@
 # Kingdom Duel
 
 Joc de duel pentru doi jucători: două regate, un număr fix de runde, iar în
-fiecare rundă fiecare jucător alege în secret una din cinci acțiuni — atac,
-fortificare, comerț, diplomație sau niciun ordin. Runda se rezolvă când amândoi
-au trimis, sau când expiră timpul rundei. Regulile complete sunt în [RULES.md](src/docs/RULES.md).
+fiecare rundă fiecare jucător își împarte în secret oastea și aurul pe mai multe
+direcții. Runda se rezolvă când amândoi au trimis, sau când expiră timpul rundei.
+
+> **Logica de joc se refactorizează.** Regulile de până acum — un ordin pe rundă,
+> din cinci, cu efecte fixe — au fost șterse din cod, iar cele noi se așază pe
+> etape. [RULES.md](src/docs/RULES.md) spune unde s-a ajuns.
 
 Proiectul e un **ASP.NET Core** care servește și API-ul, și un client
 **Blazor WebAssembly**, cu persistență în **PostgreSQL**. Contul e obligatoriu:
@@ -19,7 +22,6 @@ KingdomDuel/
     │
     ├── KingdomDuel.Domain/               modelele + logica de joc, fără dependențe externe
     │   ├── GameConstants.cs              fiecare număr din joc, într-un singur loc
-    │   ├── GameEngine.cs                 rezolvă o rundă + verifică sfârșitul meciului
     │   ├── GameOutcome.cs                motivul finalului → cine a câștigat (server + client)
     │   ├── Contracts/Entity.cs           baza cu Guid Id
     │   ├── Entities/Matches/             Match, PlayerSlot, Kingdom, RoundResult, MatchRecord
@@ -160,7 +162,6 @@ cer `Authorization: Bearer <token>`.
 | `POST` | `/matches/{code}/join` | Alăturare cu codul. Idempotent: dacă ești deja pe un slot, întoarce starea. |
 | `PUT` | `/matches/{code}/lobby` | Setările meciului (runde, aur/trupe/moral de start, timp pe rundă) + starea *ready*. |
 | `POST` | `/matches/{code}/start` | Gazda pornește meciul. |
-| `POST` | `/matches/{code}/actions` | Trimite acțiunea rundei. Runda se rezolvă când ambii au trimis sau când expiră timpul. |
 | `POST` | `/matches/{code}/leave` | Părăsește meciul. Într-un meci în desfășurare, îl încheie prin abandon. |
 
 Identitatea nu circulă niciodată prin body sau prin URL: fiecare endpoint o
@@ -254,7 +255,7 @@ unde stau lângă schimbarea pe care o explică.
 
 ## Ce nu e făcut, intenționat
 
-1. **Teste.** Nu există niciun proiect de teste; `GameEngine` și serviciile de
+1. **Teste.** Nu există niciun proiect de teste; motorul de joc și serviciile de
    autentificare sunt primele candidate.
 2. **SignalR.** Clientul face polling la 2 s; push-ul în timp real vine mai
    târziu. Polling-ul e și motorul expirării rundelor — nu există planificator

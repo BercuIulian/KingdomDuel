@@ -8,26 +8,26 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
-    : Endpoint<SubmitActionRequest, MatchStateDto>
+internal sealed class MarchEndpoint(AppDbContext dbContext) : Endpoint<MarchRequest, MatchStateDto>
 {
     private const int MaxAttempts = 2;
 
     public override void Configure()
     {
-        Post("/matches/{code}/actions");
-        Description(b => b.WithName("SubmitAction"));
+        Post("/matches/{code}/march");
+        Description(b => b.WithName("March"));
     }
 
-    public override async Task HandleAsync(SubmitActionRequest req, CancellationToken ct)
+    public override async Task HandleAsync(MarchRequest req, CancellationToken ct)
     {
         var userId = User.GetUserId();
 
         for (var attempt = 1; attempt <= MaxAttempts; attempt++)
         {
             var match = await dbContext.Matches.FindByCodeAsync(req.Code, ct);
+            var side = match?.SideOf(userId) ?? 0;
 
-            if (match is null || match.SideOf(userId) == 0)
+            if (match is null || side == 0)
             {
                 await Send.NotFoundAsync(ct);
                 return;
@@ -40,20 +40,28 @@ internal sealed class SubmitActionEndpoint(AppDbContext dbContext)
                 return;
             }
 
-            if (match.Player1 is null || match.Player2 is null)
+            RoundResolver.SettleIfDue(match);
+
+            if (match.MarchChoice is not { } choice)
             {
-                AddError("Meciul așteaptă încă un al doilea jucător.");
+                AddError("Nu e nimic de hotărât acum.");
                 await Send.ErrorsAsync(cancellation: ct);
                 return;
             }
 
-            if (!RoundResolver.ExpireIfDue(match))
+            if (choice.Side != side)
             {
-                match.PendingActions[userId.ToString()] = req.Action;
-                RoundResolver.ResolveIfReady(match);
+                AddError("Alegerea e a celui rămas în picioare pe câmp.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
             }
 
-            MatchRecorder.RecordCompleted(dbContext, match);
+            if (!RoundResolver.March(match, side, req.Advance))
+            {
+                AddError("Vremea alegerii a trecut, oastea s-a întors acasă.");
+                await Send.ErrorsAsync(cancellation: ct);
+                return;
+            }
 
             try
             {

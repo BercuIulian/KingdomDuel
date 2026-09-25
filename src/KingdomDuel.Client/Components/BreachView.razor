@@ -1,0 +1,127 @@
+@using KingdomDuel.Domain
+@using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Shared.Requests.Matches
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@implements IDisposable
+@inject ApiClient Api
+
+<div class="battle-scrim"></div>
+
+<section class="breach" role="dialog" aria-modal="true" aria-labelledby="breach-title">
+
+    <header class="battle-head">
+        <span class="battle-phase" id="breach-title"><Glyph Name="hourglass" /> Zidul a căzut</span>
+        <span class="battle-clock">@Left.ToString("0.0")<span>s</span></span>
+    </header>
+
+    <div class="battle-bar">
+        <span class="battle-bar-fill" style="width: @(Progress.ToString("0.##", Culture))%"></span>
+    </div>
+
+    @if (Breach.IsYours)
+    {
+        <p class="battle-note">
+            Oastea e la spărtură. Cât mai ține poarta, satul poate lua arma — @GameConstants.RallyCost aur
+            de cap, de două ori cât în tihnă. Cine ia arma rămâne soldat și după asediu.
+        </p>
+
+        <div class="picker-value">
+            <b>@count</b>
+            <span class="eyebrow">din @Breach.Most cu putință</span>
+        </div>
+
+        <input type="range" class="picker-range" min="0" max="@Breach.Most" step="1"
+               value="@count" @oninput="OnPick" />
+
+        <p class="picker-yield">@(count * GameConstants.RallyCost) aur</p>
+
+        <div class="march-actions">
+            <button type="button" class="result-ghost" disabled="@sending" @onclick="() => Send(0)">
+                Nu chem pe nimeni
+            </button>
+            <button type="button" class="send" disabled="@(sending || count == 0)" @onclick="() => Send(count)">
+                @(sending ? "Se sună clopotul…" : "Le dau arme")
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="battle-note">
+            Ai spart zidul. Înăuntru se aude clopotul — cetatea își cheamă satul la arme și
+            nu vezi câți răspund. Oastea ta intră când se face liniște.
+        </p>
+    }
+
+    @if (error is not null)
+    {
+        <p class="send-error">@error</p>
+    }
+
+</section>
+
+@code {
+    [Parameter, EditorRequired] public BreachDto Breach { get; set; } = default!;
+    [Parameter, EditorRequired] public string Code { get; set; } = default!;
+    [Parameter] public EventCallback<MatchStateDto> OnChanged { get; set; }
+
+    private static readonly System.Globalization.CultureInfo Culture =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private System.Threading.Timer? ticker;
+    private DateTimeOffset stamp = DateTimeOffset.UtcNow;
+    private double stampedLeft;
+    private double total;
+
+    private int count;
+    private bool sending;
+    private string? error;
+
+    private double Left => Math.Max(0, stampedLeft - (DateTimeOffset.UtcNow - stamp).TotalSeconds);
+
+    private double Progress => total <= 0 ? 0 : Math.Clamp(Left / total * 100, 0, 100);
+
+    protected override void OnParametersSet()
+    {
+        stampedLeft = Breach.SecondsRemaining;
+        stamp = DateTimeOffset.UtcNow;
+        total = Math.Max(total, Breach.SecondsRemaining);
+        count = Math.Clamp(count, 0, Breach.Most);
+    }
+
+    protected override void OnInitialized() =>
+        ticker = new System.Threading.Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(100));
+
+    private void OnPick(ChangeEventArgs args) =>
+        count = int.TryParse(args.Value?.ToString(), out var picked)
+            ? Math.Clamp(picked, 0, Breach.Most)
+            : 0;
+
+    private async Task Send(int villagers)
+    {
+        sending = true;
+        error = null;
+
+        try
+        {
+            var state = await Api.RallyAsync(
+                new RallyRequest { Code = Code, Villagers = villagers }, Code);
+
+            await OnChanged.InvokeAsync(state);
+        }
+        catch (ApiException exception)
+        {
+            error = ApiErrorReader.Describe(exception, "Clopotul n-a mai apucat să sune.");
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    public void Dispose() => ticker?.Dispose();
+}

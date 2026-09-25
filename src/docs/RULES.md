@@ -1,164 +1,237 @@
 # Regulile jocului — Duelul Regatelor
 
-Acest document descrie **absolut toate** regulile jocului, așa cum sunt
-implementate în `KingdomDuel.Domain`. Fiecare număr de aici există și în
-`GameConstants.cs` — dacă modifici una, modific-o și pe cealaltă.
+Doi jucători, două cetăți, un număr dinainte știut de runde. În fiecare rundă
+amândoi dau ordine în același timp, fără să vadă ce face celălalt; când au dat
+amândoi, runda se rezolvă.
 
-## 1. Resurse
+## Ce are un regat
 
-Fiecare jucător controlează un regat cu trei resurse:
+| | pornire | ce înseamnă |
+|---|---|---|
+| aur | 50 | se cheltuiește pe ospețe și pe cumpărături |
+| soldați | 10 | apără zidul, pleacă la atac; nu fac altceva |
+| săteni | 15 | pleacă la negoț; acasă petrec pe jumătate |
+| moral | 50 | înmulțește puterea de luptă; scade singur cu 3 pe rundă |
 
-- **Aur** — finanțează Apărarea și Diplomația, se produce prin Comerț.
-- **Trupe** — se cheltuiesc la Atac, se pierd în luptă.
-- **Moral** — crește prin Apărare/Comerț/Diplomație, scade în ciocniri și
-  rebeliuni, și e condiție de colaps dacă ajunge la 0.
+Aurul, soldații și moralul se pot alege altfel în lobby, împreună cu numărul de
+runde (8 până la 30, implicit 10) și cu timpul pe rundă (15–180 de secunde).
+Sătenii pornesc mereu de la 15.
 
-Toate trei pornesc de la **50** pentru fiecare jucător și **se acumulează**
-de-a lungul meciului — nu se resetează de la o rundă la alta.
+**Puterea** unui regat e aur + soldați + săteni + moral. Un punct e un punct,
+indiferent de unde vine — un sătean cântărește cât un soldat la socoteala
+finală, chiar dacă nu ține sabia.
 
-**Puterea totală** a unui regat = Aur + Trupe + Moral. E folosită la
-regula de stagnare și la decizia finală a meciului.
+## Două neamuri
 
-## 2. Runde
+Cetatea are două feluri de oameni, și fiecare face altceva:
 
-Meciul durează un număr de runde stabilit de gazdă în lobby (implicit
-`GameConstants.DefaultTotalRounds`). La fiecare rundă, ambii jucători aleg
-simultan una din cele 5 acțiuni de mai jos; nimeni nu vede alegerea
-celuilalt înainte ca ambele să fie trimise.
+- **Soldații** luptă. Numai ei urcă pe ziduri și numai ei pleacă la atac.
+- **Sătenii** muncesc. Numai ei pleacă cu caravana la negoț.
 
-Fiecare rundă are o **limită de timp**, stabilită de gazdă în lobby (implicit
-`GameConstants.DefaultRoundSeconds`, între `MinRoundSeconds` și
-`MaxRoundSeconds`). Nu există variantă fără limită. La expirare, cine n-a
-trimis nimic primește automat *Fără ordin*, iar ordinul celui care a apucat să
-trimită rămâne valabil. Peste termen se acordă o mică perioadă de grație
-(`RoundGraceSeconds`), pentru latența rețelei — invizibilă în interfață.
+Trecerea se face într-o singură direcție: un sătean poate lua arma, un soldat
+nu se mai întoarce la plug.
 
-## 3. Acțiunile
+## Ordinul unei runde
 
-### Atac
-- Cost: **10 trupe** (**20 trupe** dacă evenimentul rundei e Zvonuri de pace).
-- Rezultatul depinde de ce a ales adversarul — vezi secțiunea 4.
+Un ordin are două axe care nu se amestecă: **pe unde îți trimiți oamenii** și
+**pe ce dai aurul**.
 
-### Apărare
-- Cost de aur crescător pe fiecare rundă consecutivă de Apărare:
-  runda 1 din streak costă **5 aur**, a doua **8**, a treia **11** ș.a.m.d.
-  (+3 aur pentru fiecare rundă suplimentară la rând). Streak-ul se resetează
-  la orice altă acțiune.
-- Câștig de moral descrescător pe același streak: **+5** prima dată, **+3**
-  a doua oară, **+1** a treia oară, apoi rămâne la minimum **+1**.
-- **Regula de stagnare (anti-turtling):** dacă, în momentul în care alegi
-  Apărare, puterea ta totală e deja **egală sau mai mare** decât a
-  adversarului, mai pierzi **4 moral** suplimentar — poporul cere progres,
-  nu doar ziduri. Acest penalty se aplică indiferent de streak, de fiecare
-  dată când te aperi fiind deja în avantaj.
+### Oamenii
 
-### Comerț
-- Câștig de aur: **+15** normal, **+7** dacă evenimentul e Secetă, **+30**
-  dacă evenimentul e Recoltă bogată.
-- Moral: **+2**, mereu.
+Îi împarți cum vrei; cine nu primește nimic rămâne acasă, în cetate. Soldații și
+sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
 
-### Diplomație
-- Cost: **5 aur**.
-- Câștig de moral: **+10** normal, **+20** dacă evenimentul e Târg diplomatic.
+- **Atac** *(soldați)* — pleacă spre cetatea adversarului.
+- **Apărare** *(soldați)* — urcă pe ziduri. Pe zid încap cel mult 6 (8 cu o
+  fortificație, 10 cu două); restul așteaptă înăuntru și luptă doar dacă zidul
+  cade.
+- **Comerț** *(săteni)* — pleacă la negoț. Trimiși în runda 1, se întorc în runda
+  3, cu **1,4–1,6 aur de fiecare negustor**. Cât sunt pe drum nu apără nimic, și
+  nu poți trimite o a doua caravană până nu se întoarce prima.
 
-### Fără ordin
-- Cost: **nimic**. Câștig: **nimic**.
-- Rupe streak-ul de Apărare, ca orice altă acțiune care nu e Apărare. Altfel
-  alternarea Apărare–Fără ordin ar ocoli costul crescător de aur, iar o acțiune
-  care nu aduce nimic ar deveni pe ascuns un avantaj.
-- Nu oferă nicio protecție: în fața unui atac se comportă ca Comerț — vezi
-  secțiunea 4.
+### Spionii
 
-### Atac vs Atac (ciocnire directă)
-Pierderea de bază e **15 trupe** pentru fiecare parte, dar diferența de
-moral dintre cei doi jucători redistribuie pierderile: cine are moral mai
-mare pierde mai puține trupe, celălalt mai multe. Formula: fiecare 10
-puncte de diferență de moral mută o trupă din pierdere, plafonat la
-**±5 trupe** (deci pierderile variază între 10 și 20 de trupe). Ambele
-tabere pierd, în plus, **5 moral**.
+Un ordin aparte, cu trei trepte. Sătenii trimiși ca spioni **rămân plecați
+rundă după rundă**, până îi chemi acasă, și costă **un aur de cap în fiecare
+rundă**, inclusiv în cea în care pleacă.
 
-### Atac vs Apărare — aurul cumpără putere militară
-Aurul acumulat se traduce în **nivel de echipament/fortificație**: fiecare
-20 de aur = 1 nivel, plafonat la **nivel 5** (deci maximum 100+ aur contează).
+| | săteni | pe rundă | acuratețe |
+|---|---|---|---|
+| un spion | 1 | 1 aur | 65% |
+| trei spioni | 3 | 3 aur | 85% |
+| cinci spioni | 5 | 5 aur | 95%, plus ordinele |
 
-Șansa ca atacatorul să **străpungă** apărarea:
+**Raportul vine cu o rundă în urmă**: ce afli în runda 4 s-a petrecut în runda 3.
+Se aruncă o singură dată, la închiderea rundei, și nu se mai schimbă cât îl
+privești.
 
-```
-șansă = 10% + 8% × (nivelul atacatorului − nivelul apărătorului)
-șansă finală limitată între 5% și 75%
-```
+Ce spun **exact**, la orice treaptă: dacă adversarul a trimis caravană, și ce
+nivel are zidul lui — cetatea lui de pe masă se desenează după cum arată cu
+adevărat.
 
-- **Dacă străpunge:** atacul reușește ca un atac obișnuit reușit, dar fură
-  puțin mai puțin decât un atac fără apărare în față — **12 aur** și
-  **8 trupe** — plus **+5 moral** pentru atacator.
-- **Dacă eșuează** (apărarea ține): atacatorul mai pierde trupe suplimentare
-  peste costul de bază, dar echipamentul lui reduce paguba — pierdere
-  suplimentară = `max(3, 10 − nivelul de echipament al atacatorului)`.
-  Apărătorul primește un bonus de moral egal cu `5 + nivelul lui de
-  fortificație`.
+Ce spun **cu aproximație**, după treapta aleasă: câți soldați, câți săteni, ce
+moral, și câți negustori are pe drum. La 65% acuratețe o caravană de 7 poate fi
+raportată ca 5 sau ca 9. Aurul nu se iscodește deloc.
 
-Practic: un regat sărac care doar se apără nu mai e un zid sigur dacă
-adversarul lui are mult mai mult aur decât el — poate fi străpuns.
+La treapta de cinci afli pe deasupra **ordinele din runda trecută**, exact: ce
+ospăț a ținut, câți soldați a pus la apărare, dacă a plătit recrutare, și dacă a
+dat vreun ordin de spionaj.
 
-### Atac vs Comerț / Atac vs Diplomație / Atac vs Fără ordin
-Atacul reușește direct, fără nicio șansă implicată:
-- Dacă victima era la Comerț sau Fără ordin: atacatorul fură **15 aur** și
-  **10 trupe**.
-- Dacă victima era la Diplomație: atacatorul fură **20 aur** și **15 trupe**
-  (penalizare mai mare — diplomația nu oferă nicio protecție militară).
-- Atacatorul primește **+5 moral** în ambele cazuri.
-- Furtul nu poate scădea o resursă sub 0 (se limitează la ce are victima).
+Ordinele sunt ce a **făcut** în runda aceea, nu ce are pe teren. Dacă adversarul
+și-a trimis spionii în runda 1 și tu îl privești abia din runda 5, n-ai de unde
+afla că ești privit: el n-a mai umblat la ei. Îl prinzi doar în runda în care
+schimbă treapta sau își cheamă spionii acasă.
 
-### Diplomație vs Diplomație
-Alianță: ambii jucători primesc **+10 aur**.
+### Caută spioni
 
-### Orice altă combinație fără atac
-(Apărare vs Comerț, Apărare vs Diplomație, Comerț vs Comerț, Comerț vs
-Diplomație, orice vs Fără ordin etc.) — nu există interacțiune directă;
-fiecare parte primește doar efectele proprii ale acțiunii alese (secțiunea 3).
-Dacă amândoi aleg Fără ordin, runda trece fără nicio schimbare.
+Celălalt capăt al aceluiași ordin: trimiți soldați să scotocească cetatea. Cine
+e găsit e **ucis** — sătenii aceia nu se mai întorc niciodată în sat.
 
-## 5. Evenimente aleatorii
+| | soldați | cost | stinge |
+|---|---|---|---|
+| iscoadă | 1 | 1 aur | 1 nivel |
+| patrulă | 2 | 2 aur | 2 nivele |
+| scotocire | 3 | 5 aur | 3 nivele |
 
-La începutul fiecărei runde se trage aleatoriu unul din următoarele
-evenimente (toate cu șanse egale, inclusiv „nimic special”):
+Rețelele de spioni au și ele nivele: un spion e nivelul 1, trei spioni nivelul 2,
+cinci spioni nivelul 3. Căutarea **scade nivel din nivel**, iar ce rămâne rămâne
+în viață: o rețea de cinci lovită de o patrulă coboară la nivelul 1 — patru morți,
+unul rămas, iar cel rămas costă și vede de acum ca o rețea de unul singur.
 
-| Eveniment | Efect |
-|---|---|
-| Zi obișnuită | Niciun efect special. |
-| Secetă | Comerțul dă doar **7 aur** în loc de 15. |
-| Recoltă bogată | Comerțul dă **30 aur** în loc de 15. |
-| Rebeliune internă | Orice tabără cu moral sub **30** pierde **10 trupe** automat, înainte de acțiuni. |
-| Zvonuri de pace | Atacul costă **20 trupe** în loc de 10. |
-| Târg diplomatic | Diplomația dă **20 moral** în loc de 10. |
+- Căutarea prinde și rețeaua trimisă **în aceeași rundă**: scotocești cetatea la
+  urmă, deci găsești pe cine e acolo atunci.
+- **Afli câți ai prins** — și afli și când n-ai prins pe nimeni. Așa se poate
+  ști dacă ești privit, dar plătind aur și soldați pentru răspuns.
+- Cel păgubit află că i-au murit spionii, altfel n-ar înțelege de ce raportul
+  lui s-a subțiat.
+- **Soldații plecați în căutare nu apără zidul** în runda aceea și nu intră în
+  garnizoană. Se întorc la sfârșitul rundei, nu se pierd.
 
-## 6. Sfârșitul meciului
+Dacă rămâi fără aur de întreținere, **toți spionii se întorc acasă** de la
+sine. Sătenii se întorc în sat și când îi chemi, și când rămâi fără aur — nu se
+pierd. Cât sunt plecați se numără la puterea ta, ca negustorii din caravană, dar
+nu petrec la ospăț și nu pot lua arma la spărtură.
 
-Meciul se termină imediat, indiferent de rundă, dacă:
-- **Trupele** sau **Moralul** unui regat ajung la **0** → acel regat se
-  prăbușește și pierde. Dacă ambele se prăbușesc în aceeași rundă → remiză.
-- Un jucător **părăsește meciul** → adversarul câștigă prin abandon
-  (`GameOverReason.Player1Left` / `Player2Left`).
-- Un jucător **ratează 3 runde** → adversarul câștigă prin inactivitate
-  (`GameOverReason.Player1Disconnected` / `Player2Disconnected`). Dacă amândoi
-  ating pragul, meciul se încheie fără învingător (`BothDisconnected`).
-  Ratările sunt **cumulate pe tot meciul**, nu consecutive, și numără doar
-  rundele în care jucătorul **n-a trimis nimic**. Alegerea deliberată a
-  acțiunii *Fără ordin* nu intră în contor.
+### Aurul
 
-Dacă runda în care s-a atins pragul se încheie oricum pe teren — un regat
-prăbușit, de pildă — verdictul de acolo rămâne; deconectarea se aplică doar
-când runda nu produce singură un final.
+- **Ospăț** — ridică moralul celor rămași acasă: masă mică 5 aur pentru +4,
+  ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine e plecat — la
+  atac sau cu caravana — nu petrece, deci sporul scade pe măsură. La masă un
+  sătean cântărește **jumătate** de soldat, iar spionii sunt și ei plecați.
+  Moralul nu trece de 100.
+- **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare. O singură
+  dată pe rundă.
+- **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți pe loc. Se ia de
+  câte ori îți ajunge aurul.
+- **Înarmare** — 1 aur de cap. Sătenii tăi iau arma și intră în oaste din runda
+  următoare; satul rămâne cu atâția mai puțini. Așa crește oastea repede, dar
+  omul cu omul e mai scump decât la recrutare. Se înarmează doar sătenii de
+  acasă — cei cumpărați în runda asta abia mâine pot lua sabia. Sub asediu se
+  poate și pe loc, dar de două ori mai scump; vezi „Clopotul de la spărtură".
+- **Fortificație** — 12 aur. Zidul ține cu 5 secunde mai mult și încap încă 2
+  arcași pe el. Cel mult două.
+- **Catapultă** — 15 aur. Spargi zidul adversarului cu 5 secunde mai repede.
+  Cel mult două. Merg cu oastea la atac, și nu se pot retrage în grabă: dacă suni
+  retragerea sau dacă expediția e nimicită, le pierzi pe toate. Rămân ale tale
+  dacă oastea se întoarce acasă întreagă — inclusiv după un câmp câștigat.
+- **Ridicarea zidului** — 12 aur, când zidul e dărâmat. În runda de după
+  dărâmare, treptele pierdute se răscumpără ieftin: 16 aur cu totul pentru
+  nivelul 1, 19 pentru al doilea. Oferta ține o singură rundă.
 
-Dacă niciun regat nu s-a prăbușit, meciul se termină automat după ultima
-rundă stabilită în lobby: câștigă regatul cu **puterea totală**
-(Aur+Trupe+Moral) mai mare. Egalitate exactă → remiză.
+Se pot lua mai multe deodată, atâta timp cât ajunge aurul. Fiecare se plătește
+o singură dată, la prețul scris.
 
-## 7. Ce nu e încă implementat (intenționat, pentru pașii următori)
+## Bătălia
 
-- Sincronizare în timp real (SignalR) — momentan clientul trebuie să
-  interogheze (poll) `GET /api/matches/{code}` ca să vadă starea curentă.
-- Persistență — stările meciurilor există doar în memoria procesului.
-- Autentificare — un jucător e identificat doar prin `playerId`-ul primit
-  la creare/alăturare, fără cont sau parolă.
-- Interfață grafică.
+Bătălia nu e o aruncare de zar: e o luptă care curge în timp și se vede pe ecran.
+Puterea unei oști e **rădăcina pătrată din numărul de soldați**, înmulțită cu
+moralul — la 100 de moral lovești de o dată și jumătate mai tare decât la 50, la
+0 de două ori mai slab. Rădăcina face ca o oaste dublă să nu fie dublu de tare,
+dar tot decisivă: cu 10% mai mulți soldați câștigi cam 62% din ciocniri, cu 50%
+mai mulți, peste 90%.
+
+### În câmp
+
+Dacă amândoi trimit soldați la atac, oștile se ciocnesc pe drum și niciuna nu
+mai ajunge la cetate în runda aceea. Amândoi văd oștile întregi.
+
+**Retragerea** se poate suna oricând în afară de fereastra de la spărtură:
+oastea rupe lupta în 3 secunde și pierde
+10% din câți mai sunt în picioare. Semnalul nu se ia înapoi, și îl poate da doar
+cine a plecat de acasă — cine e atacat la propriile ziduri n-are unde fugi.
+
+**După câmp**, cel rămas în picioare are 10 secunde ca să hotărască: merge mai
+departe la cetatea adversarului, sau își întoarce oastea acasă. Dacă nu apasă
+nimic, oastea se întoarce. Celălalt vede numărătoarea și știe că se hotărăște
+soarta lui.
+
+### La ziduri
+
+Dacă doar unul atacă, el ajunge la cetate. Zidul ține **15 secunde** (mai mult
+cu fortificații, mai puțin dacă atacatorul are catapulte, dar niciodată sub 3).
+Cât ține, arcașii de pe zid trag: un apărător de pe zid face cât trei atacatori.
+
+Atacatorul vede doar **câți arcași sunt pe zid**, nu și câți așteaptă înăuntru.
+
+Când zidul cade, cei rămași pe el se retrag înăuntru — dar numai 70% din ei
+ajung — și se alătură garnizoanei. Abia atunci atacatorul vede cu cine are de-a
+face. Dacă apărătorul rămâne fără niciun soldat, **cetatea cade și meciul se
+încheie pe loc**.
+
+### Clopotul de la spărtură
+
+Asaltul nu curge dintr-o suflare. La spărtură se oprește, iar apărătorul are
+**10 secunde** ca să-și cheme satul la arme: **2 aur de fiecare sătean**, dublu
+față de înarmarea dată din vreme. Cei chemați intră pe loc în garnizoană, nu pe
+zid — la spărtură zidul oricum nu mai e.
+
+- Dacă se hotărăște mai devreme, fereastra se închide pe loc și asaltul pornește.
+- Dacă nu apucă să hotărască, nimeni nu ia arma.
+- Fereastra se deschide și când asaltul intră într-o cetate **fără ziduri**.
+- **Atacatorul nu se poate retrage** cât ține fereastra, și nu vede câți răspund.
+- **Cine ia arma rămâne soldat** și după asediu, chiar dacă atacul e respins.
+  Aurul e cheltuit, sătenii nu se întorc la plug.
+
+Prețul dublu are un rost: la preț egal n-ar mai avea nimeni motiv să se
+pregătească din vreme, fiindcă a aștepta ar fi la fel de scump și, pe deasupra,
+te-ai lămuri întâi dacă ești chiar atacat. Și mai e o piedică pe care n-o vezi
+în preț: **negustorii plecați cu caravana nu se pot chema** — cine își ține
+sătenii pe drum după aur nu-i are acasă la spărtură.
+
+### Zidul rămâne spart
+
+Un zid străpuns nu se reface singur. Cade oricare i-ar fi fost nivelul, și cade
+deopotrivă dacă i s-a scurs timpul sau dacă atacatorul i-a omorât toți arcașii
+înainte de vreme — amândouă înseamnă că a intrat. Nu cade doar dacă atacatorul a
+murit ori s-a retras înainte de străpungere.
+
+Cât zidul e jos, nimeni nu mai urcă la apărare, nu ai ce fortifica, iar asaltul
+următor începe direct în cetate. Se ridică la loc cu 12 aur, oricând; treptele
+pierdute se răscumpără ieftin, dar numai în runda de după dărâmare.
+
+## Moralul
+
+- scade cu 3 la fiecare rundă, de la sine;
+- ospățul îl ridică, dar niciodată peste 100;
+- o luptă câștigată aduce +3, una pierdută −5;
+- la 0 se oprește, nu coboară mai jos.
+
+## Cum se încheie meciul
+
+1. **Cetatea unuia cade** — meciul se oprește în clipa aceea.
+2. **Se termină rundele** — câștigă puterea totală mai mare; putere egală
+   înseamnă egalitate.
+3. **Cineva pleacă sau tace** — cine părăsește masa pierde pe loc; cine nu mai
+   trimite ordine trei runde la rând pierde prin abandon.
+
+La final se dezvăluie ambele cetăți și se vede povestea meciului: puterea
+amândurora rundă de rundă, cu cotiturile însemnate pe ea.
+
+## Ce vezi și ce nu
+
+Cât ține meciul, **cetatea adversarului e ascunsă** — aurul, soldații, sătenii
+și moralul lui scriu „necunoscut”, până trimiți spioni. Cifrele auzite de la
+ele iau locul lui „necunoscut”, scrise cu tilde și în alt ton, ca să se vadă că
+sunt zvon, nu socoteală. Aurul rămâne necunoscut oricâți spioni ai. Vezi doar ce se petrece între voi: bătăliile, zidurile,
+retragerile. La sfârșitul fiecărei runde ți se spune socoteala ta: ce s-a
+schimbat la aur, soldați, săteni și moral, și din ce anume.

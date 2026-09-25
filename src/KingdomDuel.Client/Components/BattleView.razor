@@ -1,0 +1,210 @@
+@using KingdomDuel.Domain
+@using KingdomDuel.Domain.Rounds
+@using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@implements IDisposable
+@inject ApiClient Api
+
+<div class="battle-scrim"></div>
+
+<section class="battle" role="dialog" aria-modal="true" aria-labelledby="battle-title">
+
+    <header class="battle-head">
+        <span class="battle-phase" id="battle-title"><Glyph Name="@PhaseIcon" /> @PhaseName</span>
+        <span class="battle-clock">@Clock.ToString("0.0")<span>s</span></span>
+    </header>
+
+    <div class="battle-bar">
+        <span class="battle-bar-fill" style="width: @(Progress.ToString("0.##", Culture))%"></span>
+        @if (Battle.BreachAt is { } breach && Battle.Duration > 0)
+        {
+            <span class="battle-bar-mark" style="left: @((breach / Battle.Duration * 100).ToString("0.##", Culture))%"></span>
+        }
+    </div>
+
+    <p class="battle-note">@Note</p>
+
+    <div class="hosts">
+        <div class="host @(YourSide == Battle.AttackerSide ? "yours" : "")">
+            <span class="host-name">@AttackerName</span>
+            <b class="host-count">@AttackerLeft</b>
+            <span class="eyebrow">din @AttackerStart</span>
+            <div class="ranks">
+                @for (var soldier = 1; soldier <= Shown(AttackerStart); soldier++)
+                {
+                    <span class="rank @(soldier <= AttackerLeft ? "" : "fallen")"></span>
+                }
+            </div>
+        </div>
+
+        <div class="host @(YourSide != Battle.AttackerSide ? "yours" : "")">
+            <span class="host-name">@DefenderName</span>
+            <b class="host-count">@DefenderLeft</b>
+            <span class="eyebrow">@DefenderUnit</span>
+            <div class="ranks">
+                @for (var soldier = 1; soldier <= Shown(DefenderStart); soldier++)
+                {
+                    <span class="rank @(soldier <= DefenderLeft ? "" : "fallen")"></span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="battle-actions">
+        @if (Battle.RetreatBySide is { } retreating)
+        {
+            <p class="battle-retreat">
+                <Glyph Name="hourglass" />
+                @(retreating == YourSide ? "Ți-ai sunat retragerea." : "Adversarul sună retragerea.")
+            </p>
+        }
+        else if (Battle.CanRetreat)
+        {
+            <button type="button" class="result-ghost" disabled="@sending" @onclick="() => confirming = true">
+                Sună retragerea
+            </button>
+        }
+        @if (error is not null)
+        {
+            <p class="send-error">@error</p>
+        }
+    </div>
+
+</section>
+
+@if (confirming)
+{
+    <div class="result-scrim" @onclick="() => confirming = false"></div>
+
+    <section class="result" role="dialog" aria-modal="true" aria-labelledby="retreat-title">
+        <span class="result-ico"><Glyph Name="hourglass" /></span>
+        <h2 id="retreat-title">Suni retragerea?</h2>
+        <p class="result-text">
+            Oastea rupe lupta în @GameConstants.RetreatSeconds secunde și pierde
+            @GameConstants.RetreatLossPercent% din câți mai sunt în picioare. Semnalul nu se poate lua înapoi.
+        </p>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="() => confirming = false">Luptăm mai departe</button>
+            <button type="button" class="send danger" disabled="@sending" @onclick="Retreat">
+                @(sending ? "Se sună…" : "Sun retragerea")
+            </button>
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public BattleDto Battle { get; set; } = default!;
+    [Parameter, EditorRequired] public string Code { get; set; } = default!;
+    [Parameter] public int YourSide { get; set; }
+    [Parameter] public string Player1Name { get; set; } = "Jucătorul 1";
+    [Parameter] public string Player2Name { get; set; } = "Jucătorul 2";
+    [Parameter] public EventCallback<MatchStateDto> OnChanged { get; set; }
+
+    private static readonly System.Globalization.CultureInfo Culture =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private const int MaxRanks = 30;
+
+    private System.Threading.Timer? ticker;
+    private DateTimeOffset stamp = DateTimeOffset.UtcNow;
+    private double stampedAt;
+
+    private bool confirming;
+    private bool sending;
+    private string? error;
+
+    private int AttackerSide => Battle.AttackerSide;
+
+    private int DefenderSide => Battle.AttackerSide == 1 ? 2 : 1;
+
+    private string Name(int side) => side == 1 ? Player1Name : Player2Name;
+
+    private string AttackerName => AttackerSide == 0 ? Name(1) : Name(AttackerSide);
+
+    private string DefenderName => AttackerSide == 0 ? Name(2) : Name(DefenderSide);
+
+    private int Left(int side) => side == 1 ? Battle.Player1Left : Battle.Player2Left;
+
+    private int Start(int side) => side == 1 ? Battle.Player1Start : Battle.Player2Start;
+
+    private int AttackerLeft => Left(AttackerSide == 0 ? 1 : AttackerSide);
+
+    private int AttackerStart => Start(AttackerSide == 0 ? 1 : AttackerSide);
+
+    private int DefenderLeft => Left(AttackerSide == 0 ? 2 : DefenderSide);
+
+    private int DefenderStart => Battle.KeepDefenders ?? Start(AttackerSide == 0 ? 2 : DefenderSide);
+
+    private static int Shown(int army) => Math.Min(Math.Max(army, 0), MaxRanks);
+
+    private double Clock => Math.Min(
+        stampedAt + (DateTimeOffset.UtcNow - stamp).TotalSeconds,
+        Battle.Duration);
+
+    private double Progress => Battle.Duration <= 0 ? 100 : Math.Clamp(Clock / Battle.Duration * 100, 0, 100);
+
+    private string PhaseName => Battle.Phase switch
+    {
+        BattlePhase.Road => "Ciocnire în câmp",
+        BattlePhase.Walls => "Asalt la ziduri",
+        _ => "Luptă în cetate",
+    };
+
+    private string PhaseIcon => Battle.Phase switch
+    {
+        BattlePhase.Road => "swords",
+        BattlePhase.Walls => "shield",
+        _ => "crown",
+    };
+
+    private string DefenderUnit => Battle.Phase == BattlePhase.Walls ? "arcași pe zid" : $"din {DefenderStart}";
+
+    private string Note => Battle.Phase switch
+    {
+        BattlePhase.Walls =>
+            "Pe zid urcă doar câți încap. Câți mai așteaptă înăuntru nu se vede de afară.",
+        BattlePhase.Keep =>
+            "Zidul a căzut: oastea dinăuntru a ieșit la vedere, cu arcașii care s-au retras de pe zid.",
+        _ => "Două oști față în față, în câmp deschis.",
+    };
+
+    protected override void OnParametersSet()
+    {
+        stampedAt = Battle.Elapsed;
+        stamp = DateTimeOffset.UtcNow;
+    }
+
+    protected override void OnInitialized() =>
+        ticker = new System.Threading.Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(100));
+
+    private async Task Retreat()
+    {
+        sending = true;
+        error = null;
+
+        try
+        {
+            var state = await Api.RetreatAsync(Code);
+
+            confirming = false;
+            await OnChanged.InvokeAsync(state);
+        }
+        catch (ApiException exception)
+        {
+            error = ApiErrorReader.Describe(exception, "Semnalul n-a ajuns.");
+            confirming = false;
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    public void Dispose() => ticker?.Dispose();
+}

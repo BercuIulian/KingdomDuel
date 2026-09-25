@@ -1,12 +1,9 @@
 @page "/game"
 @attribute [Authorize]
 @layout GameLayout
-@using System.Text.Json
 @using KingdomDuel.Client.ApiClients
-@using KingdomDuel.Domain
 @using KingdomDuel.Domain.Enums
 @using KingdomDuel.Shared.Dtos.Matches
-@using KingdomDuel.Shared.Requests.Matches
 @implements IAsyncDisposable
 @inject ApiClient Api
 @inject NavigationManager Navigation
@@ -39,12 +36,6 @@ else
             <div class="head-round">
                 <span class="eyebrow">Runda</span>
                 <span class="round-value">@state.Round<span>/@state.TotalRounds</span></span>
-                <ol class="pips" aria-label="Runda @state.Round din @state.TotalRounds">
-                    @for (var round = 1; round <= state.TotalRounds; round++)
-                    {
-                        <li class="@PipClass(round)"></li>
-                    }
-                </ol>
             </div>
 
             <RulesBook />
@@ -60,33 +51,35 @@ else
             }
         </header>
 
-        <section class="arena">
+        <section class="arena @(state.Status == MatchStatus.InProgress ? "duel" : "")">
             <CastleView House="amber"
                         Name="@Player1Name"
                         Kingdom="state.Player1Kingdom"
                         IsYou="Side == 1"
-                        OrderPending="OrderPendingFor(1)"
+                        CanRepairWall="@(Side == 1 && CanPlay && state.Status == MatchStatus.InProgress && state.Player1Kingdom is { Fortification: < 0 })"
+                        RepairChosen="@(Side == 1 ? repairTo : -1)"
+                        OnRepairWall="() => repairOpen = true"
+                        Drift="@(Side == 1 ? state.LastRound : null)"
                         MissedRounds="state.Player1MissedRounds" />
 
-            <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
-                        Power2="state.Player2Kingdom?.TotalPower ?? 0"
-                        Name1="@Player1Name"
-                        Name2="@Player2Name" />
+            @if (state.Status != MatchStatus.InProgress)
+            {
+                <PowerScale Power1="state.Player1Kingdom?.TotalPower ?? 0"
+                            Power2="state.Player2Kingdom?.TotalPower ?? 0"
+                            Name1="@Player1Name"
+                            Name2="@Player2Name" />
+            }
 
             <CastleView House="steel"
                         Name="@Player2Name"
                         Kingdom="state.Player2Kingdom"
                         Mirrored="true"
                         IsYou="Side == 2"
-                        OrderPending="OrderPendingFor(2)"
+                        CanRepairWall="@(Side == 2 && CanPlay && state.Status == MatchStatus.InProgress && state.Player2Kingdom is { Fortification: < 0 })"
+                        RepairChosen="@(Side == 2 ? repairTo : -1)"
+                        OnRepairWall="() => repairOpen = true"
+                        Drift="@(Side == 2 ? state.LastRound : null)"
                         MissedRounds="state.Player2MissedRounds" />
-        </section>
-
-        <section class="event">
-            <span class="event-ico"><Glyph Name="@CurrentEvent.Glyph" /></span>
-            <h2>@CurrentEvent.Name</h2>
-            <p>@CurrentEvent.Note</p>
-            <span class="eyebrow">Evenimentul rundei</span>
         </section>
 
         <div class="timer-row">
@@ -95,6 +88,31 @@ else
                 <RoundTimer SecondsRemaining="state.SecondsRemaining" RoundSeconds="state.RoundSeconds" />
             }
         </div>
+
+        @if (CanPlay && state.Status == MatchStatus.InProgress)
+        {
+            @if (state.Breach is { } breach)
+            {
+                <BreachView Breach="breach" Code="@state.Code" OnChanged="OnOrderSubmitted" />
+            }
+            else if (state.Battle is { } battle)
+            {
+                <BattleView Battle="battle"
+                            Code="@state.Code"
+                            YourSide="Side"
+                            Player1Name="@Player1Name"
+                            Player2Name="@Player2Name"
+                            OnChanged="OnOrderSubmitted" />
+            }
+            else if (state.March is { } march)
+            {
+                <MarchView March="march" Code="@state.Code" OnChanged="OnOrderSubmitted" />
+            }
+            else
+            {
+                <OrderPanel State="state" RepairTo="repairTo" OnSubmitted="OnOrderSubmitted" />
+            }
+        }
 
         @if (state.Status == MatchStatus.Completed)
         {
@@ -106,114 +124,18 @@ else
                 </button>
             </section>
         }
-        else
-        {
-            <section class="orders">
-                @foreach (var order in Orders)
-                {
-                    <button type="button"
-                            class="order"
-                            aria-pressed="@(chosen == order.Action ? "true" : "false")"
-                            disabled="@(OrderSent || sending || !CanPlay)"
-                            @onclick="() => ChooseOrder(order.Action)">
-                        <span class="order-ico"><Glyph Name="@order.Glyph" /></span>
-                        <b>@order.Name</b>
-                        <small>@order.Effect</small>
-                        @if (order.Shift is not null)
-                        {
-                            <span class="shift">@order.Shift</span>
-                        }
-                    </button>
-                }
-
-                <div class="order-action">
-                    @if (sendError is not null)
-                    {
-                        <p class="send-error">@sendError</p>
-                    }
-
-                    @if (!CanPlay)
-                    {
-                        <p class="order-note">Urmărești meciul. Ca să dai ordine, intră din lobby.</p>
-                    }
-                    else if (OrderSent)
-                    {
-                        <p class="order-sent">
-                            <Glyph Name="seal" />
-                            <span>Așteptăm adversarul</span>
-                        </p>
-                    }
-                    else
-                    {
-                        <button type="button" class="send" disabled="@(chosen is null || sending)" @onclick="SendOrder">
-                            @(sending ? "Se trimite…" : "Trimite ordinul")
-                        </button>
-                    }
-                </div>
-            </section>
-        }
-
-        <section class="bottom">
-
-            <article class="chronicle">
-                @if (LastRound is null)
-                {
-                    <span class="eyebrow">Cronica</span>
-                    <p class="chronicle-empty">
-                        Nicio rundă nu s-a încheiat încă. Trimite un ordin și cronica începe.
-                    </p>
-                }
-                else
-                {
-                    <span class="eyebrow">Cronica rundei @LastRound.RoundNumber</span>
-                    <p class="chronicle-lead">@ChronicleLead(LastRound)</p>
-                    <ul class="chronicle-log">
-                        @foreach (var line in LastRound.Log)
-                        {
-                            <li>@Humanize(line)</li>
-                        }
-                    </ul>
-                }
-            </article>
-
-            <section class="history">
-                <span class="eyebrow">Istoricul acțiunilor</span>
-                <div class="history-scroll">
-                    @if (state.History.Count == 0)
-                    {
-                        <p class="history-empty">Se umple după prima rundă rezolvată.</p>
-                    }
-                    else
-                    {
-                        @foreach (var (round, index) in state.History
-                            .OrderByDescending(r => r.RoundNumber)
-                            .Select((r, i) => (r, i)))
-                        {
-                            <details class="entry" open="@(index == 0)">
-                                <summary>
-                                    <span class="entry-round">Runda @round.RoundNumber</span>
-                                    <span class="entry-event">@EventOf(round.Event).Name</span>
-                                    <span class="entry-acts">
-                                        <span class="act-1">@OrderName(round.Player1Action)</span>
-                                        <span class="versus">·</span>
-                                        <span class="act-2">@OrderName(round.Player2Action)</span>
-                                    </span>
-                                </summary>
-                                <ul class="entry-log">
-                                    @foreach (var line in round.Log)
-                                    {
-                                        <li>@Humanize(line)</li>
-                                    }
-                                </ul>
-                            </details>
-                        }
-                    }
-                </div>
-            </section>
-
-        </section>
 
     </section>
+
+    @if (repairOpen && MyCastle is { Fortification: < 0 } broken)
+    {
+        <WallRepair Kingdom="broken" Chosen="repairTo" ChosenChanged="PickRepair" OnClosed="() => repairOpen = false" />
+    }
+
+    @if (recapOpen && state.LastRound is { } recap)
+    {
+        <RoundRecap Recap="recap" OnClosed="() => recapOpen = false" />
+    }
 
     @if (confirmingLeave)
     {
@@ -273,8 +195,13 @@ else
                 </div>
             </div>
 
+            @if (state.Story is { Rounds.Count: > 1 } story)
+            {
+                <MatchStory Story="story" Player1Name="@Player1Name" Player2Name="@Player2Name" />
+            }
+
             <div class="result-actions">
-                <button type="button" class="result-ghost" @onclick="DismissResult">Revezi cronica</button>
+                <button type="button" class="result-ghost" @onclick="DismissResult">Închide</button>
                 <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
                     @(leaving ? "Se iese…" : "Înapoi la meniu")
                 </button>
@@ -291,11 +218,11 @@ else
 
     private MatchStateDto? state;
     private string? error;
-    private ActionType? chosen;
-    private bool sending;
-    private string? sendError;
-    private int? submittedRound;
     private bool resultDismissed;
+    private bool recapOpen;
+    private int recapShown;
+    private int repairTo = -1;
+    private bool repairOpen;
     private bool leaving;
     private bool resultFocused;
 
@@ -305,44 +232,13 @@ else
     private ElementReference confirmPanel;
 
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
+
+    private static readonly TimeSpan LivePollInterval = TimeSpan.FromSeconds(1);
     private readonly CancellationTokenSource pollCts = new();
 
     private string? DisplayCode => state?.Code ?? Code;
 
     private bool CanPlay => Side is 1 or 2;
-
-    private bool OrderSent
-    {
-        get
-        {
-            if (state is null)
-            {
-                return false;
-            }
-
-            if (submittedRound == state.Round)
-            {
-                return true;
-            }
-
-            return Side switch
-            {
-                1 => !state.WaitingOnPlayer1Action,
-                2 => !state.WaitingOnPlayer2Action,
-                _ => false,
-            };
-        }
-    }
-
-    private bool? OrderPendingFor(int side)
-    {
-        if (state is null || state.Status != MatchStatus.InProgress)
-        {
-            return null;
-        }
-
-        return side == 1 ? state.WaitingOnPlayer1Action : state.WaitingOnPlayer2Action;
-    }
 
     private string Player1Name =>
         string.IsNullOrWhiteSpace(state?.Player1Name) ? "Jucătorul 1" : state!.Player1Name!;
@@ -353,219 +249,15 @@ else
     private string Heading =>
         state?.Status == MatchStatus.Completed ? "Meciul s-a încheiat" : "Masa de război";
 
-    private RoundResultDto? LastRound =>
-        state?.History.Count > 0 ? state.History[^1] : null;
-
-    private string PipClass(int round)
-    {
-        if (state is null) return string.Empty;
-        if (round < state.Round) return "past";
-        return round == state.Round ? "now" : string.Empty;
-    }
-
-    // ---------- Evenimente ----------
-
-    private sealed record EventInfo(string Name, string Glyph, string Note);
-
-    private EventInfo CurrentEvent => EventOf(state!.CurrentEvent);
-
-    private static EventInfo EventOf(GameEventType gameEvent) => gameEvent switch
-    {
-        GameEventType.Drought => new(
-            "Secetă", "sun",
-            $"Recoltele se usucă. Comerțul aduce doar {GameConstants.TradeDroughtGoldGain} aur în loc de {GameConstants.TradeBaseGoldGain}."),
-        GameEventType.Harvest => new(
-            "Recoltă bogată", "sheaf",
-            $"Hambarele dau pe dinafară. Comerțul aduce {GameConstants.TradeHarvestGoldGain} aur în loc de {GameConstants.TradeBaseGoldGain}."),
-        GameEventType.Rebellion => new(
-            "Rebeliune", "pitchfork",
-            $"Nemulțumirea crește. Cine are moralul sub {GameConstants.RebellionMoraleThreshold} pierde {GameConstants.RebellionTroopLoss} trupe."),
-        GameEventType.PeaceRumors => new(
-            "Zvonuri de pace", "dove",
-            $"Armatele ezită. Atacul costă {GameConstants.AttackTroopCostDuringPeaceRumors} trupe în loc de {GameConstants.AttackTroopCost}."),
-        GameEventType.DiplomaticFair => new(
-            "Târg diplomatic", "pavilion",
-            $"Solii se adună. Diplomația aduce +{GameConstants.DiplomacyFairMoraleGain} moral în loc de +{GameConstants.DiplomacyBaseMoraleGain}."),
-        _ => new(
-            "Anotimp liniștit", "moon",
-            "Nimic nu tulbură regatele. Regulile rundei rămân neschimbate."),
-    };
-
-    // ---------- Ordine ----------
-
-    private sealed record Order(ActionType Action, string Name, string Glyph, string Effect, string? Shift);
-
-    private IEnumerable<Order> Orders
-    {
-        get
-        {
-            var current = state!.CurrentEvent;
-
-            yield return new(
-                ActionType.Attack, "Atac", "sword",
-                $"Costă {GameConstants.AttackTroopCost} trupe. Dacă nu se apără, îi iei aur și trupe.",
-                current == GameEventType.PeaceRumors
-                    ? $"Zvonurile de pace urcă costul la {GameConstants.AttackTroopCostDuringPeaceRumors} trupe."
-                    : null);
-
-            yield return new(
-                ActionType.Defend, "Fortificare", "shield",
-                $"Costă {GameConstants.DefenseBaseGoldCost} aur, aduce +{GameConstants.DefenseBaseMoraleGain} moral. Scade dacă repeți.",
-                null);
-
-            yield return new(
-                ActionType.Trade, "Comerț", "scales",
-                $"Aduce +{GameConstants.TradeBaseGoldGain} aur și +{GameConstants.TradeMoraleGain} moral.",
-                current switch
-                {
-                    GameEventType.Drought => $"Seceta taie câștigul la {GameConstants.TradeDroughtGoldGain} aur.",
-                    GameEventType.Harvest => $"Recolta ridică câștigul la {GameConstants.TradeHarvestGoldGain} aur.",
-                    _ => null,
-                });
-
-            yield return new(
-                ActionType.Diplomacy, "Diplomație", "olive",
-                $"Costă {GameConstants.DiplomacyGoldCost} aur, aduce +{GameConstants.DiplomacyBaseMoraleGain} moral.",
-                current == GameEventType.DiplomaticFair
-                    ? $"Târgul ridică câștigul la +{GameConstants.DiplomacyFairMoraleGain} moral."
-                    : null);
-
-            yield return new(
-                ActionType.Idle, "Fără ordin", "hourglass",
-                "Nu primești nimic și rămâi descoperit unui atac.",
-                null);
-        }
-    }
-
-    private static string OrderName(ActionType action) => action switch
-    {
-        ActionType.Attack => "Atac",
-        ActionType.Defend => "Fortificare",
-        ActionType.Trade => "Comerț",
-        ActionType.Diplomacy => "Diplomație",
-        ActionType.Idle => "Fără ordin",
-        _ => action.ToString(),
-    };
-
-    private static string OrderVerb(ActionType action) => action switch
-    {
-        ActionType.Attack => "a lansat un atac",
-        ActionType.Defend => "s-a fortificat",
-        ActionType.Trade => "a deschis drumurile comerciale",
-        ActionType.Diplomacy => "a trimis soli",
-        ActionType.Idle => "nu a dat niciun ordin oastei",
-        _ => action.ToString(),
-    };
-
-    private static string OrderVerbTogether(ActionType action) => action switch
-    {
-        ActionType.Attack => "s-au atacat reciproc",
-        ActionType.Defend => "s-au fortificat",
-        ActionType.Trade => "au deschis drumurile comerciale",
-        ActionType.Diplomacy => "au trimis soli unul la altul",
-        ActionType.Idle => "nu au dat niciun ordin oștilor",
-        _ => action.ToString(),
-    };
-
-    private void ChooseOrder(ActionType action) => chosen = action;
-
-    private async Task SendOrder()
-    {
-        if (chosen is null || sending || !CanPlay)
-        {
-            return;
-        }
-
-        sending = true;
-        sendError = null;
-
-        var roundAtSubmit = state!.Round;
-
-        try
-        {
-            var fresh = await Api.SubmitActionAsync(
-                new SubmitActionRequest { Action = chosen.Value },
-                Code!);
-
-            submittedRound = roundAtSubmit;
-            ApplyState(fresh);
-        }
-        catch (ApiException ex) when (ex.StatusCode == 404)
-        {
-            sendError = "Meciul nu mai există.";
-        }
-        catch (ApiException ex)
-        {
-            sendError = ServerMessage(ex) ?? $"Ordinul n-a fost primit (cod {ex.StatusCode}).";
-        }
-        catch (Exception)
-        {
-            sendError = "Nu am putut contacta serverul. Încearcă din nou.";
-        }
-        finally
-        {
-            sending = false;
-        }
-    }
-
-    private static string? ServerMessage(ApiException ex)
-    {
-        if (string.IsNullOrWhiteSpace(ex.Response))
-        {
-            return null;
-        }
-
-        try
-        {
-            var parsed = JsonSerializer.Deserialize<ErrorResponse>(
-                ex.Response,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return parsed?.Errors.Values.SelectMany(messages => messages).FirstOrDefault();
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-    }
-
-    private void ApplyState(MatchStateDto fresh)
-    {
-        if (state is not null && (fresh.Round != state.Round || fresh.Status != state.Status))
-        {
-            chosen = null;
-            sendError = null;
-        }
-
-        state = fresh;
-    }
-
-    // ---------- Cronică ----------
-
-    private string ChronicleLead(RoundResultDto round)
-    {
-        var opening = $"Runda {round.RoundNumber} s-a încheiat.";
-
-        return round.Player1Action == round.Player2Action
-            ? $"{opening} {Player1Name} și {Player2Name} {OrderVerbTogether(round.Player1Action)}."
-            : $"{opening} {Player1Name} {OrderVerb(round.Player1Action)}, "
-              + $"iar {Player2Name} {OrderVerb(round.Player2Action)}.";
-    }
-
-
-    private string Humanize(string line) => line
-        .Replace("Jucătorul 1", Player1Name)
-        .Replace("Jucătorul 2", Player2Name);
-
     // ---------- Finalul meciului ----------
 
     private int WinnerSide => state?.GameOverReason switch
     {
-        GameOverReason.Player2Collapsed
+        GameOverReason.Player2CastleDestroyed
             or GameOverReason.RoundsExhaustedPlayer1Wins
             or GameOverReason.Player2Left
             or GameOverReason.Player2Disconnected => 1,
-        GameOverReason.Player1Collapsed
+        GameOverReason.Player1CastleDestroyed
             or GameOverReason.RoundsExhaustedPlayer2Wins
             or GameOverReason.Player1Left
             or GameOverReason.Player1Disconnected => 2,
@@ -590,9 +282,7 @@ else
         {
             if (WinnerSide == 0)
             {
-                return state!.GameOverReason
-                    is GameOverReason.BothCollapsed
-                    or GameOverReason.BothDisconnected
+                return state!.GameOverReason is GameOverReason.BothDisconnected
                     ? "Fără învingător"
                     : "Egalitate";
             }
@@ -608,8 +298,8 @@ else
 
     private string ResultEyebrow => state!.GameOverReason switch
     {
-        GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit",
-        GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed => "Regat prăbușit",
+        GameOverReason.Player1CastleDestroyed
+            or GameOverReason.Player2CastleDestroyed => "Cetate dărâmată",
         GameOverReason.Player1Left or GameOverReason.Player2Left => "Meci încheiat prin abandon",
         GameOverReason.Player1Disconnected or GameOverReason.Player2Disconnected => "Meci încheiat prin inactivitate",
         GameOverReason.BothDisconnected => "Ambele tabere au încetat să dea ordine",
@@ -640,6 +330,29 @@ else
 
     private void DismissResult() => resultDismissed = true;
 
+    private KingdomDto? MyCastle => Side == 1 ? state?.Player1Kingdom : state?.Player2Kingdom;
+
+    private void PickRepair(int level) => repairTo = level;
+
+    private void OnOrderSubmitted(MatchStateDto fresh)
+    {
+        state = fresh;
+        OfferRecap(fresh);
+    }
+
+    private void OfferRecap(MatchStateDto fresh)
+    {
+        if (fresh.LastRound is not { } recap || recap.Round == recapShown)
+        {
+            return;
+        }
+
+        recapShown = recap.Round;
+        repairTo = -1;
+        repairOpen = false;
+        recapOpen = RoundRecap.WorthTelling(recap);
+    }
+
     private async Task LeaveAndGoHome()
     {
         if (leaving)
@@ -667,12 +380,11 @@ else
 
     private string VerdictText => state!.GameOverReason switch
     {
-        GameOverReason.Player1Collapsed => $"{Player2Name} câștigă: regatul lui {Player1Name} s-a prăbușit.",
-        GameOverReason.Player2Collapsed => $"{Player1Name} câștigă: regatul lui {Player2Name} s-a prăbușit.",
-        GameOverReason.BothCollapsed => "Ambele regate s-au prăbușit. Nimeni nu câștigă.",
+        GameOverReason.Player1CastleDestroyed => $"{Player2Name} câștigă: cetatea lui {Player1Name} a fost dărâmată.",
+        GameOverReason.Player2CastleDestroyed => $"{Player1Name} câștigă: cetatea lui {Player2Name} a fost dărâmată.",
         GameOverReason.RoundsExhaustedPlayer1Wins => $"{Player1Name} câștigă la putere, după {state.TotalRounds} runde.",
         GameOverReason.RoundsExhaustedPlayer2Wins => $"{Player2Name} câștigă la putere, după {state.TotalRounds} runde.",
-        GameOverReason.RoundsExhaustedDraw => $"Egalitate perfectă după {state.TotalRounds} runde.",
+        GameOverReason.RoundsExhaustedDraw => $"Egalitate după {state.TotalRounds} runde.",
         GameOverReason.Player1Left => $"{Player1Name} a părăsit meciul. {Player2Name} câștigă prin abandon.",
         GameOverReason.Player2Left => $"{Player2Name} a părăsit meciul. {Player1Name} câștigă prin abandon.",
         GameOverReason.Player1Disconnected => $"{Player1Name} este inactiv, {Player2Name} câștigă.",
@@ -692,6 +404,8 @@ else
         }
 
         await LoadStateAsync();
+
+        recapShown = state?.LastRound?.Round ?? 0;
 
         if (error is null)
         {
@@ -721,7 +435,7 @@ else
     {
         try
         {
-            ApplyState(await Api.GetMatchAsync(Code!));
+            state = await Api.GetMatchAsync(Code!);
         }
         catch (ApiException ex) when (ex.StatusCode == 404)
         {
@@ -753,7 +467,12 @@ else
                         continue;
                     }
 
-                    ApplyState(fresh);
+                    state = fresh;
+                    OfferRecap(fresh);
+                    timer.Period = fresh.Battle is not null || fresh.March is not null || fresh.Breach is not null
+                        ? LivePollInterval
+                        : PollInterval;
+
                     await InvokeAsync(StateHasChanged);
 
                     if (fresh.Status == MatchStatus.Completed)

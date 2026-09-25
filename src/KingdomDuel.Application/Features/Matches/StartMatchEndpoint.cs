@@ -1,6 +1,6 @@
 using KingdomDuel.Application.Features.Auth;
-using KingdomDuel.Domain;
 using KingdomDuel.Domain.Enums;
+using KingdomDuel.Domain.Rounds;
 using KingdomDuel.Shared.Dtos.Matches;
 using Microsoft.AspNetCore.Builder;
 using FastEndpoints;
@@ -48,17 +48,16 @@ internal sealed class StartMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        var engine = new GameEngine();
-        engine.InitializeKingdoms(
-            match.Player1.Kingdom,
-            match.Player2.Kingdom,
-            match.StartingGold,
-            match.StartingTroops,
-            match.StartingMorale);
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
+        match.Player1.Kingdom = start;
+        match.Player2.Kingdom = start;
+        match.Player1.PendingOrder = null;
+        match.Player2.PendingOrder = null;
+        match.Player1.Caravan = null;
+        match.Player2.Caravan = null;
 
         match.Round = 1;
         match.Status = MatchStatus.InProgress;
-        match.CurrentEvent = engine.PickRandomEvent();
         match.StartedAt = DateTimeOffset.UtcNow;
         RoundResolver.StartRoundClock(match);
         await dbContext.SaveChangesAsync(ct);

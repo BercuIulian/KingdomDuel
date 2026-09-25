@@ -1,0 +1,844 @@
+@using KingdomDuel.Domain
+@using KingdomDuel.Domain.Enums
+@using KingdomDuel.Domain.Rounds
+@using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Shared.Requests.Matches
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@inject ApiClient Api
+
+<section class="orders-wrap">
+
+    <div class="budget">
+        <span class="budget-item">
+            <Glyph Name="helm" />
+            <b>@Free</b><span class="eyebrow">soldați liberi din @Troops</span>
+        </span>
+        <span class="budget-item">
+            <Glyph Name="folk" />
+            <b>@FreeVillagers</b><span class="eyebrow">săteni liberi din @Villagers</span>
+        </span>
+        <span class="budget-item">
+            <Glyph Name="coin" />
+            <b>@GoldLeft</b><span class="eyebrow">aur rămas din @Gold</span>
+        </span>
+        @if (Caravan is not null)
+        {
+            <span class="budget-item away">
+                <Glyph Name="coin" />
+                <span class="eyebrow">caravana e pe drum cu @Caravan.Troops, se întoarce în runda @Caravan.ReturnsInRound</span>
+            </span>
+        }
+
+        <button type="button" class="treasury" disabled="@orderSent" @onclick="() => shopOpen = true">
+            <Glyph Name="coin" />
+            Cumpără
+            @if (bought.Count > 0)
+            {
+                <span class="treasury-count">@bought.Count</span>
+            }
+        </button>
+    </div>
+
+    <div class="orders">
+        @foreach (var direction in Directions)
+        {
+            <button type="button"
+                    class="order"
+                    aria-pressed="@(Allocated(direction) > 0)"
+                    disabled="@(orderSent || Blocked(direction))"
+                    @onclick="() => OpenPicker(direction)">
+                <span class="order-ico"><Glyph Name="@Icon(direction)" /></span>
+                <b>@Label(direction)</b>
+                <small>@Hint(direction)</small>
+                @if (Allocated(direction) > 0)
+                {
+                    <span class="shift">@Allocated(direction) soldați</span>
+                }
+            </button>
+        }
+
+        <button type="button"
+                class="order"
+                aria-pressed="@(feast is not null)"
+                disabled="@orderSent"
+                @onclick="OpenFeast">
+            <span class="order-ico"><Glyph Name="flame" /></span>
+            <b>Ospăț</b>
+            <small>Ridică moralul celor de acasă</small>
+            @if (feast is { } chosenTier)
+            {
+                <span class="shift">@FeastName(chosenTier)</span>
+            }
+        </button>
+
+        <button type="button"
+                class="order"
+                aria-pressed="@(SpiesOut is not null || spies is not null)"
+                disabled="@orderSent"
+                @onclick="OpenSpies">
+            <span class="order-ico"><Glyph Name="eye" /></span>
+            <b>Spioni</b>
+            <small>@SpyHint</small>
+            @if (SpyShift is { } shift)
+            {
+                <span class="shift">@shift</span>
+            }
+        </button>
+
+        <div class="order-action">
+            @if (orderSent)
+            {
+                <p class="order-sent"><Glyph Name="seal" /> Ordin trimis</p>
+            }
+            else
+            {
+                <button type="button" class="send" disabled="@(sending || !Fits)" @onclick="Send">
+                    @(sending ? "Se trimite…" : "Trimite ordinul")
+                </button>
+            }
+            @if (error is not null)
+            {
+                <p class="send-error">@error</p>
+            }
+        </div>
+    </div>
+
+</section>
+
+@if (picking is { } chosen)
+{
+    <div class="result-scrim" @onclick="ClosePicker"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="picker-title">
+        <span class="result-ico"><Glyph Name="@Icon(chosen)" /></span>
+        <h2 id="picker-title">@Label(chosen)</h2>
+        <p class="result-text">@Hint(chosen)</p>
+
+        <div class="picker-value">
+            <b>@draft</b>
+            <span class="eyebrow">din @Ceiling(chosen) soldați</span>
+        </div>
+
+        <input type="range"
+               class="picker-range"
+               min="0"
+               max="@Ceiling(chosen)"
+               step="1"
+               value="@draft"
+               @oninput="OnDraft" />
+
+        @if (chosen == ActionType.Trade)
+        {
+            <p class="picker-yield">@TradeNote</p>
+        }
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="() => Withdraw(chosen)">@CancelLabel(chosen)</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="() => Commit(chosen)">Trimite soldați</button>
+        </div>
+    </section>
+}
+
+@if (feastPopup)
+{
+    <div class="result-scrim" @onclick="CloseFeast"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="feast-title">
+        <span class="result-ico"><Glyph Name="flame" /></span>
+        <h2 id="feast-title">Ospăț</h2>
+        <p class="result-text">Moralul urcă după câți soldați sunt acasă: cei plecați nu petrec.</p>
+
+        <div class="choices">
+            @foreach (var tier in Tiers)
+            {
+                <button type="button"
+                        class="choice @(feastDraft == tier ? "chosen" : "")"
+                        disabled="@(!Affordable(tier))"
+                        @onclick="() => feastDraft = tier">
+                    <span class="choice-text">
+                        <b>@FeastName(tier)</b>
+                        <small>+@MoraleFrom(tier) moral</small>
+                    </span>
+                    <span class="choice-price">@GameConstants.FeastCost(tier) aur</span>
+                </button>
+            }
+        </div>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="CallOffFeast">Anulează ospățul</button>
+            <button type="button" class="send" disabled="@(feastDraft is null)" @onclick="CommitFeast">Începe ospățul</button>
+        </div>
+    </section>
+}
+
+@if (shopOpen)
+{
+    <div class="result-scrim" @onclick="() => shopOpen = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="shop-title">
+        <span class="result-ico"><Glyph Name="coin" /></span>
+        <h2 id="shop-title">Cumpără</h2>
+
+        <div class="choices">
+            @foreach (var purchase in Buyables)
+            {
+                <button type="button"
+                        class="choice @(bought.Contains(purchase) ? "chosen" : "")"
+                        disabled="@(!Buyable(purchase))"
+                        @onclick="() => Toggle(purchase)">
+                    <span class="choice-text">
+                        <span class="choice-name">
+                            <b>@Label(purchase)</b>
+                            @if (MaxLevel(purchase) > 0)
+                            {
+                                <span class="levels">
+                                    @for (var step = 1; step <= MaxLevel(purchase); step++)
+                                    {
+                                        <span class="level @LevelState(purchase, step)"></span>
+                                    }
+                                </span>
+                            }
+                        </span>
+                        <small>@Hint(purchase)</small>
+                    </span>
+                    <span class="choice-price">@PurchaseNote(purchase)</span>
+                </button>
+            }
+        </div>
+
+        <div class="choices">
+            <button type="button" class="choice @(hired > 0 ? "chosen" : "")" @onclick="OpenHire">
+                <span class="choice-text">
+                    <b>Cumpără săteni</b>
+                    <small>Câte @GameConstants.VillagersPerBundle săteni@(hired > 0 ? $", {hired} selectați" : "")</small>
+                </span>
+                <span class="choice-price">@GameConstants.VillagerBundleCost aur</span>
+            </button>
+
+            <button type="button" class="choice @(armed > 0 ? "chosen" : "")"
+                    disabled="@(Villagers == 0)" @onclick="OpenArm">
+                <span class="choice-text">
+                    <b>Înarmează săteni</b>
+                    <small>@(armed > 0 ? $"{armed} trec în oaste din runda următoare" : " Recrutează soldați din proprii săteni")</small>
+                </span>
+                <span class="choice-price">@GameConstants.ArmCost aur de cap</span>
+            </button>
+        </div>
+        <div class="result-actions">
+            <button type="button" class="send" @onclick="() => shopOpen = false">Gata</button>
+        </div>
+    </section>
+}
+
+@if (hirePopup)
+{
+    <div class="result-scrim" @onclick="() => hirePopup = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="hire-title">
+        <span class="result-ico"><Glyph Name="folk" /></span>
+        <h2 id="hire-title">Cumpără săteni</h2>
+        <p class="result-text">Se cumpără la pachet, de câte ori vrei.</p>
+
+        <div class="picker-value">
+            <b>@(draft * GameConstants.VillagersPerBundle)</b>
+            <span class="eyebrow">săteni, în @draft pachete</span>
+        </div>
+
+        <input type="range" class="picker-range" min="0" max="@MaxBundles" step="1" value="@draft" @oninput="OnDraft" />
+
+        <p class="picker-yield">@(draft * GameConstants.VillagerBundleCost) aur</p>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="DropHire">Renunț</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="CommitHire">Cumpăr</button>
+        </div>
+    </section>
+}
+
+@if (armPopup)
+{
+    <div class="result-scrim" @onclick="() => armPopup = false"></div>
+
+    <section class="result picker" role="dialog" aria-modal="true" aria-labelledby="arm-title">
+        <span class="result-ico"><Glyph Name="helm" /></span>
+        <h2 id="arm-title">Înarmează săteni</h2>
+        <p class="result-text">Cine se înarmează intră în oaste din runda următoare.</p>
+
+        <div class="picker-value">
+            <b>@draft</b>
+            <span class="eyebrow">din @MaxArmed cu putință</span>
+        </div>
+
+        <input type="range" class="picker-range" min="0" max="@MaxArmed" step="1" value="@draft" @oninput="OnDraft" />
+
+        <p class="picker-yield">@(draft * GameConstants.ArmCost) aur</p>
+
+        <div class="result-actions">
+            <button type="button" class="result-ghost" @onclick="DropArm">Renunț</button>
+            <button type="button" class="send" disabled="@(draft == 0)" @onclick="CommitArm">Îi înarmez</button>
+        </div>
+    </section>
+}
+
+@if (spyPopup)
+{
+    <div class="result-scrim" @onclick="() => spyPopup = false"></div>
+
+    <section class="result spies" role="dialog" aria-modal="true" aria-labelledby="spy-title">
+        <span class="result-ico"><Glyph Name="eye" /></span>
+        <h2 id="spy-title">Spionii</h2>
+
+        <div class="tabs" role="tablist">
+            <button type="button" role="tab" class="tab @(hunting ? "" : "picked")"
+                    aria-selected="@(!hunting)" @onclick="() => hunting = false">
+                Trimite spioni
+            </button>
+            <button type="button" role="tab" class="tab @(hunting ? "picked" : "")"
+                    aria-selected="@hunting" @onclick="() => hunting = true">
+                Caută spioni
+            </button>
+        </div>
+
+        @if (!hunting)
+        {
+            <p class="result-text">
+                Sătenii trimiși ca spioni costă un aur de cap în fiecare rundă. Cu cât sunt mai mulți,
+                cu atât vestea vine mai aproape de adevăr.
+            </p>
+
+            <div class="choices">
+                @foreach (var tier in SpyTiers)
+                {
+                    <button type="button"
+                            class="choice @(ChosenSpies == tier ? "chosen" : "")"
+                            @onclick="() => PickSpies(tier)">
+                        <span class="choice-text">
+                            <b>@SpyStaffName(tier)</b>
+                            <small>@SpyNote(tier)</small>
+                        </span>
+                        <span class="choice-price">@GameConstants.SpyUpkeep(tier) aur / rundă</span>
+                    </button>
+                }
+            </div>
+
+            @if (State.YourReport is { } report)
+            {
+                <SpyReportView Report="report" />
+            }
+            else if (SpiesOut is not null)
+            {
+                <p class="spy-wait">Spionii au plecat. Prima veste sosește runda viitoare.</p>
+            }
+        }
+        else
+        {
+            <p class="result-text">
+                Trimiți soldați să scotocească cetatea. Cine e găsit e ucis, și nu se mai întoarce în satul lui.
+            </p>
+
+            <div class="choices">
+                @foreach (var tier in HuntTiers)
+                {
+                    <button type="button"
+                            class="choice @(hunt == tier ? "chosen" : "")"
+                            disabled="@(GameConstants.HuntSoldiers(tier) > FreeForHunt(tier))"
+                            @onclick="() => PickHunt(tier)">
+                        <span class="choice-text">
+                            <b>@HuntStaffName(tier)</b>
+                            <small>Stinge o rețea de până la nivelul @GameConstants.HuntLevels(tier)</small>
+                        </span>
+                        <span class="choice-price">@GameConstants.HuntCost(tier) aur</span>
+                    </button>
+                }
+            </div>
+
+            <p class="spy-wait">
+                O rețea de nivel @GameConstants.SpyLevel(SpyTier.Ring) sunt cinci spioni, de nivel
+                @GameConstants.SpyLevel(SpyTier.Pair) trei, de nivel @GameConstants.SpyLevel(SpyTier.Lone) unul.
+                Ce rămâne după scădere rămâne în viață.
+            </p>
+        }
+
+        <div class="result-actions">
+            @if (!hunting && SpiesOut is not null)
+            {
+                <button type="button" class="result-ghost" @onclick="CallSpiesHome">Retrage spionii</button>
+            }
+            @if (hunting && hunt is not null)
+            {
+                <button type="button" class="result-ghost" @onclick="() => hunt = null">Nu mai caut</button>
+            }
+            <button type="button" class="send" @onclick="() => spyPopup = false">Gata</button>
+        </div>
+    </section>
+}
+@code {
+    [Parameter, EditorRequired] public MatchStateDto State { get; set; } = default!;
+    [Parameter] public EventCallback<MatchStateDto> OnSubmitted { get; set; }
+
+    [Parameter] public int RepairTo { get; set; } = -1;
+
+    private static readonly ActionType[] Directions = [ActionType.Attack, ActionType.Defend, ActionType.Trade];
+    private static readonly PurchaseType[] Standing = [PurchaseType.Recruit, PurchaseType.Fortify, PurchaseType.Catapult];
+
+    private PurchaseType[] Buyables
+    {
+        get
+        {
+            if (!WallDown)
+            {
+                return Standing;
+            }
+
+            return [PurchaseType.Recruit, PurchaseType.Catapult];
+        }
+    }
+
+    private bool WallDown => (Mine?.Fortification ?? 0) <= GameConstants.WallDownLevel;
+
+    private int Ruined => Mine?.RuinedFrom ?? 0;
+    private static readonly FeastTier[] Tiers = [FeastTier.Small, FeastTier.Court, FeastTier.Grand];
+
+    private readonly Dictionary<ActionType, int> allocation = new();
+    private readonly HashSet<PurchaseType> bought = [];
+    private FeastTier? feast;
+    private FeastTier? feastDraft;
+
+    private ActionType? picking;
+    private bool feastPopup;
+    private bool shopOpen;
+    private int draft;
+    private int hired;
+    private int armed;
+    private bool hirePopup;
+    private bool armPopup;
+    private SpyTier? spies;
+    private bool recallSpies;
+    private bool spyPopup;
+    private bool hunting;
+    private HuntTier? hunt;
+
+    private int round;
+    private bool sending;
+    private bool orderSent;
+    private string? error;
+
+    private KingdomDto? Mine => State.YourSide == 1 ? State.Player1Kingdom : State.Player2Kingdom;
+
+    private CaravanDto? Caravan => State.YourCaravan;
+
+    private int Troops => Mine?.Troops ?? 0;
+
+    private int Gold => Mine?.Gold ?? 0;
+
+    private int Villagers => Mine?.Villagers ?? 0;
+
+    private int Free => Math.Max(0, Troops - Fighting - (hunt is { } chase ? GameConstants.HuntSoldiers(chase) : 0));
+
+    private int FreeVillagers => Math.Max(0, Villagers - Allocated(ActionType.Trade) - armed - LeavingToSpy);
+
+    private int LeavingToSpy => Math.Max(0, SpyStaff - (SpiesOut?.Villagers ?? 0));
+
+    private int SpyStaff => ChosenSpies is { } tier ? GameConstants.SpyVillagers(tier) : 0;
+
+    private int Fighting => Allocated(ActionType.Attack) + Allocated(ActionType.Defend);
+
+    private int GoldSpent =>
+        (feast is { } tier ? GameConstants.FeastCost(tier) : 0)
+        + bought.Sum(GameConstants.PurchaseCost)
+        + Repairs.Sum(GameConstants.PurchaseCost)
+        + hired * GameConstants.VillagerBundleCost
+        + armed * GameConstants.ArmCost
+        + (ChosenSpies is { } spied ? GameConstants.SpyUpkeep(spied) : 0)
+        + (hunt is { } chased ? GameConstants.HuntCost(chased) : 0);
+
+    private IEnumerable<PurchaseType> Repairs
+    {
+        get
+        {
+            if (RepairTo < 0)
+            {
+                yield break;
+            }
+
+            yield return PurchaseType.Repair;
+
+            if (RepairTo == 1) yield return PurchaseType.RepairToOne;
+            if (RepairTo == 2) yield return PurchaseType.RepairToTwo;
+        }
+    }
+
+    private int GoldLeft => Gold - GoldSpent;
+
+    private bool Fits => Fighting <= Troops && Allocated(ActionType.Trade) <= Villagers && GoldSpent <= Gold;
+
+    private string TradeNote
+    {
+        get
+        {
+            if (draft == 0)
+            {
+                return "Fără negustori nu vine aur.";
+            }
+
+            var (low, high) = GameEngine.TradeRange(draft);
+
+            return low == high ? $"Se întorc cu {low} aur" : $"Se întorc cu {low}–{high} aur";
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (round == State.Round)
+        {
+            return;
+        }
+
+        round = State.Round;
+        allocation.Clear();
+        bought.Clear();
+        feast = null;
+        feastDraft = null;
+        picking = null;
+        feastPopup = false;
+        shopOpen = false;
+        hired = 0;
+        armed = 0;
+        hirePopup = false;
+        armPopup = false;
+        spies = null;
+        recallSpies = false;
+        spyPopup = false;
+        hunting = false;
+        hunt = null;
+        orderSent = false;
+        error = null;
+    }
+
+    private int Allocated(ActionType direction) => allocation.GetValueOrDefault(direction);
+
+    private bool Blocked(ActionType direction) =>
+        (direction == ActionType.Trade && Caravan is not null)
+        || (direction == ActionType.Defend && WallDown);
+
+    private static int MaxLevel(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Fortify => GameConstants.FortifyMaxLevel,
+        PurchaseType.Catapult => GameConstants.CatapultMaxLevel,
+        _ => 0,
+    };
+
+    private int Level(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Fortify => Mine?.Fortification ?? 0,
+        PurchaseType.Catapult => Mine?.Catapults ?? 0,
+        _ => 0,
+    };
+
+    private string LevelState(PurchaseType purchase, int step)
+    {
+        var have = Level(purchase);
+
+        if (step <= have)
+        {
+            return "full";
+        }
+
+        return step == have + 1 && bought.Contains(purchase) ? "pending" : string.Empty;
+    }
+
+    private bool AtMax(PurchaseType purchase) => MaxLevel(purchase) > 0 && Level(purchase) >= MaxLevel(purchase);
+
+    private int Ceiling(ActionType direction) => direction == ActionType.Trade
+        ? FreeVillagers + Allocated(direction)
+        : Free + Allocated(direction);
+
+    // Aceleași cântare ca în motor: cine pleacă nu petrece, iar un sătean face cât jumătate de soldat.
+    private int MoraleFrom(FeastTier tier)
+    {
+        var sent = Allocated(ActionType.Trade);
+        var back = Caravan is { } away && away.ReturnsInRound <= State.Round + 1 ? away.Troops : 0;
+
+        return GameEngine.FeastMorale(
+            tier,
+            GameEngine.FeastWeight(Troops - Fighting, Villagers - sent + back),
+            GameEngine.FeastWeight(Fighting, (Caravan?.Troops ?? 0) + sent),
+            Math.Max(0, (Mine?.Morale ?? 0) - GameConstants.MoraleDecayPerRound));
+    }
+
+    private bool Affordable(FeastTier tier) =>
+        GameConstants.FeastCost(tier) + bought.Sum(GameConstants.PurchaseCost) <= Gold;
+
+    private bool Buyable(PurchaseType purchase)
+    {
+        if (purchase is PurchaseType.RepairToOne or PurchaseType.RepairToTwo
+            && !bought.Contains(PurchaseType.Repair))
+        {
+            return false;
+        }
+
+        return !AtMax(purchase)
+            && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
+    }
+
+    private int Purse => Gold - GoldSpent + hired * GameConstants.VillagerBundleCost + armed * GameConstants.ArmCost;
+
+    private int MaxBundles => Math.Max(hired, Purse / GameConstants.VillagerBundleCost);
+
+    private int MaxArmed => Math.Max(armed, Math.Min(Villagers - Allocated(ActionType.Trade), Purse / Math.Max(1, GameConstants.ArmCost)));
+
+    private void OpenHire()
+    {
+        draft = hired;
+        hirePopup = true;
+    }
+
+    private void CommitHire()
+    {
+        hired = draft;
+        hirePopup = false;
+    }
+
+    private void DropHire()
+    {
+        hired = 0;
+        hirePopup = false;
+    }
+
+    private void OpenArm()
+    {
+        draft = armed;
+        armPopup = true;
+    }
+
+    private void CommitArm()
+    {
+        armed = draft;
+        armPopup = false;
+    }
+
+    private void DropArm()
+    {
+        armed = 0;
+        armPopup = false;
+    }
+
+    private void OpenPicker(ActionType direction)
+    {
+        draft = Allocated(direction);
+        picking = direction;
+    }
+
+    private void ClosePicker() => picking = null;
+
+    private void OnDraft(ChangeEventArgs args) =>
+        draft = int.TryParse(args.Value?.ToString(), out var value) ? value : 0;
+
+    private void Commit(ActionType direction)
+    {
+        allocation[direction] = draft;
+        picking = null;
+    }
+
+    private void Withdraw(ActionType direction)
+    {
+        allocation.Remove(direction);
+        picking = null;
+    }
+
+    private void OpenFeast()
+    {
+        feastDraft = feast;
+        feastPopup = true;
+    }
+
+    private SpyRingDto? SpiesOut => State.YourSpies;
+
+    private string SpyHint => SpiesOut is { } ring
+        ? $"{SpyStaffName(ring.Tier)} pe teren, {ring.Upkeep} aur pe rundă"
+        : "Trimite săteni ca spioni";
+
+    private string? SpyShift
+    {
+        get
+        {
+            var moves = new List<string>();
+
+            if (recallSpies) moves.Add("îi chem acasă");
+            else if (spies is { } tier) moves.Add(SpyStaffName(tier));
+
+            if (hunt is { } chase) moves.Add($"caut cu {HuntStaffName(chase)}");
+
+            return moves.Count == 0 ? null : string.Join(", ", moves);
+        }
+    }
+
+    private static readonly SpyTier[] SpyTiers = [SpyTier.Lone, SpyTier.Pair, SpyTier.Ring];
+
+    private static readonly HuntTier[] HuntTiers = [HuntTier.Scout, HuntTier.Patrol, HuntTier.Sweep];
+
+    private static string HuntStaffName(HuntTier tier) =>
+        GameConstants.HuntSoldiers(tier) is var many && many == 1 ? "1 soldat" : $"{many} soldați";
+
+    private int FreeForHunt(HuntTier tier) =>
+        Free + (hunt == tier ? GameConstants.HuntSoldiers(tier) : 0);
+
+    private void PickHunt(HuntTier tier) => hunt = hunt == tier ? null : tier;
+
+    private SpyTier? ChosenSpies => recallSpies ? null : spies ?? SpiesOut?.Tier;
+
+    private static string SpyStaffName(SpyTier tier) =>
+        GameConstants.SpyVillagers(tier) is var many && many == 1 ? "1 sătean" : $"{many} săteni";
+
+    private static string SpyNote(SpyTier tier) => tier switch
+    {
+        SpyTier.Lone => "Vești aproximative, la un preț mic",
+        SpyTier.Pair => "Cifre mai apropiate de adevăr",
+        _ => "Aproape exact, și îi afli și ordinele din runda trecută",
+    };
+
+    private void OpenSpies() => spyPopup = true;
+
+    private void PickSpies(SpyTier? tier)
+    {
+        spies = tier;
+        recallSpies = false;
+    }
+
+    private void CallSpiesHome()
+    {
+        spies = null;
+        recallSpies = true;
+        spyPopup = false;
+    }
+
+    private void CloseFeast() => feastPopup = false;
+
+    private void CommitFeast()
+    {
+        feast = feastDraft;
+        feastPopup = false;
+    }
+
+    private void CallOffFeast()
+    {
+        feast = null;
+        feastDraft = null;
+        feastPopup = false;
+    }
+
+    private void Toggle(PurchaseType purchase)
+    {
+        if (!bought.Remove(purchase))
+        {
+            bought.Add(purchase);
+
+            if (purchase == PurchaseType.RepairToOne) bought.Remove(PurchaseType.RepairToTwo);
+            if (purchase == PurchaseType.RepairToTwo) bought.Remove(PurchaseType.RepairToOne);
+        }
+        else if (purchase == PurchaseType.Repair)
+        {
+            bought.Remove(PurchaseType.RepairToOne);
+            bought.Remove(PurchaseType.RepairToTwo);
+        }
+    }
+
+    private string PurchaseNote(PurchaseType purchase) =>
+        AtMax(purchase) ? "la maximum" : $"{GameConstants.PurchaseCost(purchase)} aur";
+
+    private async Task Send()
+    {
+        sending = true;
+        error = null;
+
+        try
+        {
+            var state = await Api.SubmitOrderAsync(
+                new SubmitOrderRequest
+                {
+                    Code = State.Code,
+                    Troops = allocation
+                        .Where(pair => pair.Value > 0)
+                        .Select(pair => new OrderAllocationDto { Direction = pair.Key, Troops = pair.Value })
+                        .ToList(),
+                    Feast = feast,
+                    Purchases = [.. bought, .. Repairs],
+                    Hired = hired,
+                    Armed = armed,
+                    Spies = spies,
+                    RecallSpies = recallSpies,
+                    Hunt = hunt,
+                },
+                State.Code);
+
+            orderSent = true;
+            await OnSubmitted.InvokeAsync(state);
+        }
+        catch (ApiException exception)
+        {
+            error = ApiErrorReader.Describe(exception, "Ordinul n-a fost primit.");
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    private static string Label(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Atac",
+        ActionType.Defend => "Apărare",
+        _ => "Comerț",
+    };
+
+    private string Hint(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Atacă cetatea adversarului",
+        ActionType.Defend => WallDown
+            ? "Zidul e dărâmat, n-are cine să-l țină"
+            : $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
+        _ => Caravan is null ? "Sătenii pleacă la negoț, se întorc peste o rundă" : "Caravana e deja pe drum",
+    };
+
+    private static string CancelLabel(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "Anulează atacul",
+        ActionType.Defend => "Anulează apărarea",
+        _ => "Anulează comerțul",
+    };
+
+    private static string Icon(ActionType direction) => direction switch
+    {
+        ActionType.Attack => "sword",
+        ActionType.Defend => "shield",
+        _ => "coin",
+    };
+
+    private static string Label(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Recruit => "Recrutare",
+        PurchaseType.Fortify => "Fortificație",
+        PurchaseType.Repair => "Ridică zidul",
+        PurchaseType.RepairToOne => "Și înapoi la nivelul 1",
+        PurchaseType.RepairToTwo => "Și înapoi la nivelul 2",
+        _ => "Catapultă",
+    };
+
+    private static string Hint(PurchaseType purchase) => purchase switch
+    {
+        PurchaseType.Recruit => $"Recrutează {GameConstants.RecruitTroops} soldați pentru runda următoare",
+        PurchaseType.Fortify => $"Zid mai trainic: +{GameConstants.FortifySeconds}s, +{GameConstants.FortifyArchers} arcași",
+        PurchaseType.Repair => "Cetatea are iar ziduri, la nivelul de bază",
+        PurchaseType.RepairToOne => "Cât ține oferta, treapta pierdută se ia ieftin",
+        PurchaseType.RepairToTwo => "Cât ține oferta, amândouă treptele se iau ieftin",
+        _ => $"Spargi zidul cu {GameConstants.CatapultSeconds}s mai repede",
+    };
+
+    private static string FeastName(FeastTier tier) => tier switch
+    {
+        FeastTier.Small => "Masă mică",
+        FeastTier.Court => "Ospăț de curte",
+        _ => "Ospăț mare",
+    };
+}

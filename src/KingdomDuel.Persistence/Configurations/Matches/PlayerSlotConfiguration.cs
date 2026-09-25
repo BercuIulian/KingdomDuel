@@ -1,4 +1,5 @@
 using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Rounds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -17,10 +18,30 @@ internal sealed class PlayerSlotConfiguration : IEntityTypeConfiguration<PlayerS
             .OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(p => p.UserId);
 
-        builder.HasOne(p => p.Kingdom)
-            .WithOne()
-            .HasForeignKey<Kingdom>("PlayerSlotId")
-            .OnDelete(DeleteBehavior.Cascade);
-        builder.Navigation(p => p.Kingdom).IsRequired();
+        builder.ComplexProperty(p => p.Kingdom, kingdom =>
+        {
+            kingdom.Property(k => k.Gold).HasColumnName("Gold");
+            kingdom.Property(k => k.Troops).HasColumnName("Troops");
+            kingdom.Property(k => k.Morale).HasColumnName("Morale");
+            kingdom.Property(k => k.Fortification).HasColumnName("Fortification");
+            kingdom.Property(k => k.Catapults).HasColumnName("Catapults");
+            kingdom.Ignore(k => k.TotalPower);
+        });
+
+        builder.Property(p => p.PendingOrder)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<OrderPlan>(), JsonColumns.NullableComparer<OrderPlan>());
+
+        builder.Property(p => p.Caravan)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<Caravan>(), JsonColumns.NullableComparer<Caravan>());
+
+        builder.Property(p => p.Spies)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<SpyRing>(), JsonColumns.NullableComparer<SpyRing>());
+
+        builder.Property(p => p.Report)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.NullableConverter<SpyReport>(), JsonColumns.NullableComparer<SpyReport>());
     }
 }

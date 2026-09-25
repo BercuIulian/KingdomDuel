@@ -126,10 +126,8 @@
 
     private static string ReasonText(MatchHistoryEntryDto entry) => entry.Reason switch
     {
-        GameOverReason.Player1Collapsed or GameOverReason.Player2Collapsed =>
-            entry.Outcome == MatchOutcome.Won ? "regatul adversarului s-a prăbușit" : "regatul tău s-a prăbușit",
-
-        GameOverReason.BothCollapsed => "ambele regate s-au prăbușit",
+        GameOverReason.Player1CastleDestroyed or GameOverReason.Player2CastleDestroyed =>
+            entry.Outcome == MatchOutcome.Won ? "ai dărâmat cetatea adversarului" : "cetatea ta a fost dărâmată",
 
         GameOverReason.Player1Left or GameOverReason.Player2Left =>
             entry.Outcome == MatchOutcome.Won ? "adversarul a părăsit meciul" : "ai părăsit meciul",

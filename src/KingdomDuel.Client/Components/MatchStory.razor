@@ -1,0 +1,111 @@
+@using System.Globalization
+@using KingdomDuel.Domain.Rounds
+@using KingdomDuel.Shared.Dtos.Matches
+
+<section class="story">
+
+    <header class="story-head">
+        <span class="eyebrow">Cum s-a ajuns aici</span>
+        <div class="keys">
+            <span class="key amber">@Player1Name</span>
+            <span class="key steel">@Player2Name</span>
+        </div>
+    </header>
+
+    <svg class="graph" viewBox="0 0 @Width @Height" role="img" aria-label="Puterea celor două case, rundă de rundă">
+        @foreach (var round in Marked)
+        {
+            <line class="tick"
+                  x1="@N(X(round.Round))" y1="@N(Top)"
+                  x2="@N(X(round.Round))" y2="@N(Floor)" />
+        }
+
+        <text class="mark" x="@N(Left - 6)" y="@N(Top + 3)" text-anchor="end">@Highest</text>
+        <text class="mark" x="@N(Left - 6)" y="@N(Floor)" text-anchor="end">@Lowest</text>
+
+        <polyline class="line amber" points="@Path(round => round.Player1Power)" />
+        <polyline class="line steel" points="@Path(round => round.Player2Power)" />
+
+        @foreach (var round in Marked)
+        {
+            <circle class="dot amber" cx="@N(X(round.Round))" cy="@N(Y(round.Player1Power))" r="2.6" />
+            <circle class="dot steel" cx="@N(X(round.Round))" cy="@N(Y(round.Player2Power))" r="2.6" />
+        }
+    </svg>
+
+    <ol class="turns">
+        @foreach (var round in Marked)
+        {
+            <li>
+                <b>Runda @round.Round</b>
+                <span>@Told(round)</span>
+            </li>
+        }
+    </ol>
+
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MatchStoryDto Story { get; set; } = default!;
+    [Parameter] public string Player1Name { get; set; } = "Jucătorul 1";
+    [Parameter] public string Player2Name { get; set; } = "Jucătorul 2";
+
+    private const double Width = 320;
+    private const double Height = 96;
+    private const double Top = 8;
+    private const double Floor = 84;
+    private const double Left = 30;
+    private const double Right = 314;
+
+    private List<StoryRoundDto> Rounds => Story.Rounds;
+
+    private IEnumerable<StoryRoundDto> Marked => Rounds.Where(round => round.Moments.Count > 0);
+
+    private int LastRound => Rounds.Count == 0 ? 0 : Rounds[^1].Round;
+
+    private IEnumerable<int> Powers =>
+        Rounds.SelectMany(round => new[] { round.Player1Power, round.Player2Power });
+
+    private int Highest => Powers.DefaultIfEmpty(1).Max();
+
+    private int Lowest => Math.Min(Powers.DefaultIfEmpty(0).Min(), Highest - 1);
+
+    private double X(int round) => LastRound == 0 ? Left : Left + (Right - Left) * round / LastRound;
+
+    private double Y(int power) =>
+        Floor - (Floor - Top) * (Math.Clamp(power, Lowest, Highest) - Lowest) / (double)(Highest - Lowest);
+
+    private static string N(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private string Path(Func<StoryRoundDto, int> power) =>
+        string.Join(" ", Rounds.Select(round => $"{N(X(round.Round))},{N(Y(power(round)))}"));
+
+    private string Name(int side) => side == 1 ? Player1Name : Player2Name;
+
+    private string Told(StoryRoundDto round)
+    {
+        var said = new List<string>();
+
+        if (round.Moments.Any(moment => moment.Kind == RoundEventKind.BattleJoined))
+        {
+            said.Add("s-a dat luptă");
+        }
+
+        foreach (var moment in round.Moments)
+        {
+            var who = Name(moment.Side);
+
+            said.Add(moment.Kind switch
+            {
+                RoundEventKind.WallsBreached => $"zidul lui {who} a fost spart",
+                RoundEventKind.WallsHeld => $"zidurile lui {who} au ținut",
+                RoundEventKind.Retreated => $"{who} a sunat retragerea",
+                RoundEventKind.MarchedOn => $"{who} a mers mai departe la cetate",
+                RoundEventKind.CastleDestroyed => $"cetatea lui {who} a căzut",
+                _ => string.Empty,
+            });
+        }
+
+        return string.Join(", ", said.Where(word => word.Length > 0).Distinct());
+    }
+}

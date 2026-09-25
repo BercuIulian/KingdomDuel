@@ -1,0 +1,108 @@
+@using KingdomDuel.Shared.Dtos.Matches
+@using KingdomDuel.Shared.Requests.Matches
+@using KingdomDuel.Client.ApiClients
+@using KingdomDuel.Client.Authentication
+@implements IDisposable
+@inject ApiClient Api
+
+<div class="battle-scrim"></div>
+
+<section class="march" role="dialog" aria-modal="true" aria-labelledby="march-title">
+
+    <header class="battle-head">
+        <span class="battle-phase" id="march-title"><Glyph Name="hourglass" /> Câmpul e al învingătorului</span>
+        <span class="battle-clock">@Left.ToString("0.0")<span>s</span></span>
+    </header>
+
+    <div class="battle-bar">
+        <span class="battle-bar-fill" style="width: @(Progress.ToString("0.##", Culture))%"></span>
+    </div>
+
+    @if (March.IsYours)
+    {
+        <p class="battle-note">
+            Ți-au rămas @March.Army soldați în picioare. Mergi mai departe la cetatea adversarului
+            sau îi întorci acasă? Dacă nu hotărăști, se întorc.
+        </p>
+
+        <div class="march-actions">
+            <button type="button" class="result-ghost" disabled="@sending" @onclick="() => Send(false)">
+                Îi întorc acasă
+            </button>
+            <button type="button" class="send" disabled="@sending" @onclick="() => Send(true)">
+                @(sending ? "Se duce vorba…" : "Mergem la cetate")
+            </button>
+        </div>
+    }
+    else
+    {
+        <p class="battle-note">
+            Câmpul a rămas al adversarului. Acum hotărăște dacă își întoarce oastea acasă
+            sau vine peste cetatea ta.
+        </p>
+    }
+
+    @if (error is not null)
+    {
+        <p class="send-error">@error</p>
+    }
+
+</section>
+
+@code {
+    [Parameter, EditorRequired] public MarchDto March { get; set; } = default!;
+    [Parameter, EditorRequired] public string Code { get; set; } = default!;
+    [Parameter] public EventCallback<MatchStateDto> OnChanged { get; set; }
+
+    private static readonly System.Globalization.CultureInfo Culture =
+        System.Globalization.CultureInfo.InvariantCulture;
+
+    private System.Threading.Timer? ticker;
+    private DateTimeOffset stamp = DateTimeOffset.UtcNow;
+    private double stampedLeft;
+    private double total;
+
+    private bool sending;
+    private string? error;
+
+    private double Left => Math.Max(0, stampedLeft - (DateTimeOffset.UtcNow - stamp).TotalSeconds);
+
+    private double Progress => total <= 0 ? 0 : Math.Clamp(Left / total * 100, 0, 100);
+
+    protected override void OnParametersSet()
+    {
+        stampedLeft = March.SecondsRemaining;
+        stamp = DateTimeOffset.UtcNow;
+        total = Math.Max(total, March.SecondsRemaining);
+    }
+
+    protected override void OnInitialized() =>
+        ticker = new System.Threading.Timer(
+            _ => InvokeAsync(StateHasChanged),
+            null,
+            TimeSpan.FromMilliseconds(100),
+            TimeSpan.FromMilliseconds(100));
+
+    private async Task Send(bool advance)
+    {
+        sending = true;
+        error = null;
+
+        try
+        {
+            var state = await Api.MarchAsync(new MarchRequest { Code = Code, Advance = advance }, Code);
+
+            await OnChanged.InvokeAsync(state);
+        }
+        catch (ApiException exception)
+        {
+            error = ApiErrorReader.Describe(exception, "Vorba n-a ajuns la oaste.");
+        }
+        finally
+        {
+            sending = false;
+        }
+    }
+
+    public void Dispose() => ticker?.Dispose();
+}

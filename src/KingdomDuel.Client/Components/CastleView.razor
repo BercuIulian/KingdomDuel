@@ -32,6 +32,29 @@
         <path class="gate" d="M108 152 V128 A12 12 0 0 1 132 128 V152 Z" />
         <path class="bars" d="M114 130 V152 M120 127 V152 M126 130 V152 M110 137 H130 M109 144 H131" />
 
+        @if (Level >= 1)
+        {
+            <rect class="stone outwall" x="20" y="126" width="200" height="26" />
+            <rect class="stone" x="22" y="118" width="9" height="8" />
+            <rect class="stone" x="209" y="118" width="9" height="8" />
+        }
+
+        @if (Level >= 2)
+        {
+            <rect class="stone" x="48" y="118" width="9" height="8" />
+            <rect class="stone" x="74" y="118" width="9" height="8" />
+            <rect class="stone" x="157" y="118" width="9" height="8" />
+            <rect class="stone" x="183" y="118" width="9" height="8" />
+        }
+
+        @if (WallDown)
+        {
+            <path class="rubble" d="M18 152 L34 138 L44 150 L58 134 L70 152" />
+            <path class="rubble" d="M170 152 L186 136 L198 150 L212 140 L222 152" />
+            <path class="crack" d="M100 152 V132 L94 120 L102 108" />
+            <path class="crack" d="M140 152 V136 L148 124" />
+        }
+
         <path class="pole" d="M174 66 V14" />
         <path class="banner" d="M174 18 C186 13 196 24 208 19 L208 39 C196 44 186 33 174 38 Z" />
     </svg>
@@ -64,17 +87,54 @@
         <dl class="stats">
             <div class="stat">
                 <dt><Glyph Name="coin" /> Aur</dt>
-                <dd>@Value(Kingdom?.Gold)</dd>
+                <dd class="@(Kingdom is null || Hearsay ? "unknown" : "")">
+                    @(Hearsay ? "necunoscut" : Value(Kingdom?.Gold))
+                    @if (Moved(Drift?.GoldDelta) is { } goldShift)
+                    {
+                        <span class="drift @(goldShift > 0 ? "up" : "down")">@Signed(goldShift)</span>
+                    }
+                </dd>
             </div>
             <div class="stat">
-                <dt><Glyph Name="helm" /> Trupe</dt>
-                <dd>@Value(Kingdom?.Troops)</dd>
+                <dt><Glyph Name="helm" /> Soldați</dt>
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Troops)
+                    @if (Moved(Drift?.TroopsDelta) is { } troopShift)
+                    {
+                        <span class="drift @(troopShift > 0 ? "up" : "down")">@Signed(troopShift)</span>
+                    }
+                </dd>
+            </div>
+            <div class="stat">
+                <dt><Glyph Name="folk" /> Săteni</dt>
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Villagers)
+                    @if (Moved(Drift?.VillagersDelta) is { } villageShift)
+                    {
+                        <span class="drift @(villageShift > 0 ? "up" : "down")">@Signed(villageShift)</span>
+                    }
+                </dd>
             </div>
             <div class="stat">
                 <dt><Glyph Name="flame" /> Moral</dt>
-                <dd>@Value(Kingdom?.Morale)</dd>
+                <dd class="@Tone">
+                    @Heard(Kingdom?.Morale)
+                    @if (Moved(Drift?.MoraleDelta) is { } moraleShift)
+                    {
+                        <span class="drift @(moraleShift > 0 ? "up" : "down")">@Signed(moraleShift)</span>
+                    }
+                </dd>
             </div>
         </dl>
+
+        @if (CanRepairWall)
+        {
+            <button type="button" class="repair-call" @onclick="OnRepairWall">
+                <Glyph Name="shield" />
+                <span>@(RepairChosen < 0 ? "Repară zidul" : "Zidul se ridică în runda asta")</span>
+                <b>@RepairPrice aur</b>
+            </button>
+        }
     </div>
 
 </article>
@@ -101,5 +161,39 @@
     [Parameter]
     public int MissedRounds { get; set; }
 
-    private static string Value(int? amount) => amount?.ToString() ?? "—";
+    [Parameter]
+    public RoundRecapDto? Drift { get; set; }
+
+    [Parameter]
+    public bool CanRepairWall { get; set; }
+
+    [Parameter]
+    public int RepairChosen { get; set; } = -1;
+
+    [Parameter]
+    public EventCallback OnRepairWall { get; set; }
+
+    private int RepairPrice => GameConstants.RepairCost + RepairChosen switch
+    {
+        1 => GameConstants.RepairToOneCost,
+        2 => GameConstants.RepairToTwoCost,
+        _ => 0,
+    };
+
+    private int Level => Math.Max(0, Kingdom?.Fortification ?? 0);
+
+    private bool WallDown => (Kingdom?.Fortification ?? 0) < 0;
+
+    private static int? Moved(int? amount) => amount is { } shift && shift != 0 ? shift : null;
+
+    private static string Signed(int amount) => amount > 0 ? $"+{amount}" : amount.ToString();
+
+    private bool Hearsay => Kingdom?.IsHearsay == true;
+
+    private string Tone => Kingdom is null ? "unknown" : Hearsay ? "heard" : string.Empty;
+
+    private string Heard(int? amount) =>
+        Kingdom is null ? "necunoscut" : Hearsay ? $"~{amount}" : Value(amount);
+
+    private static string Value(int? amount) => amount?.ToString() ?? "necunoscut";
 }

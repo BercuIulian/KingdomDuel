@@ -1,0 +1,102 @@
+@using KingdomDuel.Domain
+@using KingdomDuel.Shared.Dtos.Matches
+
+<div class="result-scrim" @onclick="OnClosed"></div>
+
+<section class="result" role="dialog" aria-modal="true" aria-labelledby="repair-title">
+
+    <span class="result-ico"><Glyph Name="shield" /></span>
+    <h2 id="repair-title">Zidul e dărâmat</h2>
+
+    <p class="result-text">
+        Până nu-l ridici, asaltul intră direct în cetate, iar soldații nu mai au unde urca.
+    </p>
+
+    @if (Offer > 0)
+    {
+        <div class="choices">
+            @foreach (var level in Levels)
+            {
+                <button type="button"
+                        class="choice @(Chosen == level ? "chosen" : "")"
+                        @onclick="() => Pick(level)">
+                    <span class="choice-text">
+                        <b>@Name(level)</b>
+                        <small>@Note(level)</small>
+                    </span>
+                    <span class="choice-price">@Cost(level) aur</span>
+                </button>
+            }
+        </div>
+
+        <p class="repair-note">Treptele pierdute se răscumpără ieftin doar runda asta.</p>
+    }
+    else
+    {
+        <p class="repair-plain">
+            <b>@GameConstants.RepairCost aur</b> și cetatea are iar ziduri, la nivelul de bază.
+        </p>
+    }
+
+    <div class="result-actions">
+        <button type="button" class="result-ghost" @onclick="Drop">
+            @(Chosen < 0 ? "Închide" : "Nu mai repar")
+        </button>
+        @if (Offer == 0)
+        {
+            <button type="button" class="send" @onclick="() => Pick(0)">Ridic zidul</button>
+        }
+    </div>
+
+</section>
+
+@code {
+    [Parameter, EditorRequired] public KingdomDto Kingdom { get; set; } = default!;
+
+    [Parameter] public int Chosen { get; set; } = -1;
+
+    [Parameter] public EventCallback<int> ChosenChanged { get; set; }
+
+    [Parameter] public EventCallback OnClosed { get; set; }
+
+    private int Offer => Kingdom.RuinedFrom;
+
+    private IEnumerable<int> Levels => Enumerable.Range(0, Offer + 1);
+
+    private static string Name(int level) => level switch
+    {
+        0 => "Ridică zidul",
+        1 => "Și înapoi la nivelul 1",
+        _ => "Și înapoi la nivelul 2",
+    };
+
+    private static string Note(int level) => level switch
+    {
+        0 => "Cetatea are iar ziduri, la nivelul de bază",
+        1 => "Zidul ține mai mult și încap mai mulți arcași",
+        _ => "Zidul de dinaintea dărâmării, întreg",
+    };
+
+    private static int Cost(int level) => GameConstants.RepairCost + level switch
+    {
+        1 => GameConstants.RepairToOneCost,
+        2 => GameConstants.RepairToTwoCost,
+        _ => 0,
+    };
+
+    private async Task Pick(int level)
+    {
+        await ChosenChanged.InvokeAsync(level);
+        await OnClosed.InvokeAsync();
+    }
+
+    private async Task Drop()
+    {
+        if (Chosen >= 0)
+        {
+            await ChosenChanged.InvokeAsync(-1);
+        }
+
+        await OnClosed.InvokeAsync();
+    }
+}

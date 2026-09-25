@@ -1,5 +1,7 @@
+using KingdomDuel.Domain;
 using KingdomDuel.Domain.Entities.Matches;
 using KingdomDuel.Domain.Enums;
+using KingdomDuel.Domain.Rounds;
 using KingdomDuel.Shared.Dtos.Matches;
 
 namespace KingdomDuel.Application.Features.Matches;
@@ -13,7 +15,6 @@ internal static class MatchMappings
         IsHost = match.Player1?.UserId == userId,
         Status = match.Status,
         Round = match.Round,
-        CurrentEvent = match.CurrentEvent,
         GameOverReason = match.GameOverReason,
         TotalRounds = match.TotalRounds,
         StartingGold = match.StartingGold,
@@ -27,14 +28,141 @@ internal static class MatchMappings
         Player2Ready = match.Player2?.IsReady ?? false,
         Player1MissedRounds = match.Player1?.MissedRounds ?? 0,
         Player2MissedRounds = match.Player2?.MissedRounds ?? 0,
-        Player1Kingdom = match.Player1?.Kingdom.ToKingdomDto(),
-        Player2Kingdom = match.Player2?.Kingdom.ToKingdomDto(),
-        WaitingOnPlayer1Action =
-            match.Player1 is not null && !match.PendingActions.ContainsKey(match.Player1.ActionKey()),
-        WaitingOnPlayer2Action =
-            match.Player2 is not null && !match.PendingActions.ContainsKey(match.Player2.ActionKey()),
-        History = match.History.OrderBy(r => r.RoundNumber).Select(r => r.ToRoundResultDto()).ToList(),
+        Player1Kingdom = match.KingdomSeenBy(userId, 1),
+        Player2Kingdom = match.KingdomSeenBy(userId, 2),
+        YourCaravan = match.SlotOf(userId)?.Caravan is { } caravan
+            ? new CaravanDto { Troops = caravan.Troops, ReturnsInRound = caravan.AvailableInRound }
+            : null,
+        Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        Breach = match.BreachCall?.ToBreachDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        YourSpies = match.SlotOf(userId)?.Spies?.ToSpyRingDto(),
+        YourReport = match.SlotOf(userId)?.Report?.ToSpyReportDto(),
+        LastRound = match.LastRoundSeenBy(userId),
+        Story = match.StoryOf(),
     };
+
+    private static RoundRecapDto? LastRoundSeenBy(this Match match, Guid userId)
+    {
+        var side = match.SideOf(userId);
+
+        if (side == 0 || match.History.Count == 0)
+        {
+            return null;
+        }
+
+        var last = match.History[^1];
+        var after = side == 1 ? last.Player1.After : last.Player2.After;
+        var before = match.History.Count > 1
+            ? (side == 1 ? match.History[^2].Player1.After : match.History[^2].Player2.After)
+            : KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
+
+        return new RoundRecapDto
+        {
+            Round = last.RoundNumber,
+            GoldDelta = after.Gold - before.Gold,
+            TroopsDelta = after.Troops - before.Troops,
+            VillagersDelta = after.Villagers - before.Villagers,
+            MoraleDelta = after.Morale - before.Morale,
+            Lines = last.Events
+                .Where(happening => happening.Side == side)
+                .Select(happening => new RoundLineDto
+                {
+                    Kind = happening.Kind,
+                    Amount = happening.Amount,
+                    Direction = happening.Direction,
+                    Purchase = happening.Purchase,
+                })
+                .ToList(),
+        };
+    }
+
+    private static readonly RoundEventKind[] Turns =
+    [
+        RoundEventKind.BattleJoined,
+        RoundEventKind.WallsBreached,
+        RoundEventKind.WallsHeld,
+        RoundEventKind.Retreated,
+        RoundEventKind.MarchedOn,
+        RoundEventKind.VillagersRallied,
+        RoundEventKind.CastleDestroyed,
+    ];
+
+    private static MatchStoryDto? StoryOf(this Match match)
+    {
+        if (match.Status != MatchStatus.Completed)
+        {
+            return null;
+        }
+
+        var start = KingdomState.Start(match.StartingGold, match.StartingTroops, match.StartingMorale, match.StartingVillagers);
+        var rounds = new List<StoryRoundDto>
+        {
+            new() { Round = 0, Player1Power = start.TotalPower, Player2Power = start.TotalPower },
+        };
+
+        rounds.AddRange(match.History.Select(round => new StoryRoundDto
+        {
+            Round = round.RoundNumber,
+            Player1Power = round.Player1.After.TotalPower,
+            Player2Power = round.Player2.After.TotalPower,
+            Moments = round.Events
+                .Where(happening => Turns.Contains(happening.Kind))
+                .Select(happening => new StoryMomentDto
+                {
+                    Kind = happening.Kind,
+                    Side = happening.Side,
+                    Amount = happening.Amount,
+                })
+                .ToList(),
+        }));
+
+        return new MatchStoryDto { Rounds = rounds };
+    }
+    private static MarchDto ToMarchDto(this MarchChoice choice, int side, DateTimeOffset now) => new()
+    {
+        Side = choice.Side,
+        Army = choice.Army,
+        SecondsRemaining = Math.Round(choice.SecondsLeftAt(now), 1),
+        IsYours = choice.Side == side,
+    };
+
+    private static BreachDto ToBreachDto(this BreachCall call, int side, DateTimeOffset now) => new()
+    {
+        Side = call.Side,
+        Most = call.Most,
+        SecondsRemaining = Math.Round(call.SecondsLeftAt(now), 1),
+        IsYours = call.Side == side,
+    };
+
+    private static BattleDto ToBattleDto(this LiveBattle battle, int side, DateTimeOffset now)
+    {
+        var replay = battle.Replay;
+
+        var shown = Math.Min(battle.ElapsedAt(now), battle.EndsAt);
+        var snapshot = replay.At(shown);
+
+        return new BattleDto
+        {
+            AttackerSide = replay.AttackerSide,
+            Phase = snapshot.Phase,
+            Player1Start = replay.Player1Start,
+            Player2Start = replay.Player2Start,
+            Player1Left = snapshot.Player1Left,
+            Player2Left = snapshot.Player2Left,
+            Elapsed = Math.Round(shown, 2),
+            Duration = battle.EndsAt,
+            BreachAt = replay.BreachAt,
+            KeepDefenders = replay.BreachAt is { } breach && shown >= breach ? replay.DefenderInKeep : null,
+            Over = battle.IsOverAt(now),
+            RetreatBySide = battle.Retreat?.Side,
+            RetreatAt = battle.Retreat?.At,
+            CanRetreat = battle.CanRetreat(side) && !battle.IsOverAt(now),
+            Falls = replay.FallsUntil(shown)
+                .Select(fall => new BattleFallDto { At = fall.At, Side = fall.Side, Phase = fall.Phase })
+                .ToList(),
+        };
+    }
 
     public static int? SecondsRemaining(this Match match)
     {
@@ -66,23 +194,74 @@ internal static class MatchMappings
             _ => null,
         };
 
-    public static string ActionKey(this PlayerSlot slot) => slot.UserId.ToString();
+    private static KingdomDto? KingdomSeenBy(this Match match, Guid userId, int side)
+    {
+        var slot = side == 1 ? match.Player1 : match.Player2;
 
-    private static KingdomDto ToKingdomDto(this Kingdom kingdom) => new()
+        if (slot is null)
+        {
+            return null;
+        }
+
+        if (match.Status != MatchStatus.InProgress || match.SideOf(userId) == side)
+        {
+            return slot.Kingdom.ToKingdomDto();
+        }
+
+        return match.SlotOf(userId)?.Report is { } heard ? heard.ToHearsayDto() : null;
+    }
+
+    private static KingdomDto ToHearsayDto(this SpyReport report) => new()
+    {
+        Gold = 0,
+        Troops = report.Troops,
+        Villagers = report.Villagers,
+        Morale = report.Morale,
+        TotalPower = 0,
+        Fortification = report.Fortification,
+        Catapults = 0,
+        RuinedFrom = 0,
+        IsHearsay = true,
+    };
+
+    private static SpyRingDto ToSpyRingDto(this SpyRing ring) => new()
+    {
+        Tier = ring.Tier,
+        Villagers = ring.Villagers,
+        Upkeep = ring.Upkeep,
+    };
+
+    private static SpyReportDto ToSpyReportDto(this SpyReport report) => new()
+    {
+        Round = report.Round,
+        Tier = report.Tier,
+        Accuracy = GameConstants.SpyAccuracy(report.Tier),
+        CaravanSent = report.CaravanSent,
+        CaravanVillagers = report.CaravanVillagers,
+        Fortification = report.Fortification,
+        Villagers = report.Villagers,
+        Troops = report.Troops,
+        Morale = report.Morale,
+        Orders = report.Orders is { } orders
+            ? new SpyOrdersDto
+            {
+                Feast = orders.Feast,
+                Defenders = orders.Defenders,
+                Recruited = orders.Recruited,
+                TouchedSpies = orders.TouchedSpies,
+            }
+            : null,
+    };
+
+    private static KingdomDto ToKingdomDto(this KingdomState kingdom) => new()
     {
         Gold = kingdom.Gold,
         Troops = kingdom.Troops,
+        Villagers = kingdom.Villagers,
         Morale = kingdom.Morale,
-        EquipmentLevel = kingdom.EquipmentLevel,
         TotalPower = kingdom.TotalPower,
-    };
-
-    private static RoundResultDto ToRoundResultDto(this RoundResult result) => new()
-    {
-        RoundNumber = result.RoundNumber,
-        Event = result.Event,
-        Player1Action = result.Player1Action,
-        Player2Action = result.Player2Action,
-        Log = result.Log.ToList(),
+        Fortification = kingdom.Fortification,
+        Catapults = kingdom.Catapults,
+        RuinedFrom = kingdom.RuinedFrom,
     };
 }

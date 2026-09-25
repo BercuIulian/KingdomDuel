@@ -1,4 +1,5 @@
 using KingdomDuel.Domain.Entities.Matches;
+using KingdomDuel.Domain.Rounds;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -12,15 +13,18 @@ internal sealed class RoundResultConfiguration : IEntityTypeConfiguration<RoundR
         builder.HasKey(r => r.Id);
 
         builder.Property(r => r.RoundNumber);
-        builder.Property(r => r.Event).HasConversion<string>().HasMaxLength(32);
-        builder.Property(r => r.Player1Action).HasConversion<string>().HasMaxLength(32);
-        builder.Property(r => r.Player2Action).HasConversion<string>().HasMaxLength(32);
         builder.Property(r => r.GameOverReason).HasConversion<string>().HasMaxLength(32);
 
-        // The per-round log lines are primitives - stored as a Postgres text[] column.
-        builder.Property(r => r.Log).HasColumnType("text[]");
+        builder.Property(r => r.Player1)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<RoundSide>(), JsonColumns.Comparer<RoundSide>());
 
-        // Note: the FK back to matches (MatchId) is defined from MatchConfiguration's
-        // HasMany(m => m.History) relationship.
+        builder.Property(r => r.Player2)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<RoundSide>(), JsonColumns.Comparer<RoundSide>());
+
+        builder.Property(r => r.Events)
+            .HasColumnType("jsonb")
+            .HasConversion(JsonColumns.Converter<List<RoundEvent>>(), JsonColumns.Comparer<List<RoundEvent>>());
     }
 }
