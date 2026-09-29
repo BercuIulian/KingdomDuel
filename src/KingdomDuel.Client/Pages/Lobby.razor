@@ -16,7 +16,7 @@
 @if (closedMessage is not null)
 {
     <div class="lobby-closed">
-        <span class="closed-icon">🚪</span>
+        <span class="closed-icon"><Glyph Name="exit" /></span>
         <h1>Lobby închis</h1>
         <p>@closedMessage</p>
         <button type="button" class="btn-primary" @onclick="GoHome">Înapoi la meniu</button>
@@ -26,7 +26,7 @@ else
 {
     <header class="lobby-header">
         <div class="title-block">
-            <span class="crest">🏰</span>
+            <span class="crest"><Glyph Name="crown" /></span>
             <div>
                 <h1>Lobby meci</h1>
                 <p class="subtitle">Pregătește duelul înainte de start</p>
@@ -58,7 +58,7 @@ else
 
         <!-- Setări generale ale meciului -->
         <div class="panel settings-panel">
-            <h2><span class="panel-icon">⚙️</span> Setări meci</h2>
+            <h2><span class="panel-icon"><Glyph Name="scales" /></span> Setări meci</h2>
 
             <div class="field">
                 <label for="rounds">Număr de runde</label>
@@ -73,9 +73,15 @@ else
             </div>
 
             <div class="field">
-                <label for="troops">Trupe de start</label>
+                <label for="troops">Soldați de start</label>
                 <input id="troops" type="number" min="1" max="500" step="10"
                        disabled="@(!isHost)" @bind="startingTroops" @bind:after="PersistLobbyAsync" />
+            </div>
+
+            <div class="field">
+                <label for="villagers">Săteni de start</label>
+                <input id="villagers" type="number" min="1" max="500" step="5"
+                       disabled="@(!isHost)" @bind="startingVillagers" @bind:after="PersistLobbyAsync" />
             </div>
 
             <div class="field">
@@ -101,20 +107,29 @@ else
 
             @if (!isHost)
             {
-                <p class="settings-hint">🔒 Doar gazda poate schimba setările meciului.</p>
+                <p class="settings-hint">Doar gazda poate schimba setările meciului.</p>
             }
         </div>
 
         <!-- Jucătorii aflați în lobby -->
         <div class="panel players-panel">
-            <h2><span class="panel-icon">🛡️</span> Jucători în lobby <span class="count">@players.Count(p => p.Present)/@players.Count</span></h2>
+            <h2><span class="panel-icon"><Glyph Name="shield" /></span> Jucători în lobby <span class="count">@players.Count(p => p.Present)/@players.Count</span></h2>
 
             <ul class="player-list">
                 @foreach (var slot in players)
                 {
                     var isYou = slot.IsHost == isHost;
                     <li class="player @(slot.Present ? "present" : "empty") @(isYou ? "you" : "")">
-                        <span class="avatar">@(slot.Present ? slot.Emoji : "＋")</span>
+                        <span class="avatar">
+                            @if (slot.Present)
+                            {
+                                <Glyph Name="@slot.Icon" />
+                            }
+                            else
+                            {
+                                <span>+</span>
+                            }
+                        </span>
                         <div class="player-info">
                             <span class="player-name">@(slot.Present ? slot.Name : "Se așteaptă un jucător…")</span>
                             @if (slot.Present && slot.IsHost)
@@ -138,17 +153,17 @@ else
                 @if (!OpponentReady)
                 {
                     <span class="start-hint">
-                        <span class="start-hint-icon">⚠️</span>
+                        <span class="start-hint-icon"><Glyph Name="hourglass" /></span>
                         @StartHint
                     </span>
                 }
-                <button type="button" class="btn-primary" disabled="@(!OpponentReady)" @onclick="StartMatchAsync">Start</button>
+                <button type="button" class="btn-primary" disabled="@(!OpponentReady)" @onclick="StartMatchAsync">Începe meciul</button>
             </div>
         }
         else
         {
             <button type="button" class="btn-primary @(isReady ? "unready" : "")" @onclick="ToggleReadyAsync">
-                @(isReady ? "Not ready" : "Ready")
+                @(isReady ? "Nu mai sunt gata" : "Sunt gata")
             </button>
         }
     </footer>
@@ -163,11 +178,12 @@ else
     // --- Setări meci ---
     private int rounds = GameConstants.DefaultTotalRounds;
     private int startingGold = GameConstants.StartingGold;
-    private int startingTroops = 50;
-    private int startingMorale = 50;
+    private int startingTroops = GameConstants.StartingSoldiers;
+    private int startingVillagers = GameConstants.StartingVillagers;
+    private int startingMorale = GameConstants.StartingResource;
     private int roundSeconds = GameConstants.DefaultRoundSeconds;
 
-    private (int Rounds, int Gold, int Troops, int Morale, int Seconds)? confirmedSettings;
+    private (int Rounds, int Gold, int Troops, int Villagers, int Morale, int Seconds)? confirmedSettings;
 
     private string? settingsError;
 
@@ -176,12 +192,12 @@ else
     private bool isReady;
 
     // --- Jucători în lobby ---
-    private sealed record PlayerSlot(bool Present, string Name, string Emoji, bool IsHost, bool Ready);
+    private sealed record PlayerSlot(bool Present, string Name, string Icon, bool IsHost, bool Ready);
 
     private readonly List<PlayerSlot> players =
     [
-        new(Present: true, Name: "Player 1", Emoji: "👑", IsHost: true, Ready: false),
-        new(Present: false, Name: "Player 2", Emoji: "🛡️", IsHost: false, Ready: false),
+        new(Present: true, Name: "Jucătorul 1", Icon: "crown", IsHost: true, Ready: false),
+        new(Present: false, Name: "Jucătorul 2", Icon: "shield", IsHost: false, Ready: false),
     ];
 
     private string DotClass(PlayerSlot slot, bool isYou)
@@ -194,7 +210,7 @@ else
     private bool OpponentReady => players[1].Present && players[1].Ready;
 
     private string StartHint => players[1].Present
-        ? "Jucătorul 2 nu este încă pregătit."
+        ? $"{players[1].Name} nu e încă gata."
         : "Așteaptă un al doilea jucător.";
 
     private bool isCreating = true;
@@ -332,13 +348,13 @@ else
         players[0] = players[0] with
         {
             Present = state.Player1Name is not null,
-            Name = string.IsNullOrWhiteSpace(state.Player1Name) ? "Player 1" : state.Player1Name!,
+            Name = string.IsNullOrWhiteSpace(state.Player1Name) ? "Jucătorul 1" : state.Player1Name!,
             Ready = state.Player1Ready,
         };
         players[1] = players[1] with
         {
             Present = state.Player2Name is not null,
-            Name = string.IsNullOrWhiteSpace(state.Player2Name) ? "Player 2" : state.Player2Name!,
+            Name = string.IsNullOrWhiteSpace(state.Player2Name) ? "Jucătorul 2" : state.Player2Name!,
             Ready = state.Player2Ready,
         };
 
@@ -348,6 +364,7 @@ else
             state.TotalRounds,
             state.StartingGold,
             state.StartingTroops,
+            state.StartingVillagers,
             state.StartingMorale,
             state.RoundSeconds);
 
@@ -356,6 +373,7 @@ else
             rounds = state.TotalRounds;
             startingGold = state.StartingGold;
             startingTroops = state.StartingTroops;
+            startingVillagers = state.StartingVillagers;
             startingMorale = state.StartingMorale;
             roundSeconds = state.RoundSeconds;
         }
@@ -368,7 +386,7 @@ else
             return;
         }
 
-        (rounds, startingGold, startingTroops, startingMorale, roundSeconds) = confirmed;
+        (rounds, startingGold, startingTroops, startingVillagers, startingMorale, roundSeconds) = confirmed;
     }
 
     private async Task PollLoopAsync(CancellationToken ct)
@@ -434,6 +452,7 @@ else
                     TotalRounds = rounds,
                     StartingGold = startingGold,
                     StartingTroops = startingTroops,
+                    StartingVillagers = startingVillagers,
                     StartingMorale = startingMorale,
                     RoundSeconds = roundSeconds,
                 },

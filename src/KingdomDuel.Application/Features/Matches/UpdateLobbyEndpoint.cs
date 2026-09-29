@@ -34,6 +34,7 @@ internal sealed class UpdateLobbyEndpoint(AppDbContext dbContext)
             match.TotalRounds = req.TotalRounds;
             match.StartingGold = req.StartingGold;
             match.StartingTroops = req.StartingTroops;
+            match.StartingVillagers = req.StartingVillagers;
             match.StartingMorale = req.StartingMorale;
             match.RoundSeconds = req.RoundSeconds;
         }

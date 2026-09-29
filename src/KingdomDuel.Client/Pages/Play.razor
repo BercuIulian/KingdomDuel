@@ -8,7 +8,7 @@
 <PageTitle>Kingdom Duel</PageTitle>
 
 <section class="hero">
-    <div class="crest">⚔️</div>
+    <div class="crest"><Glyph Name="swords" /></div>
     <h1>Kingdom Duel</h1>
     <p class="tagline">Două regate. Un duel. Un singur învingător.</p>
 
@@ -22,7 +22,7 @@
     {
         <div class="active-match">
             <div class="active-info">
-                <span class="active-title">⏳ Meci în desfășurare</span>
+                <span class="active-title"><Glyph Name="hourglass" /> Meci în desfășurare</span>
                 <span class="active-round">
                     <strong>@activeMatch.Code</strong> · runda @activeMatch.Round din @activeMatch.TotalRounds
                 </span>
@@ -66,7 +66,7 @@
              @ref="warningPanel"
              @onkeydown="OnWarningKeyDown">
 
-        <span class="modal-ico">⚠️</span>
+        <span class="modal-ico"><Glyph Name="hourglass" /></span>
         <h2 id="active-match-title">Ai deja un meci în desfășurare</h2>
         <p class="modal-text">
             Meciul <strong>@activeMatch.Code</strong> e la runda @activeMatch.Round din

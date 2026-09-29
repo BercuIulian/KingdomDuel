@@ -13,9 +13,9 @@ amândoi, runda se rezolvă.
 | săteni | 15 | pleacă la negoț; acasă petrec pe jumătate |
 | moral | 50 | înmulțește puterea de luptă; scade singur cu 3 pe rundă |
 
-Aurul, soldații și moralul se pot alege altfel în lobby, împreună cu numărul de
-runde (8 până la 30, implicit 10) și cu timpul pe rundă (15–180 de secunde).
-Sătenii pornesc mereu de la 15.
+Aurul, soldații, sătenii și moralul se pot alege altfel în lobby, împreună cu
+numărul de runde (8 până la 30, implicit 10) și cu timpul pe rundă (15–180 de
+secunde).
 
 **Puterea** unui regat e aur + soldați + săteni + moral. Un punct e un punct,
 indiferent de unde vine — un sătean cântărește cât un soldat la socoteala

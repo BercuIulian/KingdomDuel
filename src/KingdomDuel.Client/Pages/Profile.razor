@@ -14,7 +14,7 @@
 @if (signInNotice is not null)
 {
     <section class="gate-again">
-        <div class="crest">🔐</div>
+        <div class="crest"><Glyph Name="key" /></div>
         <h1>Intră din nou în cont</h1>
         <p class="notice">@signInNotice</p>
         <p class="notice dim">Toate sesiunile contului au fost închise, inclusiv aceasta.</p>
@@ -29,7 +29,7 @@ else
         </div>
 
         <header class="profile-head">
-            <div class="crest">👑</div>
+            <div class="crest"><Glyph Name="crown" /></div>
             <AuthorizeView>
                 <Authorized>
                     <h1>Împărăția @context.User.Identity?.Name</h1>
@@ -51,10 +51,10 @@ else
 
                 <nav class="side-nav" aria-label="Secțiunile contului">
                     <button type="button" class="nav-item @(IsHistory ? "" : "active")" @onclick="@(() => Go(null))">
-                        <span class="nav-icon">👤</span> General
+                        <span class="nav-icon"><Glyph Name="helm" /></span> General
                     </button>
                     <button type="button" class="nav-item @(IsHistory ? "active" : "")" @onclick="@(() => Go(HistorySection))">
-                        <span class="nav-icon">📜</span> Istoricul meciurilor
+                        <span class="nav-icon"><Glyph Name="book" /></span> Istoricul meciurilor
                     </button>
                 </nav>
 
@@ -119,7 +119,7 @@ else
             <form @onsubmit="Submit" @onsubmit:preventDefault>
                 @if (editing == Editable.UserName)
                 {
-                    <span class="modal-ico">🏷️</span>
+                    <span class="modal-ico"><Glyph Name="helm" /></span>
                     <h2 id="edit-title">Schimbă numele</h2>
                     <p class="modal-text">
                         E și numele sub care te vede adversarul. După schimbare va trebui să intri din nou în cont.
@@ -134,7 +134,7 @@ else
                 }
                 else if (editing == Editable.Email)
                 {
-                    <span class="modal-ico">✉️</span>
+                    <span class="modal-ico"><Glyph Name="letter" /></span>
                     <h2 id="edit-title">Schimbă emailul</h2>
                     <p class="modal-text">
                         Opțional, dar e singura cale prin care contul ar putea fi recuperat vreodată. Lasă câmpul gol ca să-l ștergi.
@@ -149,7 +149,7 @@ else
                 }
                 else
                 {
-                    <span class="modal-ico">🔑</span>
+                    <span class="modal-ico"><Glyph Name="key" /></span>
                     <h2 id="edit-title">Schimbă parola</h2>
                     <p class="modal-text">
                         După schimbare va trebui să intri din nou în cont.
@@ -206,6 +206,20 @@ else
 
     private void Go(string? section) =>
         Navigation.NavigateTo(Routes.ProfileSection(section));
+
+    protected override void OnParametersSet()
+    {
+        if (Section is null || IsHistory)
+        {
+            return;
+        }
+
+        var known = string.Equals(Section, "history", StringComparison.OrdinalIgnoreCase)
+            ? HistorySection
+            : null;
+
+        Navigation.NavigateTo(Routes.ProfileSection(known), replace: true);
+    }
 
     private UserProfileDto? profile;
     private string? loadError;

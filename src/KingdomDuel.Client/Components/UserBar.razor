@@ -5,7 +5,8 @@
     <Authorized>
         <div class="user-bar" @onkeydown="OnKeyDown">
             <button type="button" class="user-chip" aria-haspopup="menu" aria-expanded="@isOpen" @onclick="Toggle">
-                <span class="user-name">👑 @context.User.Identity?.Name</span>
+                <span class="user-ico"><Glyph Name="crown" /></span>
+                <span class="user-name">@context.User.Identity?.Name</span>
                 <span class="caret">▾</span>
             </button>
 
@@ -15,11 +16,11 @@
 
                 <div class="user-menu" role="menu">
                     <button type="button" class="menu-item" role="menuitem" @onclick="GoToProfile">
-                        <span class="menu-ico">🛡️</span> Profil
+                        <span class="menu-ico"><Glyph Name="shield" /></span> Profil
                     </button>
                     <button type="button" class="menu-item" role="menuitem"
                             disabled="@isSigningOut" @onclick="SignOut">
-                        <span class="menu-ico">🚪</span> @(isSigningOut ? "Se iese…" : "Deconectare")
+                        <span class="menu-ico"><Glyph Name="exit" /></span> @(isSigningOut ? "Se iese…" : "Deconectare")
                     </button>
                 </div>
             }

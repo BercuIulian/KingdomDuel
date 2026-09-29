@@ -19,6 +19,7 @@ internal static class MatchMappings
         TotalRounds = match.TotalRounds,
         StartingGold = match.StartingGold,
         StartingTroops = match.StartingTroops,
+        StartingVillagers = match.StartingVillagers,
         StartingMorale = match.StartingMorale,
         RoundSeconds = match.RoundSeconds,
         SecondsRemaining = match.SecondsRemaining(),
