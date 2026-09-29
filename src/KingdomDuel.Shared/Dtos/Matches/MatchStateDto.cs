@@ -13,6 +13,7 @@ public sealed class MatchStateDto
     public int TotalRounds { get; set; }
     public int StartingGold { get; set; }
     public int StartingTroops { get; set; }
+    public int StartingVillagers { get; set; }
     public int StartingMorale { get; set; }
     public int RoundSeconds { get; set; }
     public int? SecondsRemaining { get; set; }

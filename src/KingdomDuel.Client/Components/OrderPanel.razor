@@ -315,7 +315,7 @@
                             @onclick="() => PickSpies(tier)">
                         <span class="choice-text">
                             <b>@SpyStaffName(tier)</b>
-                            <small>@SpyNote(tier)</small>
+                            <small>@($"{GameConstants.SpyAccuracy(tier) * 100:0}% precizie · {SpyNote(tier)}")</small>
                         </span>
                         <span class="choice-price">@GameConstants.SpyUpkeep(tier) aur / rundă</span>
                     </button>
@@ -693,9 +693,9 @@
 
     private static string SpyNote(SpyTier tier) => tier switch
     {
-        SpyTier.Lone => "Vești aproximative, la un preț mic",
-        SpyTier.Pair => "Cifre mai apropiate de adevăr",
-        _ => "Aproape exact, și îi afli și ordinele din runda trecută",
+        SpyTier.Lone => "vești aproximative, la un preț mic",
+        SpyTier.Pair => "cifre mai apropiate de adevăr",
+        _ => "aproape exact, și îi afli și ordinele din runda trecută",
     };
 
     private void OpenSpies() => spyPopup = true;

@@ -160,7 +160,7 @@ cer `Authorization: Bearer <token>`.
 | `GET` | `/matches/mine` | Meciul în desfășurare al apelantului, dacă există. |
 | `GET` | `/matches/{code}` | Starea meciului (polling). Doar pentru participanți — altfel `404`. |
 | `POST` | `/matches/{code}/join` | Alăturare cu codul. Idempotent: dacă ești deja pe un slot, întoarce starea. |
-| `PUT` | `/matches/{code}/lobby` | Setările meciului (runde, aur/trupe/moral de start, timp pe rundă) + starea *ready*. |
+| `PUT` | `/matches/{code}/lobby` | Setările meciului (runde, aur/trupe/săteni/moral de start, timp pe rundă) + starea *ready*. |
 | `POST` | `/matches/{code}/start` | Gazda pornește meciul. |
 | `POST` | `/matches/{code}/leave` | Părăsește meciul. Într-un meci în desfășurare, îl încheie prin abandon. |
 

@@ -15,7 +15,11 @@ public sealed class UpdateLobbyValidator : AbstractValidator<UpdateLobbyRequest>
 
         RuleFor(x => x.StartingTroops)
             .InclusiveBetween(1, 500)
-            .WithMessage("Trupele de start trebuie să fie între 1 și 500.");
+            .WithMessage("Soldații de start trebuie să fie între 1 și 500.");
+
+        RuleFor(x => x.StartingVillagers)
+            .InclusiveBetween(1, 500)
+            .WithMessage("Sătenii de start trebuie să fie între 1 și 500.");
 
         RuleFor(x => x.StartingMorale)
             .InclusiveBetween(1, 100)

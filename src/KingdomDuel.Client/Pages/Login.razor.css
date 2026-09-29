@@ -10,15 +10,20 @@
 }
 
 .crest {
-    font-size: 2.75rem;
+    display: flex;
+    justify-content: center;
+    color: var(--gold);
+    font-size: 2.4rem;
     line-height: 1;
     margin-bottom: 0.5rem;
 }
 
 .gate h1 {
     margin: 0;
-    font-size: 2rem;
-    letter-spacing: 0.04em;
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
     color: #e9d9a8;
     font-weight: 700;
 }
@@ -46,8 +51,11 @@
     border-radius: 8px;
     background: transparent;
     color: #9ea4af;
-    font-family: inherit;
-    font-size: 0.95rem;
+    font-family: var(--font-display);
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
@@ -72,11 +80,15 @@
     display: block;
     margin-bottom: 0.3rem;
     color: #9ea4af;
-    font-size: 0.85rem;
-    letter-spacing: 0.01em;
+    font-family: var(--font-display);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
 .field em {
+    text-transform: none;
+    letter-spacing: normal;
     font-style: normal;
     color: #767d88;
 }
@@ -115,10 +127,11 @@
     border-radius: 10px;
     background: linear-gradient(180deg, #d9bd72, #c6a15b);
     color: #1b1408;
-    font-family: inherit;
-    font-size: 1.02rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    font-family: var(--font-display);
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: filter 0.15s ease;
 }
