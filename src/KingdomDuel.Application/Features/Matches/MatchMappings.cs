@@ -8,7 +8,7 @@ namespace KingdomDuel.Application.Features.Matches;
 
 internal static class MatchMappings
 {
-    public static MatchStateDto ToStateDto(this Match match, Guid userId) => new()
+    public static MatchStateDto ToStateDto(this Match match, Guid userId, DateTimeOffset now) => new()
     {
         Code = match.Code,
         YourSide = match.SideOf(userId),
@@ -22,7 +22,7 @@ internal static class MatchMappings
         StartingVillagers = match.StartingVillagers,
         StartingMorale = match.StartingMorale,
         RoundSeconds = match.RoundSeconds,
-        SecondsRemaining = match.SecondsRemaining(),
+        SecondsRemaining = match.SecondsRemaining(now),
         Player1Name = match.Player1?.User.UserName,
         Player2Name = match.Player2?.User.UserName,
         Player1Ready = match.Player1?.IsReady ?? false,
@@ -34,9 +34,9 @@ internal static class MatchMappings
         YourCaravan = match.SlotOf(userId)?.Caravan is { } caravan
             ? new CaravanDto { Troops = caravan.Troops, ReturnsInRound = caravan.AvailableInRound }
             : null,
-        Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), DateTimeOffset.UtcNow),
-        March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), DateTimeOffset.UtcNow),
-        Breach = match.BreachCall?.ToBreachDto(match.SideOf(userId), DateTimeOffset.UtcNow),
+        Battle = match.LiveBattle?.ToBattleDto(match.SideOf(userId), now),
+        March = match.MarchChoice?.ToMarchDto(match.SideOf(userId), now),
+        Breach = match.BreachCall?.ToBreachDto(match.SideOf(userId), now),
         YourSpies = match.SlotOf(userId)?.Spies?.ToSpyRingDto(),
         YourReport = match.SlotOf(userId)?.Report?.ToSpyReportDto(),
         LastRound = match.LastRoundSeenBy(userId),
@@ -105,8 +105,8 @@ internal static class MatchMappings
         rounds.AddRange(match.History.Select(round => new StoryRoundDto
         {
             Round = round.RoundNumber,
-            Player1Power = round.Player1.After.TotalPower,
-            Player2Power = round.Player2.After.TotalPower,
+            Player1Power = round.Player1.TotalPower,
+            Player2Power = round.Player2.TotalPower,
             Moments = round.Events
                 .Where(happening => Turns.Contains(happening.Kind))
                 .Select(happening => new StoryMomentDto
@@ -131,7 +131,7 @@ internal static class MatchMappings
     private static BreachDto ToBreachDto(this BreachCall call, int side, DateTimeOffset now) => new()
     {
         Side = call.Side,
-        Most = call.Most,
+        Most = call.Side == side ? call.Most : 0,
         SecondsRemaining = Math.Round(call.SecondsLeftAt(now), 1),
         IsYours = call.Side == side,
     };
@@ -165,14 +165,14 @@ internal static class MatchMappings
         };
     }
 
-    public static int? SecondsRemaining(this Match match)
+    public static int? SecondsRemaining(this Match match, DateTimeOffset now)
     {
         if (match.Status != MatchStatus.InProgress || match.RoundDeadline is not { } deadline)
         {
             return null;
         }
 
-        var left = (deadline - DateTimeOffset.UtcNow).TotalSeconds;
+        var left = (deadline - now).TotalSeconds;
 
         return left <= 0 ? 0 : (int)Math.Ceiling(left);
     }
@@ -195,6 +195,8 @@ internal static class MatchMappings
             _ => null,
         };
 
+    public static int TotalPower(this PlayerSlot slot) => SideOutcome.PowerOf(slot.Kingdom, slot.Caravan, slot.Spies);
+
     private static KingdomDto? KingdomSeenBy(this Match match, Guid userId, int side)
     {
         var slot = side == 1 ? match.Player1 : match.Player2;
@@ -206,7 +208,7 @@ internal static class MatchMappings
 
         if (match.Status != MatchStatus.InProgress || match.SideOf(userId) == side)
         {
-            return slot.Kingdom.ToKingdomDto();
+            return slot.Kingdom.ToKingdomDto(slot.TotalPower());
         }
 
         return match.SlotOf(userId)?.Report is { } heard ? heard.ToHearsayDto() : null;
@@ -254,13 +256,13 @@ internal static class MatchMappings
             : null,
     };
 
-    private static KingdomDto ToKingdomDto(this KingdomState kingdom) => new()
+    private static KingdomDto ToKingdomDto(this KingdomState kingdom, int totalPower) => new()
     {
         Gold = kingdom.Gold,
         Troops = kingdom.Troops,
         Villagers = kingdom.Villagers,
         Morale = kingdom.Morale,
-        TotalPower = kingdom.TotalPower,
+        TotalPower = totalPower,
         Fortification = kingdom.Fortification,
         Catapults = kingdom.Catapults,
         RuinedFrom = kingdom.RuinedFrom,

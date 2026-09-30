@@ -7,7 +7,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class RetreatEndpoint(AppDbContext dbContext) : EndpointWithoutRequest<MatchStateDto>
+internal sealed class RetreatEndpoint(AppDbContext dbContext, RoundResolver resolver, TimeProvider time) : EndpointWithoutRequest<MatchStateDto>
 {
     private const int MaxAttempts = 2;
 
@@ -40,7 +40,7 @@ internal sealed class RetreatEndpoint(AppDbContext dbContext) : EndpointWithoutR
                 return;
             }
 
-            RoundResolver.SettleIfDue(match);
+            resolver.SettleIfDue(match);
 
             if (match.LiveBattle is not { } battle)
             {
@@ -63,7 +63,7 @@ internal sealed class RetreatEndpoint(AppDbContext dbContext) : EndpointWithoutR
                 return;
             }
 
-            if (!RoundResolver.SignalRetreat(match, side))
+            if (!resolver.SignalRetreat(match, side))
             {
                 AddError("Bătălia s-a încheiat deja.");
                 await Send.ErrorsAsync(cancellation: ct);
@@ -80,7 +80,7 @@ internal sealed class RetreatEndpoint(AppDbContext dbContext) : EndpointWithoutR
                 continue;
             }
 
-            await Send.OkAsync(match.ToStateDto(userId), ct);
+            await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
             return;
         }
     }

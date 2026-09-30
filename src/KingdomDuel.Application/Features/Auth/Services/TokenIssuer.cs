@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 
 namespace KingdomDuel.Application.Features.Auth.Services;
 
-internal sealed class TokenIssuer(IOptions<JwtOptions> options)
+internal sealed class TokenIssuer(IOptions<JwtOptions> options, TimeProvider time)
 {
     private readonly JwtOptions options = options.Value;
 
@@ -12,7 +12,7 @@ internal sealed class TokenIssuer(IOptions<JwtOptions> options)
 
     public AuthToken Issue(Guid userId, string userName, int tokenVersion)
     {
-        var expiresAt = DateTimeOffset.UtcNow.AddDays(options.LifetimeDays);
+        var expiresAt = time.GetUtcNow().AddDays(options.LifetimeDays);
 
         var token = JwtBearer.CreateToken(o =>
         {

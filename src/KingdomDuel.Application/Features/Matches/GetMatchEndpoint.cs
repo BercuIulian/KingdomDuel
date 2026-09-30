@@ -7,7 +7,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class GetMatchEndpoint(AppDbContext dbContext)
+internal sealed class GetMatchEndpoint(AppDbContext dbContext, RoundResolver resolver, TimeProvider time)
     : Endpoint<GetMatchRequest, MatchStateDto>
 {
     public override void Configure()
@@ -27,11 +27,11 @@ internal sealed class GetMatchEndpoint(AppDbContext dbContext)
             return;
         }
 
-        var settled = RoundResolver.SettleIfDue(match);
+        var settled = resolver.SettleIfDue(match);
 
-        if (settled || RoundResolver.ExpireIfDue(match))
+        if (settled || resolver.ExpireIfDue(match))
         {
-            MatchRecorder.RecordCompleted(dbContext, match);
+            MatchRecorder.RecordCompleted(dbContext, match, time.GetUtcNow());
 
             try
             {
@@ -50,6 +50,6 @@ internal sealed class GetMatchEndpoint(AppDbContext dbContext)
             }
         }
 
-        await Send.OkAsync(match.ToStateDto(userId), ct);
+        await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
     }
 }

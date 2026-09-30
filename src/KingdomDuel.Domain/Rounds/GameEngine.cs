@@ -20,18 +20,9 @@ public static class GameEngine
 
         var battle = PlanBattle(after1, after2, order1, order2, random);
 
-        if (battle is not null)
-        {
-            return new RoundOutcome(after1, after2, events, GameOverReason.None, battle);
-        }
+        var outcome = new RoundOutcome(after1, after2, events, GameOverReason.None, battle);
 
-        (after1, after2) = LandRecruits(after1, after2, events);
-
-        return new RoundOutcome(
-            after1,
-            after2,
-            events,
-            EvaluateGameOver(after1, after2, input.Round, input.TotalRounds));
+        return battle is null ? CloseRound(outcome, input.Round, input.TotalRounds) : outcome;
     }
 
     public static RoundOutcome SettleBattle(
@@ -88,9 +79,26 @@ public static class GameEngine
         }
 
         (after1, after2) = MoveMorale(after1, after2, replay, endsAt, retreat, events);
-        (after1, after2) = LandRecruits(after1, after2, events);
 
-        return new RoundOutcome(after1, after2, events, EvaluateGameOver(after1, after2, round, totalRounds));
+        var afterBattle = new RoundOutcome(after1, after2, events, GameOverReason.None);
+
+        return MarchChoiceSide(replay, endsAt, retreat) == 0
+            ? CloseRound(afterBattle, round, totalRounds)
+            : afterBattle;
+    }
+
+    public static RoundOutcome CloseRound(RoundOutcome outcome, int round, int totalRounds)
+    {
+        var events = outcome.Events.ToList();
+        var (after1, after2) = LandRecruits(outcome.Player1, outcome.Player2, events);
+
+        return outcome with
+        {
+            Player1 = after1,
+            Player2 = after2,
+            Events = events,
+            GameOverReason = EvaluateGameOver(after1, after2, round, totalRounds),
+        };
     }
 
     private static (SideOutcome, SideOutcome) BringWallDown(

@@ -107,7 +107,11 @@ internal static class GameSetup
             ? Math.Min(signal.At + GameConstants.RetreatSeconds, replay.Duration)
             : replay.Duration;
 
-        return GameEngine.SettleBattle(before, replay, endsAt, round, totalRounds, retreat);
+        var settled = GameEngine.SettleBattle(before, replay, endsAt, round, totalRounds, retreat);
+
+        return GameEngine.MarchChoiceSide(replay, endsAt, retreat) == 0
+            ? settled
+            : GameEngine.CloseRound(settled, round, totalRounds);
     }
 
     public static int Count(this RoundOutcome outcome, RoundEventKind kind, int side) =>
@@ -117,8 +121,6 @@ internal static class GameSetup
         outcome.Events.Any(e => e.Kind == kind && e.Side == side);
 }
 
-// NextDouble always returns the same value, so every roll of a battle goes
-// one way: below the loss chance the first army falls, above it the second.
 internal sealed class FixedRandom(double value) : Random
 {
     public const double FirstLoses = 0.0;

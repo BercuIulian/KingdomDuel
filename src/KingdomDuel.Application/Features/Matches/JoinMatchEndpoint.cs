@@ -7,7 +7,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
+internal sealed class JoinMatchEndpoint(AppDbContext dbContext, TimeProvider time)
     : EndpointWithoutRequest<JoinMatchResponse>
 {
     public override void Configure()
@@ -29,7 +29,7 @@ internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
 
         if (match.SideOf(userId) != 0)
         {
-            await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId) }, ct);
+            await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId, time.GetUtcNow()) }, ct);
             return;
         }
 
@@ -67,6 +67,6 @@ internal sealed class JoinMatchEndpoint(AppDbContext dbContext)
         match.Player2 = new PlayerSlot { UserId = userId, User = user };
         await dbContext.SaveChangesAsync(ct);
 
-        await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId) }, ct);
+        await Send.OkAsync(new JoinMatchResponse { State = match.ToStateDto(userId, time.GetUtcNow()) }, ct);
     }
 }

@@ -11,7 +11,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
+internal sealed class SubmitOrderEndpoint(AppDbContext dbContext, RoundResolver resolver, TimeProvider time)
     : Endpoint<SubmitOrderRequest, MatchStateDto>
 {
     private const int MaxAttempts = 2;
@@ -61,7 +61,7 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
-            RoundResolver.SettleIfDue(match);
+            resolver.SettleIfDue(match);
 
             if (match.LiveBattle is not null)
             {
@@ -161,13 +161,13 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 return;
             }
 
-            if (!RoundResolver.ExpireIfDue(match))
+            if (!resolver.ExpireIfDue(match))
             {
                 slot.PendingOrder = plan;
-                RoundResolver.ResolveIfReady(match);
+                resolver.ResolveIfReady(match);
             }
 
-            MatchRecorder.RecordCompleted(dbContext, match);
+            MatchRecorder.RecordCompleted(dbContext, match, time.GetUtcNow());
 
             try
             {
@@ -179,7 +179,7 @@ internal sealed class SubmitOrderEndpoint(AppDbContext dbContext)
                 continue;
             }
 
-            await Send.OkAsync(match.ToStateDto(userId), ct);
+            await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
             return;
         }
     }

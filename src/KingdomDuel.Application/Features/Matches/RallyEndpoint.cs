@@ -8,7 +8,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class RallyEndpoint(AppDbContext dbContext) : Endpoint<RallyRequest, MatchStateDto>
+internal sealed class RallyEndpoint(AppDbContext dbContext, RoundResolver resolver, TimeProvider time) : Endpoint<RallyRequest, MatchStateDto>
 {
     private const int MaxAttempts = 2;
 
@@ -40,7 +40,7 @@ internal sealed class RallyEndpoint(AppDbContext dbContext) : Endpoint<RallyRequ
                 return;
             }
 
-            RoundResolver.SettleIfDue(match);
+            resolver.SettleIfDue(match);
 
             if (match.BreachCall is not { } call)
             {
@@ -56,7 +56,7 @@ internal sealed class RallyEndpoint(AppDbContext dbContext) : Endpoint<RallyRequ
                 return;
             }
 
-            if (!RoundResolver.Rally(match, side, req.Villagers))
+            if (!resolver.Rally(match, side, req.Villagers))
             {
                 AddError("A trecut vremea: asaltul a intrat deja în cetate.");
                 await Send.ErrorsAsync(cancellation: ct);
@@ -73,7 +73,7 @@ internal sealed class RallyEndpoint(AppDbContext dbContext) : Endpoint<RallyRequ
                 continue;
             }
 
-            await Send.OkAsync(match.ToStateDto(userId), ct);
+            await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
             return;
         }
     }

@@ -103,6 +103,30 @@ public sealed class FieldBattleTests
     }
 
     [Fact]
+    public void The_round_stays_open_while_the_field_winner_chooses()
+    {
+        var random = new FixedRandom(FixedRandom.SecondLoses);
+        var before = Resolve(
+            Side(order: Order(attack: 5)),
+            Side(Kingdom(gold: 50, villagers: 0), Order(attack: 5, buy: [PurchaseType.Recruit], hired: 1)),
+            round: 10,
+            totalRounds: 10,
+            random: random);
+
+        var afterField = GameEngine.SettleBattle(before, before.Battle!, before.Battle!.Duration, 10, 10);
+
+        afterField.GameOverReason.ShouldBe(GameOverReason.None);
+        afterField.Player2.Recruits.ShouldBe(6);
+        afterField.Player2.Hired.ShouldBe(5);
+
+        var closed = GameEngine.CloseRound(afterField, 10, 10);
+
+        closed.Player2.Kingdom.Troops.ShouldBe(5 + 6);
+        closed.Player2.Kingdom.Villagers.ShouldBe(5);
+        closed.GameOverReason.ShouldNotBe(GameOverReason.None);
+    }
+
+    [Fact]
     public void After_a_retreat_the_other_army_chooses()
     {
         var outcome = Resolve(

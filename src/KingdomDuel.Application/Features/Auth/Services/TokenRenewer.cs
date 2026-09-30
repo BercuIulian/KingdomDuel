@@ -3,7 +3,7 @@ using Microsoft.Extensions.Options;
 
 namespace KingdomDuel.Application.Features.Auth.Services;
 
-internal sealed class TokenRenewer(TokenIssuer tokenIssuer, IOptions<JwtOptions> options)
+internal sealed class TokenRenewer(TokenIssuer tokenIssuer, IOptions<JwtOptions> options, TimeProvider time)
 {
     private readonly JwtOptions options = options.Value;
 
@@ -19,7 +19,7 @@ internal sealed class TokenRenewer(TokenIssuer tokenIssuer, IOptions<JwtOptions>
             return null;
         }
 
-        var remaining = expiresAt.Value - DateTimeOffset.UtcNow;
+        var remaining = expiresAt.Value - time.GetUtcNow();
 
         return remaining > TimeSpan.FromDays(options.RenewWhenRemainingDays)
             ? null

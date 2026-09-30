@@ -2,14 +2,13 @@ using System.Text.Json.Serialization;
 using FastEndpoints;
 using FastEndpoints.Swagger;
 using KingdomDuel.Application;
+using KingdomDuel.Application.Features.Matches;
 using KingdomDuel.Shared.Auth;
 
 namespace KingdomDuel.Api.Configurations;
 
 public static class ApiConfiguration
 {
-    // CORS policy that lets the Blazor WASM client (served from a different
-    // origin) call the API during development.
     private const string ClientCorsPolicy = "ClientApp";
 
     public static WebApplicationBuilder AddApiConfiguration(this WebApplicationBuilder builder)
@@ -19,6 +18,8 @@ public static class ApiConfiguration
             o.Assemblies = [typeof(AppDbContext).Assembly];
             o.IncludeAbstractValidators = true;
         });
+
+        builder.Services.AddMatchServices();
 
         // Dev-only: the client runs on its own dev-server port, so it needs CORS.
         if (!builder.Environment.IsProduction())

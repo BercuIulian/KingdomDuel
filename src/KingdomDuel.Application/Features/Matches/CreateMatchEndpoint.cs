@@ -9,7 +9,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class CreateMatchEndpoint(AppDbContext dbContext)
+internal sealed class CreateMatchEndpoint(AppDbContext dbContext, TimeProvider time)
     : EndpointWithoutRequest<CreateMatchResponse>
 {
     public override void Configure()
@@ -41,7 +41,7 @@ internal sealed class CreateMatchEndpoint(AppDbContext dbContext)
             if (open is not null)
             {
                 await Send.OkAsync(
-                    new CreateMatchResponse { MatchCode = open.Code, State = open.ToStateDto(userId) },
+                    new CreateMatchResponse { MatchCode = open.Code, State = open.ToStateDto(userId, time.GetUtcNow()) },
                     ct);
                 return;
             }
@@ -71,7 +71,7 @@ internal sealed class CreateMatchEndpoint(AppDbContext dbContext)
         await dbContext.SaveChangesAsync(ct);
 
         await Send.OkAsync(
-            new CreateMatchResponse { MatchCode = match.Code, State = match.ToStateDto(userId) },
+            new CreateMatchResponse { MatchCode = match.Code, State = match.ToStateDto(userId, time.GetUtcNow()) },
             ct);
     }
 }
