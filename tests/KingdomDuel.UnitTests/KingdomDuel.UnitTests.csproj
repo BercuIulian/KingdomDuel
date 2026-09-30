@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KingdomDuel.Domain\KingdomDuel.Domain.csproj" />
+    <ProjectReference Include="..\..\src\KingdomDuel.Shared\KingdomDuel.Shared.csproj" />
+    <ProjectReference Include="..\..\src\KingdomDuel.Application\KingdomDuel.Application.csproj" />
+  </ItemGroup>
+
+</Project>

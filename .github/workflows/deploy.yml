@@ -10,7 +10,45 @@ permissions:
   id-token: write        # obligatoriu pentru OIDC — fără el, autentificarea la Google eșuează
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Testele de integrare pornesc Postgres prin Testcontainers; Docker e deja pe runner.
+      - name: Test
+        run: |
+          dotnet test --solution KingdomDuel.sln \
+            --coverlet \
+            --coverlet-output-format cobertura \
+            --coverlet-include "[KingdomDuel.*]*" \
+            --coverlet-exclude "[KingdomDuel.*Tests]*" \
+            --coverlet-exclude-by-file "**/Migrations/*.cs" \
+            --coverlet-exclude-by-file "**/ApiClients/ApiClient.cs" \
+            --coverlet-exclude-by-file "**/Program.cs" \
+            --coverlet-exclude-by-attribute GeneratedCode \
+            --coverlet-skip-auto-props \
+            --results-directory TestResults
+
+      - name: Coverage report
+        if: always()
+        run: |
+          dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.5.11
+          reportgenerator -reports:"TestResults/**/*.cobertura*.xml" -targetdir:coverage -reporttypes:"Html;MarkdownSummaryGithub"
+          cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     env:
       REGION: us-east1
