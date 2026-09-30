@@ -53,7 +53,9 @@ sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
 
 Un ordin aparte, cu trei trepte. Sătenii trimiși ca spioni **rămân plecați
 rundă după rundă**, până îi chemi acasă, și costă **un aur de cap în fiecare
-rundă**, inclusiv în cea în care pleacă.
+rundă**, inclusiv în cea în care pleacă. Rețeaua de pe teren nu mai atârnă de
+sătenii din cetate: o păstrezi sau o micșorezi oricâți ai acasă, iar ca s-o
+mărești îți trebuie doar sătenii care pleacă în plus.
 
 | | săteni | pe rundă | acuratețe |
 |---|---|---|---|
@@ -105,7 +107,8 @@ unul rămas, iar cel rămas costă și vede de acum ca o rețea de unul singur.
 - Cel păgubit află că i-au murit spionii, altfel n-ar înțelege de ce raportul
   lui s-a subțiat.
 - **Soldații plecați în căutare nu apără zidul** în runda aceea și nu intră în
-  garnizoană. Se întorc la sfârșitul rundei, nu se pierd.
+  garnizoană. Dacă cetatea rezistă, se întorc la sfârșitul rundei; dacă cade,
+  mor odată cu ea.
 
 Dacă rămâi fără aur de întreținere, **toți spionii se întorc acasă** de la
 sine. Sătenii se întorc în sat și când îi chemi, și când rămâi fără aur — nu se
@@ -115,14 +118,16 @@ nu petrec la ospăț și nu pot lua arma la spărtură.
 ### Aurul
 
 - **Ospăț** — ridică moralul celor rămași acasă: masă mică 5 aur pentru +4,
-  ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine e plecat — la
-  atac sau cu caravana — nu petrece, deci sporul scade pe măsură. La masă un
+  ospăț de curte 12 pentru +10, ospăț mare 25 pentru +22. Cine nu e la masă —
+  plecat la atac, urcat pe zid la apărare sau dus cu caravana — nu petrece,
+  deci sporul scade pe măsură. La masă un
   sătean cântărește **jumătate** de soldat, iar spionii sunt și ei plecați.
-  Moralul nu trece de 100.
+  Negustorii se socotesc plecați până în runda în care se întorc: trimiși în
+  runda 3, petrec abia la un ospăț din runda 5. Moralul nu trece de 100.
 - **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare. O singură
   dată pe rundă.
-- **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți pe loc. Se ia de
-  câte ori îți ajunge aurul.
+- **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți în runda
+  următoare. Se ia de câte ori îți ajunge aurul.
 - **Înarmare** — 1 aur de cap. Sătenii tăi iau arma și intră în oaste din runda
   următoare; satul rămâne cu atâția mai puțini. Așa crește oastea repede, dar
   omul cu omul e mai scump decât la recrutare. Se înarmează doar sătenii de

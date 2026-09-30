@@ -12,30 +12,30 @@
     <div class="budget">
         <span class="budget-item">
             <Glyph Name="helm" />
-            <b>@Free</b><span class="eyebrow">soldați liberi din @Troops</span>
+            <b>@order.Free</b><span class="eyebrow">soldați liberi din @order.Troops</span>
         </span>
         <span class="budget-item">
             <Glyph Name="folk" />
-            <b>@FreeVillagers</b><span class="eyebrow">săteni liberi din @Villagers</span>
+            <b>@order.FreeVillagers</b><span class="eyebrow">săteni liberi din @order.Villagers</span>
         </span>
         <span class="budget-item">
             <Glyph Name="coin" />
-            <b>@GoldLeft</b><span class="eyebrow">aur rămas din @Gold</span>
+            <b>@order.GoldLeft</b><span class="eyebrow">aur rămas din @order.Gold</span>
         </span>
-        @if (Caravan is not null)
+        @if (order.Caravan is not null)
         {
             <span class="budget-item away">
                 <Glyph Name="coin" />
-                <span class="eyebrow">caravana e pe drum cu @Caravan.Troops, se întoarce în runda @Caravan.ReturnsInRound</span>
+                <span class="eyebrow">caravana e pe drum cu @order.Caravan.Troops, se întoarce în runda @order.Caravan.ReturnsInRound</span>
             </span>
         }
 
         <button type="button" class="treasury" disabled="@orderSent" @onclick="() => shopOpen = true">
             <Glyph Name="coin" />
             Cumpără
-            @if (bought.Count > 0)
+            @if (order.Bought.Count > 0)
             {
-                <span class="treasury-count">@bought.Count</span>
+                <span class="treasury-count">@order.Bought.Count</span>
             }
         </button>
     </div>
@@ -45,28 +45,28 @@
         {
             <button type="button"
                     class="order"
-                    aria-pressed="@(Allocated(direction) > 0)"
-                    disabled="@(orderSent || Blocked(direction))"
+                    aria-pressed="@(order.Allocated(direction) > 0)"
+                    disabled="@(orderSent || order.Blocked(direction))"
                     @onclick="() => OpenPicker(direction)">
                 <span class="order-ico"><Glyph Name="@Icon(direction)" /></span>
                 <b>@Label(direction)</b>
                 <small>@Hint(direction)</small>
-                @if (Allocated(direction) > 0)
+                @if (order.Allocated(direction) > 0)
                 {
-                    <span class="shift">@Allocated(direction) soldați</span>
+                    <span class="shift">@order.Allocated(direction) soldați</span>
                 }
             </button>
         }
 
         <button type="button"
                 class="order"
-                aria-pressed="@(feast is not null)"
+                aria-pressed="@(order.Feast is not null)"
                 disabled="@orderSent"
                 @onclick="OpenFeast">
             <span class="order-ico"><Glyph Name="flame" /></span>
             <b>Ospăț</b>
             <small>Ridică moralul celor de acasă</small>
-            @if (feast is { } chosenTier)
+            @if (order.Feast is { } chosenTier)
             {
                 <span class="shift">@FeastName(chosenTier)</span>
             }
@@ -74,7 +74,7 @@
 
         <button type="button"
                 class="order"
-                aria-pressed="@(SpiesOut is not null || spies is not null)"
+                aria-pressed="@(order.SpiesOut is not null || order.Spies is not null)"
                 disabled="@orderSent"
                 @onclick="OpenSpies">
             <span class="order-ico"><Glyph Name="eye" /></span>
@@ -93,7 +93,7 @@
             }
             else
             {
-                <button type="button" class="send" disabled="@(sending || !Fits)" @onclick="Send">
+                <button type="button" class="send" disabled="@(sending || !order.Fits)" @onclick="Send">
                     @(sending ? "Se trimite…" : "Trimite ordinul")
                 </button>
             }
@@ -117,13 +117,13 @@
 
         <div class="picker-value">
             <b>@draft</b>
-            <span class="eyebrow">din @Ceiling(chosen) soldați</span>
+            <span class="eyebrow">din @order.Ceiling(chosen) soldați</span>
         </div>
 
         <input type="range"
                class="picker-range"
                min="0"
-               max="@Ceiling(chosen)"
+               max="@order.Ceiling(chosen)"
                step="1"
                value="@draft"
                @oninput="OnDraft" />
@@ -154,11 +154,11 @@
             {
                 <button type="button"
                         class="choice @(feastDraft == tier ? "chosen" : "")"
-                        disabled="@(!Affordable(tier))"
+                        disabled="@(!order.Affordable(tier))"
                         @onclick="() => feastDraft = tier">
                     <span class="choice-text">
                         <b>@FeastName(tier)</b>
-                        <small>+@MoraleFrom(tier) moral</small>
+                        <small>+@order.MoraleFrom(tier) moral</small>
                     </span>
                     <span class="choice-price">@GameConstants.FeastCost(tier) aur</span>
                 </button>
@@ -184,16 +184,16 @@
             @foreach (var purchase in Buyables)
             {
                 <button type="button"
-                        class="choice @(bought.Contains(purchase) ? "chosen" : "")"
-                        disabled="@(!Buyable(purchase))"
-                        @onclick="() => Toggle(purchase)">
+                        class="choice @(order.Bought.Contains(purchase) ? "chosen" : "")"
+                        disabled="@(!order.Buyable(purchase))"
+                        @onclick="() => order.Toggle(purchase)">
                     <span class="choice-text">
                         <span class="choice-name">
                             <b>@Label(purchase)</b>
-                            @if (MaxLevel(purchase) > 0)
+                            @if (OrderDraft.MaxLevel(purchase) > 0)
                             {
                                 <span class="levels">
-                                    @for (var step = 1; step <= MaxLevel(purchase); step++)
+                                    @for (var step = 1; step <= OrderDraft.MaxLevel(purchase); step++)
                                     {
                                         <span class="level @LevelState(purchase, step)"></span>
                                     }
@@ -208,19 +208,19 @@
         </div>
 
         <div class="choices">
-            <button type="button" class="choice @(hired > 0 ? "chosen" : "")" @onclick="OpenHire">
+            <button type="button" class="choice @(order.Hired > 0 ? "chosen" : "")" @onclick="OpenHire">
                 <span class="choice-text">
                     <b>Cumpără săteni</b>
-                    <small>Câte @GameConstants.VillagersPerBundle săteni@(hired > 0 ? $", {hired} selectați" : "")</small>
+                    <small>Câte @GameConstants.VillagersPerBundle săteni@(order.Hired > 0 ? $", {order.Hired} selectați" : "")</small>
                 </span>
                 <span class="choice-price">@GameConstants.VillagerBundleCost aur</span>
             </button>
 
-            <button type="button" class="choice @(armed > 0 ? "chosen" : "")"
-                    disabled="@(Villagers == 0)" @onclick="OpenArm">
+            <button type="button" class="choice @(order.Armed > 0 ? "chosen" : "")"
+                    disabled="@(order.Villagers == 0)" @onclick="OpenArm">
                 <span class="choice-text">
                     <b>Înarmează săteni</b>
-                    <small>@(armed > 0 ? $"{armed} trec în oaste din runda următoare" : " Recrutează soldați din proprii săteni")</small>
+                    <small>@(order.Armed > 0 ? $"{order.Armed} trec în oaste din runda următoare" : " Recrutează soldați din proprii săteni")</small>
                 </span>
                 <span class="choice-price">@GameConstants.ArmCost aur de cap</span>
             </button>
@@ -245,7 +245,7 @@
             <span class="eyebrow">săteni, în @draft pachete</span>
         </div>
 
-        <input type="range" class="picker-range" min="0" max="@MaxBundles" step="1" value="@draft" @oninput="OnDraft" />
+        <input type="range" class="picker-range" min="0" max="@order.MaxBundles" step="1" value="@draft" @oninput="OnDraft" />
 
         <p class="picker-yield">@(draft * GameConstants.VillagerBundleCost) aur</p>
 
@@ -267,10 +267,10 @@
 
         <div class="picker-value">
             <b>@draft</b>
-            <span class="eyebrow">din @MaxArmed cu putință</span>
+            <span class="eyebrow">din @order.MaxArmed cu putință</span>
         </div>
 
-        <input type="range" class="picker-range" min="0" max="@MaxArmed" step="1" value="@draft" @oninput="OnDraft" />
+        <input type="range" class="picker-range" min="0" max="@order.MaxArmed" step="1" value="@draft" @oninput="OnDraft" />
 
         <p class="picker-yield">@(draft * GameConstants.ArmCost) aur</p>
 
@@ -311,8 +311,9 @@
                 @foreach (var tier in SpyTiers)
                 {
                     <button type="button"
-                            class="choice @(ChosenSpies == tier ? "chosen" : "")"
-                            @onclick="() => PickSpies(tier)">
+                            class="choice @(order.ChosenSpies == tier ? "chosen" : "")"
+                            disabled="@(order.ChosenSpies != tier && !order.CanSendSpies(tier))"
+                            @onclick="() => order.PickSpies(tier)">
                         <span class="choice-text">
                             <b>@SpyStaffName(tier)</b>
                             <small>@($"{GameConstants.SpyAccuracy(tier) * 100:0}% precizie · {SpyNote(tier)}")</small>
@@ -326,7 +327,7 @@
             {
                 <SpyReportView Report="report" />
             }
-            else if (SpiesOut is not null)
+            else if (order.SpiesOut is not null)
             {
                 <p class="spy-wait">Spionii au plecat. Prima veste sosește runda viitoare.</p>
             }
@@ -341,9 +342,9 @@
                 @foreach (var tier in HuntTiers)
                 {
                     <button type="button"
-                            class="choice @(hunt == tier ? "chosen" : "")"
-                            disabled="@(GameConstants.HuntSoldiers(tier) > FreeForHunt(tier))"
-                            @onclick="() => PickHunt(tier)">
+                            class="choice @(order.Hunt == tier ? "chosen" : "")"
+                            disabled="@(GameConstants.HuntSoldiers(tier) > order.FreeForHunt(tier))"
+                            @onclick="() => order.PickHunt(tier)">
                         <span class="choice-text">
                             <b>@HuntStaffName(tier)</b>
                             <small>Stinge o rețea de până la nivelul @GameConstants.HuntLevels(tier)</small>
@@ -361,13 +362,13 @@
         }
 
         <div class="result-actions">
-            @if (!hunting && SpiesOut is not null)
+            @if (!hunting && order.SpiesOut is not null)
             {
-                <button type="button" class="result-ghost" @onclick="CallSpiesHome">Retrage spionii</button>
+                <button type="button" class="result-ghost" @onclick="order.CallSpiesHome">Retrage spionii</button>
             }
-            @if (hunting && hunt is not null)
+            @if (hunting && order.Hunt is not null)
             {
-                <button type="button" class="result-ghost" @onclick="() => hunt = null">Nu mai caut</button>
+                <button type="button" class="result-ghost" @onclick="() => order.Hunt = null">Nu mai caut</button>
             }
             <button type="button" class="send" @onclick="() => spyPopup = false">Gata</button>
         </div>
@@ -382,96 +383,26 @@
     private static readonly ActionType[] Directions = [ActionType.Attack, ActionType.Defend, ActionType.Trade];
     private static readonly PurchaseType[] Standing = [PurchaseType.Recruit, PurchaseType.Fortify, PurchaseType.Catapult];
 
-    private PurchaseType[] Buyables
-    {
-        get
-        {
-            if (!WallDown)
-            {
-                return Standing;
-            }
+    private PurchaseType[] Buyables => order.WallDown ? [PurchaseType.Recruit, PurchaseType.Catapult] : Standing;
 
-            return [PurchaseType.Recruit, PurchaseType.Catapult];
-        }
-    }
-
-    private bool WallDown => (Mine?.Fortification ?? 0) <= GameConstants.WallDownLevel;
-
-    private int Ruined => Mine?.RuinedFrom ?? 0;
     private static readonly FeastTier[] Tiers = [FeastTier.Small, FeastTier.Court, FeastTier.Grand];
 
-    private readonly Dictionary<ActionType, int> allocation = new();
-    private readonly HashSet<PurchaseType> bought = [];
-    private FeastTier? feast;
+    private OrderDraft order = default!;
     private FeastTier? feastDraft;
 
     private ActionType? picking;
     private bool feastPopup;
     private bool shopOpen;
     private int draft;
-    private int hired;
-    private int armed;
     private bool hirePopup;
     private bool armPopup;
-    private SpyTier? spies;
-    private bool recallSpies;
     private bool spyPopup;
     private bool hunting;
-    private HuntTier? hunt;
 
-    private int round;
+    private int? round;
     private bool sending;
     private bool orderSent;
     private string? error;
-
-    private KingdomDto? Mine => State.YourSide == 1 ? State.Player1Kingdom : State.Player2Kingdom;
-
-    private CaravanDto? Caravan => State.YourCaravan;
-
-    private int Troops => Mine?.Troops ?? 0;
-
-    private int Gold => Mine?.Gold ?? 0;
-
-    private int Villagers => Mine?.Villagers ?? 0;
-
-    private int Free => Math.Max(0, Troops - Fighting - (hunt is { } chase ? GameConstants.HuntSoldiers(chase) : 0));
-
-    private int FreeVillagers => Math.Max(0, Villagers - Allocated(ActionType.Trade) - armed - LeavingToSpy);
-
-    private int LeavingToSpy => Math.Max(0, SpyStaff - (SpiesOut?.Villagers ?? 0));
-
-    private int SpyStaff => ChosenSpies is { } tier ? GameConstants.SpyVillagers(tier) : 0;
-
-    private int Fighting => Allocated(ActionType.Attack) + Allocated(ActionType.Defend);
-
-    private int GoldSpent =>
-        (feast is { } tier ? GameConstants.FeastCost(tier) : 0)
-        + bought.Sum(GameConstants.PurchaseCost)
-        + Repairs.Sum(GameConstants.PurchaseCost)
-        + hired * GameConstants.VillagerBundleCost
-        + armed * GameConstants.ArmCost
-        + (ChosenSpies is { } spied ? GameConstants.SpyUpkeep(spied) : 0)
-        + (hunt is { } chased ? GameConstants.HuntCost(chased) : 0);
-
-    private IEnumerable<PurchaseType> Repairs
-    {
-        get
-        {
-            if (RepairTo < 0)
-            {
-                yield break;
-            }
-
-            yield return PurchaseType.Repair;
-
-            if (RepairTo == 1) yield return PurchaseType.RepairToOne;
-            if (RepairTo == 2) yield return PurchaseType.RepairToTwo;
-        }
-    }
-
-    private int GoldLeft => Gold - GoldSpent;
-
-    private bool Fits => Fighting <= Troops && Allocated(ActionType.Trade) <= Villagers && GoldSpent <= Gold;
 
     private string TradeNote
     {
@@ -492,141 +423,76 @@
     {
         if (round == State.Round)
         {
+            order.State = State;
+            order.RepairTo = RepairTo;
             return;
         }
 
         round = State.Round;
-        allocation.Clear();
-        bought.Clear();
-        feast = null;
+        order = new OrderDraft(State, RepairTo);
         feastDraft = null;
         picking = null;
         feastPopup = false;
         shopOpen = false;
-        hired = 0;
-        armed = 0;
         hirePopup = false;
         armPopup = false;
-        spies = null;
-        recallSpies = false;
         spyPopup = false;
         hunting = false;
-        hunt = null;
         orderSent = false;
         error = null;
     }
 
-    private int Allocated(ActionType direction) => allocation.GetValueOrDefault(direction);
-
-    private bool Blocked(ActionType direction) =>
-        (direction == ActionType.Trade && Caravan is not null)
-        || (direction == ActionType.Defend && WallDown);
-
-    private static int MaxLevel(PurchaseType purchase) => purchase switch
-    {
-        PurchaseType.Fortify => GameConstants.FortifyMaxLevel,
-        PurchaseType.Catapult => GameConstants.CatapultMaxLevel,
-        _ => 0,
-    };
-
-    private int Level(PurchaseType purchase) => purchase switch
-    {
-        PurchaseType.Fortify => Mine?.Fortification ?? 0,
-        PurchaseType.Catapult => Mine?.Catapults ?? 0,
-        _ => 0,
-    };
-
     private string LevelState(PurchaseType purchase, int step)
     {
-        var have = Level(purchase);
+        var have = order.Level(purchase);
 
         if (step <= have)
         {
             return "full";
         }
 
-        return step == have + 1 && bought.Contains(purchase) ? "pending" : string.Empty;
+        return step == have + 1 && order.Bought.Contains(purchase) ? "pending" : string.Empty;
     }
-
-    private bool AtMax(PurchaseType purchase) => MaxLevel(purchase) > 0 && Level(purchase) >= MaxLevel(purchase);
-
-    private int Ceiling(ActionType direction) => direction == ActionType.Trade
-        ? FreeVillagers + Allocated(direction)
-        : Free + Allocated(direction);
-
-    // Aceleași cântare ca în motor: cine pleacă nu petrece, iar un sătean face cât jumătate de soldat.
-    private int MoraleFrom(FeastTier tier)
-    {
-        var sent = Allocated(ActionType.Trade);
-        var back = Caravan is { } away && away.ReturnsInRound <= State.Round + 1 ? away.Troops : 0;
-
-        return GameEngine.FeastMorale(
-            tier,
-            GameEngine.FeastWeight(Troops - Fighting, Villagers - sent + back),
-            GameEngine.FeastWeight(Fighting, (Caravan?.Troops ?? 0) + sent),
-            Math.Max(0, (Mine?.Morale ?? 0) - GameConstants.MoraleDecayPerRound));
-    }
-
-    private bool Affordable(FeastTier tier) =>
-        GameConstants.FeastCost(tier) + bought.Sum(GameConstants.PurchaseCost) <= Gold;
-
-    private bool Buyable(PurchaseType purchase)
-    {
-        if (purchase is PurchaseType.RepairToOne or PurchaseType.RepairToTwo
-            && !bought.Contains(PurchaseType.Repair))
-        {
-            return false;
-        }
-
-        return !AtMax(purchase)
-            && (bought.Contains(purchase) || GameConstants.PurchaseCost(purchase) <= GoldLeft);
-    }
-
-    private int Purse => Gold - GoldSpent + hired * GameConstants.VillagerBundleCost + armed * GameConstants.ArmCost;
-
-    private int MaxBundles => Math.Max(hired, Purse / GameConstants.VillagerBundleCost);
-
-    private int MaxArmed => Math.Max(armed, Math.Min(Villagers - Allocated(ActionType.Trade), Purse / Math.Max(1, GameConstants.ArmCost)));
 
     private void OpenHire()
     {
-        draft = hired;
+        draft = order.Hired;
         hirePopup = true;
     }
 
     private void CommitHire()
     {
-        hired = draft;
+        order.Hired = draft;
         hirePopup = false;
     }
 
     private void DropHire()
     {
-        hired = 0;
+        order.Hired = 0;
         hirePopup = false;
     }
 
     private void OpenArm()
     {
-        draft = armed;
+        draft = order.Armed;
         armPopup = true;
     }
 
     private void CommitArm()
     {
-        armed = draft;
+        order.Armed = draft;
         armPopup = false;
     }
 
     private void DropArm()
     {
-        armed = 0;
+        order.Armed = 0;
         armPopup = false;
     }
 
     private void OpenPicker(ActionType direction)
     {
-        draft = Allocated(direction);
+        draft = order.Allocated(direction);
         picking = direction;
     }
 
@@ -637,25 +503,23 @@
 
     private void Commit(ActionType direction)
     {
-        allocation[direction] = draft;
+        order.Allocate(direction, draft);
         picking = null;
     }
 
     private void Withdraw(ActionType direction)
     {
-        allocation.Remove(direction);
+        order.Withdraw(direction);
         picking = null;
     }
 
     private void OpenFeast()
     {
-        feastDraft = feast;
+        feastDraft = order.Feast;
         feastPopup = true;
     }
 
-    private SpyRingDto? SpiesOut => State.YourSpies;
-
-    private string SpyHint => SpiesOut is { } ring
+    private string SpyHint => order.SpiesOut is { } ring
         ? $"{SpyStaffName(ring.Tier)} pe teren, {ring.Upkeep} aur pe rundă"
         : "Trimite săteni ca spioni";
 
@@ -665,10 +529,10 @@
         {
             var moves = new List<string>();
 
-            if (recallSpies) moves.Add("îi chem acasă");
-            else if (spies is { } tier) moves.Add(SpyStaffName(tier));
+            if (order.RecallSpies) moves.Add("îi chem acasă");
+            else if (order.Spies is { } tier) moves.Add(SpyStaffName(tier));
 
-            if (hunt is { } chase) moves.Add($"caut cu {HuntStaffName(chase)}");
+            if (order.Hunt is { } chase) moves.Add($"caut cu {HuntStaffName(chase)}");
 
             return moves.Count == 0 ? null : string.Join(", ", moves);
         }
@@ -680,13 +544,6 @@
 
     private static string HuntStaffName(HuntTier tier) =>
         GameConstants.HuntSoldiers(tier) is var many && many == 1 ? "1 soldat" : $"{many} soldați";
-
-    private int FreeForHunt(HuntTier tier) =>
-        Free + (hunt == tier ? GameConstants.HuntSoldiers(tier) : 0);
-
-    private void PickHunt(HuntTier tier) => hunt = hunt == tier ? null : tier;
-
-    private SpyTier? ChosenSpies => recallSpies ? null : spies ?? SpiesOut?.Tier;
 
     private static string SpyStaffName(SpyTier tier) =>
         GameConstants.SpyVillagers(tier) is var many && many == 1 ? "1 sătean" : $"{many} săteni";
@@ -700,52 +557,23 @@
 
     private void OpenSpies() => spyPopup = true;
 
-    private void PickSpies(SpyTier? tier)
-    {
-        spies = tier;
-        recallSpies = false;
-    }
-
-    private void CallSpiesHome()
-    {
-        spies = null;
-        recallSpies = true;
-        spyPopup = false;
-    }
-
     private void CloseFeast() => feastPopup = false;
 
     private void CommitFeast()
     {
-        feast = feastDraft;
+        order.Feast = feastDraft;
         feastPopup = false;
     }
 
     private void CallOffFeast()
     {
-        feast = null;
+        order.Feast = null;
         feastDraft = null;
         feastPopup = false;
     }
 
-    private void Toggle(PurchaseType purchase)
-    {
-        if (!bought.Remove(purchase))
-        {
-            bought.Add(purchase);
-
-            if (purchase == PurchaseType.RepairToOne) bought.Remove(PurchaseType.RepairToTwo);
-            if (purchase == PurchaseType.RepairToTwo) bought.Remove(PurchaseType.RepairToOne);
-        }
-        else if (purchase == PurchaseType.Repair)
-        {
-            bought.Remove(PurchaseType.RepairToOne);
-            bought.Remove(PurchaseType.RepairToTwo);
-        }
-    }
-
     private string PurchaseNote(PurchaseType purchase) =>
-        AtMax(purchase) ? "la maximum" : $"{GameConstants.PurchaseCost(purchase)} aur";
+        order.AtMax(purchase) ? "la maximum" : $"{GameConstants.PurchaseCost(purchase)} aur";
 
     private async Task Send()
     {
@@ -754,23 +582,7 @@
 
         try
         {
-            var state = await Api.SubmitOrderAsync(
-                new SubmitOrderRequest
-                {
-                    Code = State.Code,
-                    Troops = allocation
-                        .Where(pair => pair.Value > 0)
-                        .Select(pair => new OrderAllocationDto { Direction = pair.Key, Troops = pair.Value })
-                        .ToList(),
-                    Feast = feast,
-                    Purchases = [.. bought, .. Repairs],
-                    Hired = hired,
-                    Armed = armed,
-                    Spies = spies,
-                    RecallSpies = recallSpies,
-                    Hunt = hunt,
-                },
-                State.Code);
+            var state = await Api.SubmitOrderAsync(order.ToRequest(), State.Code);
 
             orderSent = true;
             await OnSubmitted.InvokeAsync(state);
@@ -795,10 +607,10 @@
     private string Hint(ActionType direction) => direction switch
     {
         ActionType.Attack => "Atacă cetatea adversarului",
-        ActionType.Defend => WallDown
+        ActionType.Defend => order.WallDown
             ? "Zidul e dărâmat, n-are cine să-l țină"
-            : $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(Mine?.Fortification ?? 0)}",
-        _ => Caravan is null ? "Sătenii pleacă la negoț, se întorc peste o rundă" : "Caravana e deja pe drum",
+            : $"Pe ziduri urcă cel mult {GameEngine.WallCapacity(order.Mine?.Fortification ?? 0)}",
+        _ => order.Caravan is null ? "Sătenii pleacă la negoț, se întorc peste o rundă" : "Caravana e deja pe drum",
     };
 
     private static string CancelLabel(ActionType direction) => direction switch

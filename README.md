@@ -1,12 +1,13 @@
 # Kingdom Duel
 
 Joc de duel pentru doi jucători: două regate, un număr fix de runde, iar în
-fiecare rundă fiecare jucător își împarte în secret oastea și aurul pe mai multe
-direcții. Runda se rezolvă când amândoi au trimis, sau când expiră timpul rundei.
+fiecare rundă fiecare jucător își împarte în secret oamenii și aurul. Soldații
+atacă sau apără zidul, sătenii pleacă la negoț sau ca spioni, aurul merge pe
+ospețe, recruți, fortificații și catapulte. Runda se rezolvă când amândoi au
+trimis, sau când expiră timpul rundei; o bătălie se joacă apoi în timp, pe ecran,
+cu retragere, marș mai departe după câmp și clopotul de la spărtură.
 
-> **Logica de joc se refactorizează.** Regulile de până acum — un ordin pe rundă,
-> din cinci, cu efecte fixe — au fost șterse din cod, iar cele noi se așază pe
-> etape. [RULES.md](src/docs/RULES.md) spune unde s-a ajuns.
+Regulile complete sunt în [RULES.md](src/docs/RULES.md).
 
 Proiectul e un **ASP.NET Core** care servește și API-ul, și un client
 **Blazor WebAssembly**, cu persistență în **PostgreSQL**. Contul e obligatoriu:
@@ -17,6 +18,10 @@ nu se joacă fără autentificare.
 ```
 KingdomDuel/
 ├── KingdomDuel.sln
+├── global.json                           dotnet test rulează pe Microsoft Testing Platform
+├── dotnet-tools.json                     unelte locale (ReportGenerator)
+├── build/                                coverage.ps1 + pragurile de coverage
+├── tests/                                proiectele de teste (vezi „Teste”)
 └── src/
     ├── docs/                             documentația (vezi mai jos)
     │
@@ -24,15 +29,19 @@ KingdomDuel/
     │   ├── GameConstants.cs              fiecare număr din joc, într-un singur loc
     │   ├── GameOutcome.cs                motivul finalului → cine a câștigat (server + client)
     │   ├── Contracts/Entity.cs           baza cu Guid Id
-    │   ├── Entities/Matches/             Match, PlayerSlot, Kingdom, RoundResult, MatchRecord
+    │   ├── Entities/Matches/             Match, PlayerSlot, RoundResult, MatchRecord
     │   ├── Entities/Users/User.cs        contul, cu normalizarea numelui
-    │   └── Enums/                        ActionType, GameEventType, MatchStatus, GameOverReason, MatchOutcome
+    │   ├── Enums/                        ActionType, FeastTier, PurchaseType, SpyTier, HuntTier,
+    │   │                                 MatchStatus, GameOverReason, MatchOutcome
+    │   └── Rounds/                       motorul: GameEngine (rezolvarea rundei și a bătăliei),
+    │                                     Battle, BattleReplay, OrderPlan, KingdomState, Spying,
+    │                                     LiveBattle, MarchChoice, BreachCall
     │
     ├── KingdomDuel.Application/          endpoint-urile + regulile lor
     │   ├── AppDbContext.cs
     │   ├── RateLimitPolicies.cs          numele politicilor de rate limiting
-    │   ├── Features/Matches/             un endpoint per operație + RoundResolver, MatchRecorder,
-    │   │                                 MatchQueries, MatchMappings
+    │   ├── Features/Matches/             un endpoint per operație + RoundResolver (mersul meciului
+    │   │                                 în timp), MatchRecorder, MatchQueries, MatchMappings
     │   └── Features/Auth/                Endpoints/ + Services/
     │
     ├── KingdomDuel.Persistence/          EF Core: configurări + migrări
@@ -45,11 +54,13 @@ KingdomDuel/
     │   └── Auth/AuthHeaders.cs
     │
     ├── KingdomDuel.Api/                  gazda: Program.cs + Configurations/
-    │   └── Configurations/               Api, Auth, RateLimit, Database, ClientGeneration
+    │   └── Configurations/               Api, Auth, RateLimit, Database, Health, Exception,
+    │                                     Proxy, ClientGeneration
     │
     └── KingdomDuel.Client/               Blazor WebAssembly
-        ├── Pages/                        Home, Login, Lobby, Game, Profile
-        ├── Components/                   UserBar, RulesBook, CastleView, RoundTimer, MatchHistory, …
+        ├── Pages/                        Landing, Login, Play, Lobby, Game, Profile
+        ├── Components/                   OrderPanel + OrderDraft (ordinul rundei), BattleView,
+        │                                 BreachView, MarchView, CastleView, RoundTimer, RulesBook, …
         ├── Authentication/               TokenStore, BearerTokenHandler, …
         └── ApiClients/ApiClient.cs       generat cu NSwag — nu se scrie de mână
 ```
@@ -162,6 +173,10 @@ cer `Authorization: Bearer <token>`.
 | `POST` | `/matches/{code}/join` | Alăturare cu codul. Idempotent: dacă ești deja pe un slot, întoarce starea. |
 | `PUT` | `/matches/{code}/lobby` | Setările meciului (runde, aur/trupe/săteni/moral de start, timp pe rundă) + starea *ready*. |
 | `POST` | `/matches/{code}/start` | Gazda pornește meciul. |
+| `POST` | `/matches/{code}/orders` | Ordinul rundei: oamenii pe direcții, ospăț, cumpărături, săteni cumpărați și înarmați, spioni, căutarea spionilor. Când au ordonat amândoi, runda se rezolvă. |
+| `POST` | `/matches/{code}/retreat` | Sună retragerea din bătălia în desfășurare. |
+| `POST` | `/matches/{code}/march` | După câmpul câștigat: `{ advance }` — mergi la cetate sau te întorci. |
+| `POST` | `/matches/{code}/rally` | La spărtură, apărătorul își cheamă satul la arme: `{ villagers }`. |
 | `POST` | `/matches/{code}/leave` | Părăsește meciul. Într-un meci în desfășurare, îl încheie prin abandon. |
 
 Identitatea nu circulă niciodată prin body sau prin URL: fiecare endpoint o
@@ -222,11 +237,37 @@ Partiționarea pe IP folosește `Connection.RemoteIpAddress`, care în spatele u
 reverse proxy ar fi adresa proxy-ului — toți utilizatorii într-o singură
 partiție. De aceea `ForwardedHeaders` e primul middleware din `Program.cs`.
 
+## Teste
+
+| Proiect | Ce testează |
+|---|---|
+| `tests/KingdomDuel.UnitTests` | motorul de joc (câte un fișier pe secțiune din `RULES.md`, plus meciuri întregi jucate pe ordine aleatoare), validatorii, `RoundResolver` cu ceas fals, ce vede fiecare jucător, istoricul |
+| `tests/KingdomDuel.IntegrationTests` | API-ul cap-coadă pe un Postgres real, pornit în container prin Testcontainers: conturi, lobby, joc, bătălii |
+| `tests/KingdomDuel.Client.Tests` | logica de autentificare din client, calculele din panoul de ordine (comparate cu motorul) și, cu bUnit, câteva componente |
+
+xUnit v3 pe Microsoft Testing Platform, aserțiuni cu Shouldly. Testele de
+integrare au nevoie de **Docker Desktop pornit**.
+
+```bash
+dotnet test --solution KingdomDuel.sln
+```
+
+Cu coverage, raport HTML și verificarea pragurilor, dintr-o singură comandă —
+aceeași pe care o rulează CI-ul:
+
+```powershell
+./build/coverage.ps1 -Open
+```
+
+Raportul iese în `coverage/index.html`. Pragurile, pe proiect, stau în
+`build/coverage-gate.cs`.
+
 ## Publicare
 
 Jocul rulează pe **Google Cloud Run** (`us-east1`), cu Postgres pe **Neon**
 (`us-east-2`) și deploy automat la fiecare push pe `main`, prin GitHub Actions.
-Workflow-ul e în `.github/workflows/deploy.yml`.
+Workflow-ul e în `.github/workflows/deploy.yml`: job-ul `test` rulează toate
+testele și pragurile de coverage, iar `deploy` pornește doar dacă ele trec.
 
 Autentificarea la Google se face prin **Workload Identity Federation**, deci nu
 există nicio cheie de serviciu salvată în repo. Cele trei secrete din GitHub
@@ -255,16 +296,14 @@ unde stau lângă schimbarea pe care o explică.
 
 ## Ce nu e făcut, intenționat
 
-1. **Teste.** Nu există niciun proiect de teste; motorul de joc și serviciile de
-   autentificare sunt primele candidate.
-2. **SignalR.** Clientul face polling la 2 s; push-ul în timp real vine mai
+1. **SignalR.** Clientul face polling la 2 s; push-ul în timp real vine mai
    târziu. Polling-ul e și motorul expirării rundelor — nu există planificator
    de fundal, iar containerul doarme când nu joacă nimeni.
-3. **Curățarea meciurilor.** Un meci terminat din care n-a ieșit niciunul
+2. **Curățarea meciurilor.** Un meci terminat din care n-a ieșit niciunul
    dintre cei doi rămâne în bază — nu există nimic care să-l șteargă. De când
    rezultatul se păstrează separat, în `match_records`, ștergerea nu mai pierde
    nimic; e prima datorie tehnică de plătit.
-4. **Resetare de parolă și confirmare de email.** Blocate de lipsa SMTP; de
+3. **Resetare de parolă și confirmare de email.** Blocate de lipsa SMTP; de
    aici și consecința că o parolă uitată înseamnă cont pierdut.
-5. **Google OAuth.** Următoarea fază firească — nu cere SMTP și rezolvă exact
+4. **Google OAuth.** Următoarea fază firească — nu cere SMTP și rezolvă exact
    consecința de mai sus.

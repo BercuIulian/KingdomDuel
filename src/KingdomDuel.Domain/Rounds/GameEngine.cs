@@ -6,8 +6,8 @@ public static class GameEngine
 {
     public static RoundOutcome Resolve(RoundInput input, Random random)
     {
-        var order1 = input.Player1.Order.ClampTo(input.Player1.Kingdom);
-        var order2 = input.Player2.Order.ClampTo(input.Player2.Kingdom);
+        var order1 = input.Player1.Order.ClampTo(input.Player1.Kingdom, input.Player1.Spies);
+        var order2 = input.Player2.Order.ClampTo(input.Player2.Kingdom, input.Player2.Spies);
 
         var events = new List<RoundEvent>();
         Record(1, order1, events);
@@ -20,18 +20,9 @@ public static class GameEngine
 
         var battle = PlanBattle(after1, after2, order1, order2, random);
 
-        if (battle is not null)
-        {
-            return new RoundOutcome(after1, after2, events, GameOverReason.None, battle);
-        }
+        var outcome = new RoundOutcome(after1, after2, events, GameOverReason.None, battle);
 
-        (after1, after2) = LandRecruits(after1, after2, events);
-
-        return new RoundOutcome(
-            after1,
-            after2,
-            events,
-            EvaluateGameOver(after1, after2, input.Round, input.TotalRounds));
+        return battle is null ? CloseRound(outcome, input.Round, input.TotalRounds) : outcome;
     }
 
     public static RoundOutcome SettleBattle(
@@ -88,9 +79,26 @@ public static class GameEngine
         }
 
         (after1, after2) = MoveMorale(after1, after2, replay, endsAt, retreat, events);
-        (after1, after2) = LandRecruits(after1, after2, events);
 
-        return new RoundOutcome(after1, after2, events, EvaluateGameOver(after1, after2, round, totalRounds));
+        var afterBattle = new RoundOutcome(after1, after2, events, GameOverReason.None);
+
+        return MarchChoiceSide(replay, endsAt, retreat) == 0
+            ? CloseRound(afterBattle, round, totalRounds)
+            : afterBattle;
+    }
+
+    public static RoundOutcome CloseRound(RoundOutcome outcome, int round, int totalRounds)
+    {
+        var events = outcome.Events.ToList();
+        var (after1, after2) = LandRecruits(outcome.Player1, outcome.Player2, events);
+
+        return outcome with
+        {
+            Player1 = after1,
+            Player2 = after2,
+            Events = events,
+            GameOverReason = EvaluateGameOver(after1, after2, round, totalRounds),
+        };
     }
 
     private static (SideOutcome, SideOutcome) BringWallDown(
@@ -283,17 +291,21 @@ public static class GameEngine
 
     private static SideOutcome Land(int side, SideOutcome outcome, List<RoundEvent> events)
     {
-        if (outcome.Recruits <= 0)
+        if (outcome.Recruits <= 0 && outcome.Hired <= 0)
         {
             return outcome;
         }
 
-        events.Add(new RoundEvent(RoundEventKind.Recruited, side, outcome.Recruits));
+        if (outcome.Recruits > 0)
+        {
+            events.Add(new RoundEvent(RoundEventKind.Recruited, side, outcome.Recruits));
+        }
 
         return outcome with
         {
-            Kingdom = outcome.Kingdom.With(troopsDelta: outcome.Recruits),
+            Kingdom = outcome.Kingdom.With(troopsDelta: outcome.Recruits, villagersDelta: outcome.Hired),
             Recruits = 0,
+            Hired = 0,
         };
     }
 
@@ -375,7 +387,9 @@ public static class GameEngine
             }
             events.Add(new RoundEvent(RoundEventKind.BattleJoined, defenderSide, replay.DefenderInKeep, ActionType.Defend));
 
-            defenderLeft = replay.DefenderInKeep - replay.FallsOf(defenderSide, endsAt, BattlePhase.Keep);
+            var keepLeft = replay.DefenderInKeep - replay.FallsOf(defenderSide, endsAt, BattlePhase.Keep);
+
+            defenderLeft = keepLeft > 0 ? keepLeft + replay.Searching : 0;
         }
         else
         {
@@ -482,7 +496,8 @@ public static class GameEngine
                 keepDefenders,
                 null,
                 falls.Count == 0 ? 0 : falls[^1].At,
-                falls)
+                falls,
+                defenceOrder.Searching)
             : new BattleReplay(
                 attackerSide,
                 attackerSide == 1 ? army : onTheWall,
@@ -490,7 +505,8 @@ public static class GameEngine
                 keepDefenders,
                 seconds,
                 seconds,
-                falls);
+                falls,
+                defenceOrder.Searching);
     }
 
     private static (SideOutcome, SideOutcome) HuntSpies(
@@ -601,9 +617,11 @@ public static class GameEngine
     {
         var state = input.Kingdom;
         var caravan = input.Caravan;
+        var returned = 0;
 
         if (caravan is { } away && away.AvailableInRound <= round + 1)
         {
+            returned = away.Troops;
             var gold = TradeYield(away.Troops, random);
 
             state = state.With(goldDelta: gold, villagersDelta: away.Troops);
@@ -670,19 +688,20 @@ public static class GameEngine
         state = state.With(moraleDelta: -GameConstants.MoraleDecayPerRound);
         events.Add(new RoundEvent(RoundEventKind.MoraleDecay, side, GameConstants.MoraleDecayPerRound));
 
-        state = Feast(side, state, order, input, spies, events);
+        state = Feast(side, state, order, input, spies, returned, events);
 
         var recruits = 0;
+        var hired = 0;
 
         if (order.Hired > 0)
         {
             var bundles = Math.Min(order.Hired, state.Gold / GameConstants.VillagerBundleCost);
-            var hands = bundles * GameConstants.VillagersPerBundle;
 
             if (bundles > 0)
             {
-                state = state.With(goldDelta: -bundles * GameConstants.VillagerBundleCost, villagersDelta: hands);
-                events.Add(new RoundEvent(RoundEventKind.VillagersHired, side, hands));
+                hired = bundles * GameConstants.VillagersPerBundle;
+                state = state.With(goldDelta: -bundles * GameConstants.VillagerBundleCost);
+                events.Add(new RoundEvent(RoundEventKind.VillagersHired, side, hired));
             }
         }
 
@@ -758,7 +777,7 @@ public static class GameEngine
                 Purchase: PurchaseType.Catapult));
         }
 
-        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits, spies);
+        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits, spies, hired);
     }
 
     private static KingdomState Feast(
@@ -767,6 +786,7 @@ public static class GameEngine
         OrderPlan order,
         SideInput input,
         SpyRing? spies,
+        int returned,
         List<RoundEvent> events)
     {
         if (order.Feast is not { } tier || state.Gold < GameConstants.FeastCost(tier))
@@ -776,7 +796,7 @@ public static class GameEngine
 
         var gone = order.Committed;
         var homeSoldiers = Math.Max(0, input.Kingdom.Troops - gone);
-        var homeVillagers = state.Villagers;
+        var homeVillagers = Math.Max(0, state.Villagers - returned);
         var awayVillagers = (input.Caravan?.Troops ?? 0) + order.Sent + (spies?.Villagers ?? 0);
 
         var morale = FeastMorale(

@@ -70,7 +70,7 @@ public sealed record OrderPlan
     public bool FitsIn(KingdomState state) =>
         Committed + Searching <= state.Troops && Sent <= state.Villagers && GoldCost <= state.Gold;
 
-    public OrderPlan ClampTo(KingdomState state)
+    public OrderPlan ClampTo(KingdomState state, SpyRing? spiesOut = null)
     {
         var kept = purchases;
         var feast = Feast;
@@ -101,9 +101,11 @@ public sealed record OrderPlan
         scaled = Fit(scaled, ActionType.Trade, ActionType.Trade, Sent, state.Villagers);
 
         var spies = Spies;
+        var away = spiesOut?.Villagers ?? 0;
 
         while (spies is { } tier
-            && (GameConstants.SpyVillagers(tier) > state.Villagers
+            && GameConstants.SpyVillagers(tier) > away
+            && (GameConstants.SpyVillagers(tier) - away > state.Villagers
                 || GameConstants.SpyUpkeep(tier) + Cost(feast, kept, hired, armed) > state.Gold))
         {
             spies = tier == SpyTier.Lone ? null : tier - 1;

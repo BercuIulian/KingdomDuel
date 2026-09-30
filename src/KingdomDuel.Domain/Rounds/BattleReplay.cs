@@ -18,7 +18,8 @@ public sealed record BattleReplay(
     int DefenderInKeep,
     double? BreachAt,
     double Duration,
-    IReadOnlyList<BattleFall> Falls)
+    IReadOnlyList<BattleFall> Falls,
+    int Searching = 0)
 {
     public BattleSnapshot At(double seconds)
     {

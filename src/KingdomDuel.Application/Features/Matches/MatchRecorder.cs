@@ -6,19 +6,21 @@ namespace KingdomDuel.Application.Features.Matches;
 
 internal static class MatchRecorder
 {
-    public static void RecordCompleted(AppDbContext dbContext, Match match)
+    public static void RecordCompleted(AppDbContext dbContext, Match match, DateTimeOffset now)
+        => dbContext.MatchRecords.AddRange(EntriesFor(match, now));
+
+    public static IReadOnlyList<MatchRecord> EntriesFor(Match match, DateTimeOffset now)
     {
         if (match.Status != MatchStatus.Completed
             || match.Player1 is null
             || match.Player2 is null)
         {
-            return;
+            return [];
         }
 
-        var startedAt = match.StartedAt ?? DateTimeOffset.UtcNow;
+        var startedAt = match.StartedAt ?? now;
 
-        dbContext.MatchRecords.Add(EntryFor(match, side: 1, startedAt));
-        dbContext.MatchRecords.Add(EntryFor(match, side: 2, startedAt));
+        return [EntryFor(match, side: 1, startedAt), EntryFor(match, side: 2, startedAt)];
     }
 
     private static MatchRecord EntryFor(Match match, int side, DateTimeOffset startedAt)
@@ -34,8 +36,8 @@ internal static class MatchRecorder
             Reason = match.GameOverReason,
             RoundsPlayed = match.Round,
             TotalRounds = match.TotalRounds,
-            YourPower = you.Kingdom.TotalPower,
-            OpponentPower = opponent.Kingdom.TotalPower,
+            YourPower = you.TotalPower(),
+            OpponentPower = opponent.TotalPower(),
             StartedAt = startedAt,
         };
     }

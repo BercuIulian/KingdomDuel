@@ -8,7 +8,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class MarchEndpoint(AppDbContext dbContext) : Endpoint<MarchRequest, MatchStateDto>
+internal sealed class MarchEndpoint(AppDbContext dbContext, RoundResolver resolver, TimeProvider time) : Endpoint<MarchRequest, MatchStateDto>
 {
     private const int MaxAttempts = 2;
 
@@ -40,7 +40,7 @@ internal sealed class MarchEndpoint(AppDbContext dbContext) : Endpoint<MarchRequ
                 return;
             }
 
-            RoundResolver.SettleIfDue(match);
+            resolver.SettleIfDue(match);
 
             if (match.MarchChoice is not { } choice)
             {
@@ -56,7 +56,7 @@ internal sealed class MarchEndpoint(AppDbContext dbContext) : Endpoint<MarchRequ
                 return;
             }
 
-            if (!RoundResolver.March(match, side, req.Advance))
+            if (!resolver.March(match, side, req.Advance))
             {
                 AddError("Vremea alegerii a trecut, oastea s-a întors acasă.");
                 await Send.ErrorsAsync(cancellation: ct);
@@ -73,7 +73,7 @@ internal sealed class MarchEndpoint(AppDbContext dbContext) : Endpoint<MarchRequ
                 continue;
             }
 
-            await Send.OkAsync(match.ToStateDto(userId), ct);
+            await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
             return;
         }
     }

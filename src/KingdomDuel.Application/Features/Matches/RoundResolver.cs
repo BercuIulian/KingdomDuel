@@ -5,9 +5,9 @@ using KingdomDuel.Domain.Rounds;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal static class RoundResolver
+internal sealed class RoundResolver(TimeProvider time, Random random)
 {
-    public static bool ExpireIfDue(Match match)
+    public bool ExpireIfDue(Match match)
     {
         if (match.Status != MatchStatus.InProgress
             || match.LiveBattle is not null
@@ -19,7 +19,7 @@ internal static class RoundResolver
             return false;
         }
 
-        if (DateTimeOffset.UtcNow <= deadline.AddSeconds(GameConstants.RoundGraceSeconds))
+        if (time.GetUtcNow() <= deadline.AddSeconds(GameConstants.RoundGraceSeconds))
         {
             return false;
         }
@@ -50,7 +50,7 @@ internal static class RoundResolver
         return true;
     }
 
-    public static bool ResolveIfReady(Match match)
+    public bool ResolveIfReady(Match match)
     {
         if (match.Status != MatchStatus.InProgress
             || match.LiveBattle is not null
@@ -71,11 +71,11 @@ internal static class RoundResolver
             match.TotalRounds,
             new SideInput(match.Player1.Kingdom, order1, match.Player1.Caravan, match.Player1.Spies),
             new SideInput(match.Player2.Kingdom, order2, match.Player2.Caravan, match.Player2.Spies)),
-            Random.Shared);
+            random);
 
         if (outcome.Battle is { } battle)
         {
-            match.LiveBattle = new LiveBattle(battle, outcome, DateTimeOffset.UtcNow);
+            match.LiveBattle = new LiveBattle(battle, outcome, time.GetUtcNow());
             match.RoundDeadline = null;
 
             return true;
@@ -86,9 +86,9 @@ internal static class RoundResolver
         return true;
     }
 
-    public static bool SettleIfDue(Match match)
+    public bool SettleIfDue(Match match)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
         var changed = false;
 
         if (match.LiveBattle is { } battle && battle.IsOverAt(now))
@@ -121,14 +121,14 @@ internal static class RoundResolver
                         chooser,
                         GameEngine.SurvivingExpedition(battle.Replay, battle.EndsAt, chooser),
                         now.AddSeconds(GameConstants.MarchChoiceSeconds),
-                        afterBattle with { GameOverReason = GameOverReason.None });
+                        afterBattle);
                 }
 
                 changed = true;
             }
         }
 
-        if (match.MarchChoice is { } choice && choice.IsDueAt(DateTimeOffset.UtcNow))
+        if (match.MarchChoice is { } choice && choice.IsDueAt(time.GetUtcNow()))
         {
             TurnBack(match, choice);
             changed = true;
@@ -137,9 +137,9 @@ internal static class RoundResolver
         return changed;
     }
 
-    public static bool March(Match match, int side, bool advance)
+    public bool March(Match match, int side, bool advance)
     {
-        if (match.MarchChoice is not { } choice || choice.Side != side || choice.IsDueAt(DateTimeOffset.UtcNow))
+        if (match.MarchChoice is not { } choice || choice.Side != side || choice.IsDueAt(time.GetUtcNow()))
         {
             return false;
         }
@@ -165,20 +165,20 @@ internal static class RoundResolver
             attacker.Kingdom,
             defender,
             defenceOrder,
-            Random.Shared);
+            random);
 
         match.MarchChoice = null;
         match.LiveBattle = new LiveBattle(
             replay,
             choice.AfterField with { Events = events },
-            DateTimeOffset.UtcNow);
+            time.GetUtcNow());
 
         return true;
     }
 
-    public static bool Rally(Match match, int side, int villagers)
+    public bool Rally(Match match, int side, int villagers)
     {
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
 
         if (match.BreachCall is not { } call || call.Side != side || call.IsDueAt(now))
         {
@@ -195,7 +195,7 @@ internal static class RoundResolver
         return true;
     }
 
-    private static bool CallTheVillage(Match match, LiveBattle battle, DateTimeOffset now)
+    private bool CallTheVillage(Match match, LiveBattle battle, DateTimeOffset now)
     {
         if (match.BreachCall is { } call)
         {
@@ -225,7 +225,7 @@ internal static class RoundResolver
         return true;
     }
 
-    private static void StormKeep(Match match, LiveBattle battle, int villagers)
+    private void StormKeep(Match match, LiveBattle battle, int villagers)
     {
         var side = battle.Replay.AttackerSide == 1 ? 2 : 1;
         var before = villagers > 0
@@ -240,23 +240,23 @@ internal static class RoundResolver
             villagers,
             attacker.Kingdom.Morale,
             defender.Kingdom.Morale,
-            Random.Shared);
+            random);
 
         match.BreachCall = null;
         match.LiveBattle = new LiveBattle(
             replay,
             before,
-            DateTimeOffset.UtcNow.AddSeconds(-(replay.BreachAt ?? 0)));
+            time.GetUtcNow().AddSeconds(-(replay.BreachAt ?? 0)));
     }
 
-    public static bool SignalRetreat(Match match, int side)
+    public bool SignalRetreat(Match match, int side)
     {
         if (match.LiveBattle is not { } battle || !battle.CanRetreat(side))
         {
             return false;
         }
 
-        var now = DateTimeOffset.UtcNow;
+        var now = time.GetUtcNow();
 
         if (battle.IsOverAt(now))
         {
@@ -271,33 +271,33 @@ internal static class RoundResolver
         return true;
     }
 
-    private static void TurnBack(Match match, MarchChoice choice)
+    private void TurnBack(Match match, MarchChoice choice)
     {
         var events = choice.AfterField.Events.ToList();
         events.Add(new RoundEvent(RoundEventKind.TurnedBack, choice.Side, choice.Army, ActionType.Attack));
 
         match.MarchChoice = null;
-        Apply(match, choice.AfterField with
-        {
-            Events = events,
-            GameOverReason = GameEngine.EvaluateGameOver(
-                choice.AfterField.Player1,
-                choice.AfterField.Player2,
-                match.Round,
-                match.TotalRounds),
-        });
+        Apply(match, GameEngine.CloseRound(choice.AfterField with { Events = events }, match.Round, match.TotalRounds));
     }
 
-    public static void StartRoundClock(Match match)
-        => match.RoundDeadline = DateTimeOffset.UtcNow.AddSeconds(match.RoundSeconds);
+    public void StartRoundClock(Match match)
+        => match.RoundDeadline = time.GetUtcNow().AddSeconds(match.RoundSeconds);
 
-    private static void Apply(Match match, RoundOutcome outcome)
+    private void Apply(Match match, RoundOutcome outcome)
     {
         match.History.Add(new RoundResult
         {
             RoundNumber = match.Round,
-            Player1 = new RoundSide(match.Player1!.PendingOrder ?? OrderPlan.Empty, outcome.Player1.Kingdom),
-            Player2 = new RoundSide(match.Player2!.PendingOrder ?? OrderPlan.Empty, outcome.Player2.Kingdom),
+            Player1 = new RoundSide(
+                match.Player1!.PendingOrder ?? OrderPlan.Empty,
+                outcome.Player1.Kingdom,
+                outcome.Player1.Caravan,
+                outcome.Player1.Spies),
+            Player2 = new RoundSide(
+                match.Player2!.PendingOrder ?? OrderPlan.Empty,
+                outcome.Player2.Kingdom,
+                outcome.Player2.Caravan,
+                outcome.Player2.Spies),
             Events = outcome.Events.ToList(),
             GameOverReason = outcome.GameOverReason,
         });
@@ -312,9 +312,9 @@ internal static class RoundResolver
         match.Player1.Spies = outcome.Player1.Spies;
         match.Player2.Spies = outcome.Player2.Spies;
         match.Player1.Report = Spying.ReportOn(
-            match.Round, outcome.Player1.Spies, outcome.Player2, order2, Random.Shared);
+            match.Round, outcome.Player1.Spies, outcome.Player2, order2, random);
         match.Player2.Report = Spying.ReportOn(
-            match.Round, outcome.Player2.Spies, outcome.Player1, order1, Random.Shared);
+            match.Round, outcome.Player2.Spies, outcome.Player1, order1, random);
         match.Player1.PendingOrder = null;
         match.Player2.PendingOrder = null;
         match.GameOverReason = outcome.GameOverReason;
@@ -331,7 +331,7 @@ internal static class RoundResolver
         }
     }
 
-    private static void ForfeitIfAbandoned(Match match)
+    private void ForfeitIfAbandoned(Match match)
     {
         if (match.GameOverReason != GameOverReason.None)
         {

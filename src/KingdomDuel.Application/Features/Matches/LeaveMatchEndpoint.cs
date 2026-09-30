@@ -6,7 +6,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
+internal sealed class LeaveMatchEndpoint(AppDbContext dbContext, TimeProvider time)
     : EndpointWithoutRequest
 {
     public override void Configure()
@@ -41,7 +41,7 @@ internal sealed class LeaveMatchEndpoint(AppDbContext dbContext)
             case MatchStatus.InProgress when match.Player1 is not null && match.Player2 is not null:
                 match.Status = MatchStatus.Completed;
                 match.GameOverReason = isPlayer1 ? GameOverReason.Player1Left : GameOverReason.Player2Left;
-                MatchRecorder.RecordCompleted(dbContext, match);
+                MatchRecorder.RecordCompleted(dbContext, match, time.GetUtcNow());
                 break;
 
             case MatchStatus.Completed when IsAbandon(match.GameOverReason):

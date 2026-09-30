@@ -19,10 +19,14 @@ public sealed record SideOutcome(
     KingdomState Kingdom,
     Caravan? Caravan = null,
     int Recruits = 0,
-    SpyRing? Spies = null)
+    SpyRing? Spies = null,
+    int Hired = 0)
 {
     [JsonIgnore]
-    public int TotalPower => Kingdom.TotalPower + (Caravan?.Troops ?? 0) + (Spies?.Villagers ?? 0);
+    public int TotalPower => PowerOf(Kingdom, Caravan, Spies);
+
+    public static int PowerOf(KingdomState kingdom, Caravan? caravan, SpyRing? spies) =>
+        kingdom.TotalPower + (caravan?.Troops ?? 0) + (spies?.Villagers ?? 0);
 }
 
 public sealed record RoundOutcome(

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\KingdomDuel.Domain\KingdomDuel.Domain.csproj" />
+    <ProjectReference Include="..\..\src\KingdomDuel.Shared\KingdomDuel.Shared.csproj" />
+    <ProjectReference Include="..\..\src\KingdomDuel.Application\KingdomDuel.Application.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
+  </ItemGroup>
+
+</Project>

@@ -7,7 +7,7 @@ using FastEndpoints;
 
 namespace KingdomDuel.Application.Features.Matches;
 
-internal sealed class UpdateLobbyEndpoint(AppDbContext dbContext)
+internal sealed class UpdateLobbyEndpoint(AppDbContext dbContext, TimeProvider time)
     : Endpoint<UpdateLobbyRequest, MatchStateDto>
 {
     public override void Configure()
@@ -45,6 +45,6 @@ internal sealed class UpdateLobbyEndpoint(AppDbContext dbContext)
 
         await dbContext.SaveChangesAsync(ct);
 
-        await Send.OkAsync(match.ToStateDto(userId), ct);
+        await Send.OkAsync(match.ToStateDto(userId, time.GetUtcNow()), ct);
     }
 }

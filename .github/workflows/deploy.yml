@@ -10,7 +10,31 @@ permissions:
   id-token: write        # obligatoriu pentru OIDC — fără el, autentificarea la Google eșuează
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # Testele de integrare pornesc Postgres prin Testcontainers; Docker e deja pe runner.
+      - name: Test
+        run: pwsh build/coverage.ps1
+
+      - name: Coverage summary
+        if: always()
+        run: if [ -f coverage/SummaryGithub.md ]; then cat coverage/SummaryGithub.md >> "$GITHUB_STEP_SUMMARY"; fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage
+          path: coverage
+
   deploy:
+    needs: test
     runs-on: ubuntu-latest
     env:
       REGION: us-east1
