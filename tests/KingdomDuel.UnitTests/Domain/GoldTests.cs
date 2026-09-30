@@ -28,6 +28,16 @@ public sealed class GoldTests
     }
 
     [Fact]
+    public void Traders_miss_the_feast_of_the_round_before_they_are_back()
+    {
+        var outcome = Resolve(
+            Side(Kingdom(troops: 10, villagers: 5, morale: 50), Order(feast: FeastTier.Grand), caravan: new Caravan(10, 3)),
+            round: 2);
+
+        outcome.Player1.Kingdom.Morale.ShouldBe(47 + 16);
+    }
+
+    [Fact]
     public void Spies_miss_the_feast()
     {
         // home: 10 soldiers + 10 villagers at half = 15; away: 5 spies at half = 2.5

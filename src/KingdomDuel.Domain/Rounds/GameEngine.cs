@@ -6,8 +6,8 @@ public static class GameEngine
 {
     public static RoundOutcome Resolve(RoundInput input, Random random)
     {
-        var order1 = input.Player1.Order.ClampTo(input.Player1.Kingdom);
-        var order2 = input.Player2.Order.ClampTo(input.Player2.Kingdom);
+        var order1 = input.Player1.Order.ClampTo(input.Player1.Kingdom, input.Player1.Spies);
+        var order2 = input.Player2.Order.ClampTo(input.Player2.Kingdom, input.Player2.Spies);
 
         var events = new List<RoundEvent>();
         Record(1, order1, events);
@@ -617,9 +617,11 @@ public static class GameEngine
     {
         var state = input.Kingdom;
         var caravan = input.Caravan;
+        var returned = 0;
 
         if (caravan is { } away && away.AvailableInRound <= round + 1)
         {
+            returned = away.Troops;
             var gold = TradeYield(away.Troops, random);
 
             state = state.With(goldDelta: gold, villagersDelta: away.Troops);
@@ -686,7 +688,7 @@ public static class GameEngine
         state = state.With(moraleDelta: -GameConstants.MoraleDecayPerRound);
         events.Add(new RoundEvent(RoundEventKind.MoraleDecay, side, GameConstants.MoraleDecayPerRound));
 
-        state = Feast(side, state, order, input, spies, events);
+        state = Feast(side, state, order, input, spies, returned, events);
 
         var recruits = 0;
         var hired = 0;
@@ -784,6 +786,7 @@ public static class GameEngine
         OrderPlan order,
         SideInput input,
         SpyRing? spies,
+        int returned,
         List<RoundEvent> events)
     {
         if (order.Feast is not { } tier || state.Gold < GameConstants.FeastCost(tier))
@@ -793,7 +796,7 @@ public static class GameEngine
 
         var gone = order.Committed;
         var homeSoldiers = Math.Max(0, input.Kingdom.Troops - gone);
-        var homeVillagers = state.Villagers;
+        var homeVillagers = Math.Max(0, state.Villagers - returned);
         var awayVillagers = (input.Caravan?.Troops ?? 0) + order.Sent + (spies?.Villagers ?? 0);
 
         var morale = FeastMorale(

@@ -115,6 +115,20 @@ public sealed class OrderPlanTests
     }
 
     [Fact]
+    public void Keeping_or_lowering_the_ring_needs_no_villagers_at_home()
+    {
+        Order(spies: SpyTier.Pair).ClampTo(Kingdom(villagers: 0), new SpyRing(SpyTier.Pair)).Spies.ShouldBe(SpyTier.Pair);
+        Order(spies: SpyTier.Lone).ClampTo(Kingdom(villagers: 0), new SpyRing(SpyTier.Ring)).Spies.ShouldBe(SpyTier.Lone);
+    }
+
+    [Fact]
+    public void Raising_the_ring_needs_only_the_extra_villagers()
+    {
+        Order(spies: SpyTier.Ring).ClampTo(Kingdom(villagers: 2), new SpyRing(SpyTier.Pair)).Spies.ShouldBe(SpyTier.Ring);
+        Order(spies: SpyTier.Ring).ClampTo(Kingdom(villagers: 1), new SpyRing(SpyTier.Pair)).Spies.ShouldBe(SpyTier.Pair);
+    }
+
+    [Fact]
     public void Clamp_steps_spies_down_to_what_the_treasury_can_pay()
     {
         Order(spies: SpyTier.Ring).ClampTo(Kingdom(gold: 1)).Spies.ShouldBe(SpyTier.Lone);

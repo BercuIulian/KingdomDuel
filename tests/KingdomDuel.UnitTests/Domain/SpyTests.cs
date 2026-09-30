@@ -52,6 +52,31 @@ public sealed class SpyTests
     }
 
     [Fact]
+    public void A_ring_stays_whole_with_nobody_left_at_home()
+    {
+        var outcome = Resolve(Side(
+            Kingdom(gold: 50, villagers: 0),
+            Order(spies: SpyTier.Pair),
+            spies: new SpyRing(SpyTier.Pair)));
+
+        outcome.Player1.Spies.ShouldBe(new SpyRing(SpyTier.Pair));
+        outcome.Player1.Kingdom.Gold.ShouldBe(47);
+    }
+
+    [Fact]
+    public void A_ring_is_lowered_as_ordered_with_nobody_left_at_home()
+    {
+        var outcome = Resolve(Side(
+            Kingdom(gold: 50, villagers: 0),
+            Order(spies: SpyTier.Lone),
+            spies: new SpyRing(SpyTier.Pair)));
+
+        outcome.Player1.Spies.ShouldBe(new SpyRing(SpyTier.Lone));
+        outcome.Player1.Kingdom.Villagers.ShouldBe(2);
+        outcome.Player1.Kingdom.Gold.ShouldBe(49);
+    }
+
+    [Fact]
     public void Recalled_spies_come_home_and_cost_nothing()
     {
         var outcome = Resolve(Side(

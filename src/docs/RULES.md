@@ -53,7 +53,9 @@ sătenii se numără separat — trimiterea unora nu-i mișcă pe ceilalți.
 
 Un ordin aparte, cu trei trepte. Sătenii trimiși ca spioni **rămân plecați
 rundă după rundă**, până îi chemi acasă, și costă **un aur de cap în fiecare
-rundă**, inclusiv în cea în care pleacă.
+rundă**, inclusiv în cea în care pleacă. Rețeaua de pe teren nu mai atârnă de
+sătenii din cetate: o păstrezi sau o micșorezi oricâți ai acasă, iar ca s-o
+mărești îți trebuie doar sătenii care pleacă în plus.
 
 | | săteni | pe rundă | acuratețe |
 |---|---|---|---|
@@ -120,7 +122,8 @@ nu petrec la ospăț și nu pot lua arma la spărtură.
   plecat la atac, urcat pe zid la apărare sau dus cu caravana — nu petrece,
   deci sporul scade pe măsură. La masă un
   sătean cântărește **jumătate** de soldat, iar spionii sunt și ei plecați.
-  Moralul nu trece de 100.
+  Negustorii se socotesc plecați până în runda în care se întorc: trimiși în
+  runda 3, petrec abia la un ospăț din runda 5. Moralul nu trece de 100.
 - **Recrutare** — 12 aur, **6 soldați**, sosiți în runda următoare. O singură
   dată pe rundă.
 - **Cumpără săteni** — 8 aur pachetul de **5 săteni**, sosiți în runda
