@@ -283,17 +283,21 @@ public static class GameEngine
 
     private static SideOutcome Land(int side, SideOutcome outcome, List<RoundEvent> events)
     {
-        if (outcome.Recruits <= 0)
+        if (outcome.Recruits <= 0 && outcome.Hired <= 0)
         {
             return outcome;
         }
 
-        events.Add(new RoundEvent(RoundEventKind.Recruited, side, outcome.Recruits));
+        if (outcome.Recruits > 0)
+        {
+            events.Add(new RoundEvent(RoundEventKind.Recruited, side, outcome.Recruits));
+        }
 
         return outcome with
         {
-            Kingdom = outcome.Kingdom.With(troopsDelta: outcome.Recruits),
+            Kingdom = outcome.Kingdom.With(troopsDelta: outcome.Recruits, villagersDelta: outcome.Hired),
             Recruits = 0,
+            Hired = 0,
         };
     }
 
@@ -375,7 +379,9 @@ public static class GameEngine
             }
             events.Add(new RoundEvent(RoundEventKind.BattleJoined, defenderSide, replay.DefenderInKeep, ActionType.Defend));
 
-            defenderLeft = replay.DefenderInKeep - replay.FallsOf(defenderSide, endsAt, BattlePhase.Keep);
+            var keepLeft = replay.DefenderInKeep - replay.FallsOf(defenderSide, endsAt, BattlePhase.Keep);
+
+            defenderLeft = keepLeft > 0 ? keepLeft + replay.Searching : 0;
         }
         else
         {
@@ -482,7 +488,8 @@ public static class GameEngine
                 keepDefenders,
                 null,
                 falls.Count == 0 ? 0 : falls[^1].At,
-                falls)
+                falls,
+                defenceOrder.Searching)
             : new BattleReplay(
                 attackerSide,
                 attackerSide == 1 ? army : onTheWall,
@@ -490,7 +497,8 @@ public static class GameEngine
                 keepDefenders,
                 seconds,
                 seconds,
-                falls);
+                falls,
+                defenceOrder.Searching);
     }
 
     private static (SideOutcome, SideOutcome) HuntSpies(
@@ -673,16 +681,17 @@ public static class GameEngine
         state = Feast(side, state, order, input, spies, events);
 
         var recruits = 0;
+        var hired = 0;
 
         if (order.Hired > 0)
         {
             var bundles = Math.Min(order.Hired, state.Gold / GameConstants.VillagerBundleCost);
-            var hands = bundles * GameConstants.VillagersPerBundle;
 
             if (bundles > 0)
             {
-                state = state.With(goldDelta: -bundles * GameConstants.VillagerBundleCost, villagersDelta: hands);
-                events.Add(new RoundEvent(RoundEventKind.VillagersHired, side, hands));
+                hired = bundles * GameConstants.VillagersPerBundle;
+                state = state.With(goldDelta: -bundles * GameConstants.VillagerBundleCost);
+                events.Add(new RoundEvent(RoundEventKind.VillagersHired, side, hired));
             }
         }
 
@@ -758,7 +767,7 @@ public static class GameEngine
                 Purchase: PurchaseType.Catapult));
         }
 
-        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits, spies);
+        return new SideOutcome(state with { RuinedFrom = 0 }, caravan, recruits, spies, hired);
     }
 
     private static KingdomState Feast(
