@@ -33,4 +33,5 @@ public sealed class MatchStateDto
     public RoundRecapDto? LastRound { get; set; }
     public MatchStoryDto? Story { get; set; }
     public CaravanDto? YourCaravan { get; set; }
+    public RematchDto? Rematch { get; set; }
 }

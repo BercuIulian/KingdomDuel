@@ -178,6 +178,7 @@ cer `Authorization: Bearer <token>`.
 | `POST` | `/matches/{code}/march` | După câmpul câștigat: `{ advance }` — mergi la cetate sau te întorci. |
 | `POST` | `/matches/{code}/rally` | La spărtură, apărătorul își cheamă satul la arme: `{ villagers }`. |
 | `POST` | `/matches/{code}/leave` | Părăsește meciul. Într-un meci în desfășurare, îl încheie prin abandon. |
+| `POST` | `/matches/{code}/rematch` | După final, cere revanșa. Când au cerut-o amândoi, pornește un meci nou cu aceleași reguli, după 3 secunde; codul lui vine în starea meciului vechi. |
 
 Identitatea nu circulă niciodată prin body sau prin URL: fiecare endpoint o
 citește din token.

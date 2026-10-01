@@ -232,6 +232,11 @@ pierdute se răscumpără ieftin, dar numai în runda de după dărâmare.
 La final se dezvăluie ambele cetăți și se vede povestea meciului: puterea
 amândurora rundă de rundă, cu cotiturile însemnate pe ea.
 
+**Revanșa.** Tot la final, oricare dintre jucători poate cere un meci nou, iar
+celălalt vede că i s-a cerut. Când au cerut-o amândoi, după o numărătoare de 3
+secunde începe un meci cu aceleași reguli și cu aceleași locuri la masă. Nu se
+poate cere după un abandon sau după ce adversarul s-a ridicat de la masă.
+
 ## Ce vezi și ce nu
 
 Cât ține meciul, **cetatea adversarului e ascunsă** — aurul, soldații, sătenii

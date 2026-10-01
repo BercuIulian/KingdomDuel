@@ -54,8 +54,21 @@ namespace KingdomDuel.Persistence.Migrations
                     b.Property<Guid?>("Player1Id")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("Player1WantsRematch")
+                        .HasColumnType("boolean");
+
                     b.Property<Guid?>("Player2Id")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("Player2WantsRematch")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("RematchCode")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
+                    b.Property<DateTimeOffset?>("RematchStartsAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("Round")
                         .HasColumnType("integer");

@@ -33,5 +33,11 @@ public sealed class Match : Entity
 
     public DateTimeOffset? StartedAt { get; set; }
 
+    public bool Player1WantsRematch { get; set; }
+    public bool Player2WantsRematch { get; set; }
+
+    public string? RematchCode { get; set; }
+    public DateTimeOffset? RematchStartsAt { get; set; }
+
     public DateTimeOffset CreatedAt { get; init; } = DateTimeOffset.UtcNow;
 }
