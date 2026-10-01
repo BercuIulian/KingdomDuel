@@ -41,7 +41,40 @@ internal static class MatchMappings
         YourReport = match.SlotOf(userId)?.Report?.ToSpyReportDto(),
         LastRound = match.LastRoundSeenBy(userId),
         Story = match.StoryOf(),
+        Rematch = match.RematchSeenBy(userId, now),
     };
+
+    private static RematchDto? RematchSeenBy(this Match match, Guid userId, DateTimeOffset now)
+    {
+        var side = match.SideOf(userId);
+
+        if (match.Status != MatchStatus.Completed || side == 0)
+        {
+            return null;
+        }
+
+        var opponentLeft = match.GameOverReason == (side == 1 ? GameOverReason.Player2Left : GameOverReason.Player1Left);
+        var opponentGone = opponentLeft || (side == 1 ? match.Player2 : match.Player1) is null;
+
+        return new RematchDto
+        {
+            Available = match.CanRematch(),
+            YouAsked = side == 1 ? match.Player1WantsRematch : match.Player2WantsRematch,
+            OpponentAsked = side == 1 ? match.Player2WantsRematch : match.Player1WantsRematch,
+            OpponentGone = opponentGone,
+            Code = match.RematchCode,
+            SecondsRemaining = match.RematchStartsAt is { } startsAt
+                ? Math.Round(Math.Max(0, (startsAt - now).TotalSeconds), 1)
+                : null,
+        };
+    }
+
+    public static bool CanRematch(this Match match) =>
+        match.Status == MatchStatus.Completed
+        && match.Player1 is not null
+        && match.Player2 is not null
+        && match.GameOverReason is not (GameOverReason.Player1Left or GameOverReason.Player2Left)
+        && match.RematchCode is null;
 
     private static RoundRecapDto? LastRoundSeenBy(this Match match, Guid userId)
     {

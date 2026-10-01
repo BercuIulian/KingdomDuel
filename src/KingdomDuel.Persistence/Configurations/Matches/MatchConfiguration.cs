@@ -21,6 +21,7 @@ internal sealed class MatchConfiguration : IEntityTypeConfiguration<Match>
 
         builder.Property(m => m.Code).HasMaxLength(16).IsRequired();
         builder.HasIndex(m => m.Code).IsUnique();
+        builder.Property(m => m.RematchCode).HasMaxLength(16);
 
         builder.Property(m => m.RoundSeconds)
             .HasDefaultValue(GameConstants.DefaultRoundSeconds);

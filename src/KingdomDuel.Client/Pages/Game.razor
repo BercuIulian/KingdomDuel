@@ -26,7 +26,7 @@ else if (state is null)
 }
 else
 {
-    <section class="table">
+    <section class="table" @key="loadedCode">
 
         <header class="head">
             <span class="crest"><Glyph Name="swords" /></span>
@@ -119,9 +119,13 @@ else
             <section class="verdict">
                 <span class="verdict-ico"><Glyph Name="crown" /></span>
                 <p class="verdict-text">@VerdictText</p>
-                <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
-                    @(leaving ? "Se iese…" : "Înapoi la meniu")
-                </button>
+                <div class="verdict-actions">
+                    @RematchNote
+                    <button type="button" class="@(RematchOpen ? "result-ghost" : "send")" disabled="@leaving" @onclick="LeaveAndGoHome">
+                        @(leaving ? "Se iese…" : "Înapoi la meniu")
+                    </button>
+                    @RematchButton
+                </div>
             </section>
         }
 
@@ -200,12 +204,25 @@ else
                 <MatchStory Story="story" Player1Name="@Player1Name" Player2Name="@Player2Name" />
             }
 
-            <div class="result-actions">
-                <button type="button" class="result-ghost" @onclick="DismissResult">Închide</button>
-                <button type="button" class="send" disabled="@leaving" @onclick="LeaveAndGoHome">
-                    @(leaving ? "Se iese…" : "Înapoi la meniu")
-                </button>
-            </div>
+            @if (rematchCode is not null)
+            {
+                <div class="rematch-countdown" role="status" aria-live="assertive">
+                    <span class="eyebrow">Revanșa începe în</span>
+                    <b @key="rematchLeft">@rematchLeft</b>
+                </div>
+            }
+            else
+            {
+                <div class="result-actions">
+                    <button type="button" class="result-ghost" @onclick="DismissResult">Închide</button>
+                    <button type="button" class="@(RematchOpen ? "result-ghost" : "send")" disabled="@leaving" @onclick="LeaveAndGoHome">
+                        @(leaving ? "Se iese…" : "Înapoi la meniu")
+                    </button>
+                    @RematchButton
+                </div>
+
+                @RematchNote
+            }
         </section>
     }
 }
@@ -231,10 +248,19 @@ else
     private bool confirmFocused;
     private ElementReference confirmPanel;
 
+    private string? loadedCode;
+    private bool rematchAsking;
+    private string? rematchError;
+    private bool opponentAskSeen;
+    private string? rematchCode;
+    private int rematchLeft;
+    private bool disposed;
+
     private static readonly TimeSpan PollInterval = TimeSpan.FromSeconds(2);
 
     private static readonly TimeSpan LivePollInterval = TimeSpan.FromSeconds(1);
-    private readonly CancellationTokenSource pollCts = new();
+    private static readonly TimeSpan CountdownTick = TimeSpan.FromMilliseconds(100);
+    private CancellationTokenSource pollCts = new();
 
     private string? DisplayCode => state?.Code ?? Code;
 
@@ -330,6 +356,129 @@ else
 
     private void DismissResult() => resultDismissed = true;
 
+    // ---------- Revanșa ----------
+
+    private RematchDto? Rematch => state?.Rematch;
+
+    private bool RematchOpen => Rematch is { Available: true };
+
+    private string OpponentAtTable => Rematch is { OpponentGone: true } ? "Adversarul" : OpponentName;
+
+    private RenderFragment RematchButton => @<text>
+        @if (RematchOpen)
+        {
+            <button type="button"
+                    class="send rematch"
+                    disabled="@(rematchAsking || Rematch!.YouAsked)"
+                    @onclick="AskRematch">
+                @(Rematch!.YouAsked ? "Revanșă cerută" : Rematch.OpponentAsked ? "Acceptă revanșa" : "Joacă din nou")
+            </button>
+        }
+    </text>;
+
+    private RenderFragment RematchNote => @<text>
+        @if (rematchError is not null)
+        {
+            <p class="rematch-note gone">@rematchError</p>
+        }
+        else if (Rematch is { OpponentGone: true })
+        {
+            <p class="rematch-note gone">@OpponentAtTable a părăsit masa. Revanșa nu mai e posibilă.</p>
+        }
+        else if (Rematch is { Available: true, YouAsked: true })
+        {
+            <p class="rematch-note waiting" role="status"><span class="pulse"></span>Se așteaptă răspunsul lui @OpponentName…</p>
+        }
+        else if (Rematch is { Available: true, OpponentAsked: true })
+        {
+            <p class="rematch-note asked" role="status"><Glyph Name="swords" /> @OpponentName vrea revanșa.</p>
+        }
+    </text>;
+
+    private async Task AskRematch()
+    {
+        if (rematchAsking || string.IsNullOrWhiteSpace(Code))
+        {
+            return;
+        }
+
+        rematchAsking = true;
+        rematchError = null;
+
+        try
+        {
+            state = await Api.RematchAsync(Code);
+            FollowRematch(state);
+        }
+        catch (ApiException ex)
+        {
+            rematchError = ApiErrorReader.Describe(ex, "Revanșa nu a putut fi cerută.");
+        }
+        catch (Exception)
+        {
+            rematchError = "Nu am putut contacta serverul.";
+        }
+        finally
+        {
+            rematchAsking = false;
+        }
+    }
+
+    private void FollowRematch(MatchStateDto fresh)
+    {
+        if (fresh.Rematch is not { } rematch)
+        {
+            return;
+        }
+
+        if (rematch is { OpponentAsked: true, YouAsked: false } && !opponentAskSeen)
+        {
+            opponentAskSeen = true;
+            ReopenResult();
+        }
+
+        if (rematch is { Code: { } code, SecondsRemaining: { } seconds } && rematchCode is null)
+        {
+            rematchCode = code;
+            ReopenResult();
+            _ = CountDownAsync(code, TimeSpan.FromSeconds(seconds));
+        }
+    }
+
+    private void ReopenResult()
+    {
+        resultDismissed = false;
+        resultFocused = false;
+        confirmingLeave = false;
+    }
+
+    private async Task CountDownAsync(string code, TimeSpan wait)
+    {
+        var startsAt = DateTime.UtcNow + wait;
+        await pollCts.CancelAsync();
+
+        using var timer = new PeriodicTimer(CountdownTick);
+
+        do
+        {
+            var left = startsAt - DateTime.UtcNow;
+
+            if (left <= TimeSpan.Zero)
+            {
+                break;
+            }
+
+            rematchLeft = (int)Math.Ceiling(left.TotalSeconds);
+            await InvokeAsync(StateHasChanged);
+        }
+        while (await timer.WaitForNextTickAsync());
+
+        if (!disposed && rematchCode == code)
+        {
+            Navigation.NavigateTo(Routes.GameFor(code));
+        }
+    }
+
     private KingdomDto? MyCastle => Side == 1 ? state?.Player1Kingdom : state?.Player2Kingdom;
 
     private void PickRepair(int level) => repairTo = level;
@@ -395,22 +544,55 @@ else
 
     // ---------- Ciclul de viață ----------
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        if (Code == loadedCode && state is not null)
+        {
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(Code))
         {
             error = "Lipsește codul meciului.";
             return;
         }
 
+        await pollCts.CancelAsync();
+        pollCts.Dispose();
+        pollCts = new CancellationTokenSource();
+        ResetTable();
+        loadedCode = Code;
+
         await LoadStateAsync();
 
         recapShown = state?.LastRound?.Round ?? 0;
 
-        if (error is null)
+        if (state is not null)
         {
-            _ = PollLoopAsync(pollCts.Token);
+            FollowRematch(state);
         }
+
+        if (error is null && rematchCode is null)
+        {
+            _ = PollLoopAsync(Code, pollCts.Token);
+        }
+    }
+
+    private void ResetTable()
+    {
+        state = null;
+        error = null;
+        resultDismissed = false;
+        recapOpen = false;
+        repairTo = -1;
+        repairOpen = false;
+        leaving = false;
+        resultFocused = false;
+        confirmingLeave = false;
+        rematchAsking = false;
+        rematchError = null;
+        opponentAskSeen = false;
+        rematchCode = null;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -451,7 +633,7 @@ else
         }
     }
 
-    private async Task PollLoopAsync(CancellationToken ct)
+    private async Task PollLoopAsync(string code, CancellationToken ct)
     {
         using var timer = new PeriodicTimer(PollInterval);
         try
@@ -460,7 +642,7 @@ else
             {
                 try
                 {
-                    var fresh = await Api.GetMatchAsync(Code!, ct);
+                    var fresh = await Api.GetMatchAsync(code, ct);
 
                     if (state is not null && fresh.Round < state.Round)
                     {
@@ -469,13 +651,15 @@ else
 
                     state = fresh;
                     OfferRecap(fresh);
+                    FollowRematch(fresh);
                     timer.Period = fresh.Battle is not null || fresh.March is not null || fresh.Breach is not null
+                                   || fresh.Rematch is { YouAsked: true }
                         ? LivePollInterval
                         : PollInterval;
 
                     await InvokeAsync(StateHasChanged);
 
-                    if (fresh.Status == MatchStatus.Completed)
+                    if (fresh.Status == MatchStatus.Completed && fresh.Rematch is not { Available: true })
                     {
                         return;
                     }
@@ -504,6 +688,7 @@ else
 
     public async ValueTask DisposeAsync()
     {
+        disposed = true;
         await pollCts.CancelAsync();
         pollCts.Dispose();
     }

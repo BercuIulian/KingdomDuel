@@ -18,6 +18,7 @@ public static class GameConstants
     public const int MaxRoundSeconds = 180;
     public const int RoundGraceSeconds = 2;
     public const int MissedRoundsBeforeForfeit = 3;
+    public const int RematchCountdownSeconds = 3;
 
     public const double BattleStrengthExponent = 0.5;
     public const int WallBreakingSeconds = 15;
