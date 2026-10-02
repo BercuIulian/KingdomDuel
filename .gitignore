@@ -6,3 +6,9 @@ obj/
 # Teste
 TestResults/
 coverage/
+
+# AI Factory — unelte instalate
+.claude/skills/
+.claude/agents/
+.ai-factory.json
+skills-lock.json
